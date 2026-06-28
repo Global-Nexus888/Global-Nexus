@@ -2,6 +2,8 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CountdownBanner from './components/CountdownBanner'
+import LangBar from './components/LangBar'
+import { LangProvider } from './context/LangContext'
 import Home from './pages/Home'
 import CatalogPage from './pages/CatalogPage'
 import ProducersPage from './pages/ProducersPage'
@@ -26,15 +28,19 @@ export default function App() {
 
   if (isFullScreen) {
     return (
-      <Routes>
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/mensajes" element={<MessagesPage />} />
-      </Routes>
+      <LangProvider>
+        <Routes>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/mensajes" element={<MessagesPage />} />
+        </Routes>
+      </LangProvider>
     )
   }
 
   return (
+    <LangProvider>
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <LangBar />
       <CountdownBanner />
       <Navbar />
       <main style={{ flex: 1 }}>
@@ -56,5 +62,6 @@ export default function App() {
       </main>
       <Footer />
     </div>
+    </LangProvider>
   )
 }
