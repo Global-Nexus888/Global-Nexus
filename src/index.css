@@ -94,7 +94,7 @@ html, body { overflow-x: hidden; max-width: 100vw; }
 
 /* ─── Responsive helpers ─── */
 .nav-desktop { display: flex; }
-.nav-mobile  { display: none; }
+.nav-mobile  { display: none !important; }
 
 /* ─── Hero search bar ─── */
 .hero-search {
@@ -153,6 +153,7 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   /* Nav */
   .nav-desktop { display: none !important; }
   .nav-mobile  { display: flex !important; }
+  .nav-mobile-drawer { display: block !important; }
   .hidden-mobile { display: none !important; }
 
   /* Catalog sidebar hidden — show inline filter button instead */

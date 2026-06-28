@@ -8,7 +8,8 @@ export default function Navbar() {
   const links = [
     { to: '/catalogo', label: 'Catálogo' },
     { to: '/productores', label: 'Productores' },
-    { to: '/como-funciona', label: 'Cómo funciona' },
+    { to: '/comunidad', label: 'Comunidad' },
+    { to: '/oportunidades', label: '🔥 Ofertas' },
     { to: '/precios', label: 'Precios' },
   ]
 

@@ -14,6 +14,8 @@ import DashboardPage from './pages/DashboardPage'
 import MessagesPage from './pages/MessagesPage'
 import AdminPage from './pages/AdminPage'
 import VerificationPage from './pages/VerificationPage'
+import SocialPage from './pages/SocialPage'
+import DealsPage from './pages/DealsPage'
 import NotFound from './pages/NotFound'
 
 const FULL_SCREEN_ROUTES = ['/admin', '/mensajes']
@@ -47,6 +49,8 @@ export default function App() {
           <Route path="/producto/:id" element={<ProductPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/verificacion" element={<VerificationPage />} />
+          <Route path="/comunidad" element={<SocialPage />} />
+          <Route path="/oportunidades" element={<DealsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
