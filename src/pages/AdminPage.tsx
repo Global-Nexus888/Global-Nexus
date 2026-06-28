@@ -49,8 +49,23 @@ const INTERACCIONES = [
   { id: 'i10', tipo: 'mensaje', usuario: 'Klaus Richter', target: 'Agave Azul del Highlands', detalle: 'Revisó lista de precios de exportación', fecha: '2026-06-22 17:20', pais: '🇩🇪' },
 ]
 
+const COMUNIDAD_STATS = [
+  { usuario: 'Agave Azul del Highlands', tipo: 'photo', likes: 47, comentarios: 12, fecha: '2026-06-27', reportes: 0 },
+  { usuario: 'Marie Dubois', tipo: 'rfq', likes: 23, comentarios: 8, fecha: '2026-06-27', reportes: 0 },
+  { usuario: 'Valles Orgánicos', tipo: 'event', likes: 89, comentarios: 22, fecha: '2026-06-26', reportes: 1 },
+  { usuario: 'Ing. Carmen Vega', tipo: 'update', likes: 31, comentarios: 5, fecha: '2026-06-26', reportes: 0 },
+  { usuario: 'Pedro Martens', tipo: 'rfq', likes: 18, comentarios: 14, fecha: '2026-06-25', reportes: 0 },
+]
+
+const OFERTAS_STATS = [
+  { producto: 'Tequila Reposado Premium', productor: 'Agave Azul', views: 214, contactos: 18, stock: 38, descuento: 41 },
+  { producto: 'Café Orgánico Chiapas', productor: 'Cooperativa Sierra Madre', views: 189, contactos: 12, stock: 12, descuento: 43 },
+  { producto: 'Aceite de Jojoba', productor: 'Jojoba del Sonora', views: 97, contactos: 6, stock: 8, descuento: 43 },
+  { producto: 'Mezcal Espadín-Tobalá', productor: 'Destilería San Dionisio', views: 143, contactos: 9, stock: 4, descuento: 42 },
+]
+
 /* ─── Helpers ─── */
-type AdminTab = 'overview' | 'usuarios' | 'suscripciones' | 'verificaciones' | 'actividad'
+type AdminTab = 'overview' | 'usuarios' | 'suscripciones' | 'verificaciones' | 'actividad' | 'comunidad' | 'ofertas'
 
 const PLAN_CONFIG: Record<string, { color: string; bg: string }> = {
   pro:        { color: '#0F766E', bg: '#CCFBF1' },
@@ -141,6 +156,7 @@ export default function AdminPage() {
   const [userSearch, setUserSearch] = useState('')
   const [rolFilter, setRolFilter] = useState<'all' | 'producer' | 'buyer'>('all')
   const [planFilter, setPlanFilter] = useState('all')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   if (!auth) return <AdminLogin onLogin={() => setAuth(true)} />
 
@@ -157,14 +173,28 @@ export default function AdminPage() {
     { id: 'usuarios',       label: 'Usuarios',       icon: '👥', badge: REGISTROS.length },
     { id: 'suscripciones',  label: 'Suscripciones',  icon: '💳', badge: SUSCRIPCIONES.filter(s => s.estado === 'activa').length },
     { id: 'verificaciones', label: 'Verificaciones', icon: '🛡️', badge: pendingDocs },
+    { id: 'comunidad',      label: 'Comunidad',      icon: '🌐', badge: COMUNIDAD_STATS.filter(p => p.reportes > 0).length || undefined },
+    { id: 'ofertas',        label: 'Ofertas Calientes', icon: '🔥' },
     { id: 'actividad',      label: 'Actividad',      icon: '⚡' },
   ]
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#0F172A' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#0F172A', position: 'relative' }}>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 40 }} />
+      )}
+
+      {/* Mobile top bar */}
+      <div style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, height: 56, background: '#1E293B', borderBottom: '1px solid rgba(255,255,255,.07)', alignItems: 'center', padding: '0 1rem', gap: 12, zIndex: 30 }} className="admin-topbar-mobile">
+        <button onClick={() => setSidebarOpen(o => !o)} style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.05)', cursor: 'pointer', fontSize: '1rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>☰</button>
+        <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>🌐 Global Nexus Admin</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#5EEAD4', fontWeight: 700 }}>MRR ${mrr}</span>
+      </div>
 
       {/* ── Sidebar ── */}
-      <div style={{ width: 240, background: '#1E293B', display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ width: 240, background: '#1E293B', display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,.07)', position: 'fixed', top: 0, bottom: 0, left: sidebarOpen ? 0 : undefined, zIndex: 50, transition: 'left .25s' }} className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -181,7 +211,7 @@ export default function AdminPage() {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { setTab(item.id); setSidebarOpen(false) }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10,
                 border: 'none', cursor: 'pointer', marginBottom: 4, textAlign: 'left', transition: 'all .15s',
@@ -216,7 +246,7 @@ export default function AdminPage() {
       </div>
 
       {/* ── Main content ── */}
-      <div style={{ flex: 1, overflowY: 'auto', background: '#0F172A' }}>
+      <div style={{ flex: 1, overflowY: 'auto', background: '#0F172A', marginLeft: 240 }} className="admin-main">
 
         {/* Top bar */}
         <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1E293B' }}>
@@ -490,6 +520,125 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* ── COMUNIDAD ── */}
+          {tab === 'comunidad' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '1rem', marginBottom: 8 }}>
+                {[
+                  { label: 'Posts publicados', value: COMUNIDAD_STATS.length, color: '#5EEAD4', icon: '📢' },
+                  { label: 'Likes totales', value: COMUNIDAD_STATS.reduce((a,p) => a + p.likes, 0), color: '#FCA5A5', icon: '❤️' },
+                  { label: 'Comentarios', value: COMUNIDAD_STATS.reduce((a,p) => a + p.comentarios, 0), color: '#93C5FD', icon: '💬' },
+                  { label: 'Reportes activos', value: COMUNIDAD_STATS.filter(p => p.reportes > 0).length, color: '#FCD34D', icon: '⚠️' },
+                ].map(k => (
+                  <div key={k.label} style={{ background: '#1E293B', borderRadius: 12, padding: '1.1rem', border: '1px solid rgba(255,255,255,.06)' }}>
+                    <div style={{ fontSize: '1.1rem', marginBottom: 6 }}>{k.icon}</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: k.color }}>{k.value}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 4 }}>{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: '#1E293B', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.06)' }}>
+                <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,.07)', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                  🌐 Posts del feed — moderación
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+                      {['Usuario', 'Tipo', 'Likes', 'Comentarios', 'Reportes', 'Fecha', 'Acción'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COMUNIDAD_STATS.map((p, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#fff', fontWeight: 600 }}>{p.usuario}</td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(13,148,136,.2)', color: '#5EEAD4', fontWeight: 600 }}>{p.tipo}</span>
+                        </td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#FCA5A5', fontWeight: 700 }}>{p.likes}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#93C5FD', fontWeight: 700 }}>{p.comentarios}</td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: p.reportes > 0 ? '#FCD34D' : 'rgba(255,255,255,.3)' }}>
+                            {p.reportes > 0 ? `⚠️ ${p.reportes}` : '—'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '11px 14px', fontSize: 11, color: 'rgba(255,255,255,.4)' }}>{p.fecha}</td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.6)', cursor: 'pointer' }}>Ver</button>
+                            {p.reportes > 0 && <button style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(220,38,38,.2)', color: '#FCA5A5', cursor: 'pointer' }}>Eliminar</button>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── OFERTAS ── */}
+          {tab === 'ofertas' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '1rem', marginBottom: 8 }}>
+                {[
+                  { label: 'Ofertas activas', value: OFERTAS_STATS.length, color: '#FCD34D', icon: '🔥' },
+                  { label: 'Vistas totales', value: OFERTAS_STATS.reduce((a,o) => a + o.views, 0), color: '#5EEAD4', icon: '👁️' },
+                  { label: 'Contactos generados', value: OFERTAS_STATS.reduce((a,o) => a + o.contactos, 0), color: '#86EFAC', icon: '📩' },
+                  { label: 'Stock crítico (<10)', value: OFERTAS_STATS.filter(o => o.stock < 10).length, color: '#FCA5A5', icon: '⚠️' },
+                ].map(k => (
+                  <div key={k.label} style={{ background: '#1E293B', borderRadius: 12, padding: '1.1rem', border: '1px solid rgba(255,255,255,.06)' }}>
+                    <div style={{ fontSize: '1.1rem', marginBottom: 6 }}>{k.icon}</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: k.color }}>{k.value}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 4 }}>{k.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: '#1E293B', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.06)' }}>
+                <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>🔥 Ofertas calientes activas</span>
+                  <button style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: 'none', background: 'rgba(13,148,136,.2)', color: '#5EEAD4', cursor: 'pointer', fontWeight: 600 }}>+ Nueva oferta</button>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+                      {['Producto', 'Productor', 'Views', 'Contactos', 'Stock', 'Descuento', 'Acción'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {OFERTAS_STATS.map((o, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#fff', fontWeight: 600 }}>{o.producto}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 12, color: 'rgba(255,255,255,.5)' }}>{o.productor}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#5EEAD4', fontWeight: 700 }}>{o.views}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#86EFAC', fontWeight: 700 }}>{o.contactos}</td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: o.stock < 10 ? '#FCA5A5' : 'rgba(255,255,255,.6)' }}>
+                            {o.stock < 10 ? `⚠️ ${o.stock}` : o.stock}
+                          </span>
+                        </td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#FCD34D' }}>-{o.descuento}%</span>
+                        </td>
+                        <td style={{ padding: '11px 14px' }}>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.6)', cursor: 'pointer' }}>Editar</button>
+                            <button style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(220,38,38,.15)', color: '#FCA5A5', cursor: 'pointer' }}>Pausar</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
