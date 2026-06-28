@@ -34,28 +34,27 @@ export default function ProducersPage() {
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Empresas certificadas con capacidad de exportación a la Unión Europea</p>
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '1.5rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔍</span>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar productor o estado..."
-            style={{ width: '100%', padding: '10px 14px 10px 38px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '14px', background: 'var(--white)' }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'var(--teal)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-          />
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {CATS.map(c => (
-            <button key={c.value} onClick={() => setCat(c.value)}
-              className="btn"
-              style={{ padding: '8px 14px', fontSize: '13px', background: cat === c.value ? 'var(--teal)' : 'var(--white)', color: cat === c.value ? '#fff' : 'var(--text)', border: '1.5px solid', borderColor: cat === c.value ? 'var(--teal)' : 'var(--border)' }}
-            >{c.label}</button>
-          ))}
-        </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
-          <input type="checkbox" checked={verified} onChange={e => setVerified(e.target.checked)} style={{ accentColor: 'var(--teal)', width: 16, height: 16 }} />
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: '10px' }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔍</span>
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar productor o estado..."
+          style={{ width: '100%', padding: '10px 14px 10px 38px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '14px', background: 'var(--white)', boxSizing: 'border-box' }}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--teal)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+        />
+      </div>
+      {/* Filters — scroll horizontal en móvil */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1.25rem', alignItems: 'center', overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        {CATS.map(c => (
+          <button key={c.value} onClick={() => setCat(c.value)}
+            className="btn"
+            style={{ padding: '7px 14px', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0, background: cat === c.value ? 'var(--teal)' : 'var(--white)', color: cat === c.value ? '#fff' : 'var(--text)', border: '1.5px solid', borderColor: cat === c.value ? 'var(--teal)' : 'var(--border)' }}
+          >{c.label}</button>
+        ))}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '13px', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <input type="checkbox" checked={verified} onChange={e => setVerified(e.target.checked)} style={{ accentColor: 'var(--teal)', width: 15, height: 15 }} />
           Solo verificados
         </label>
       </div>

@@ -146,6 +146,7 @@ export default function PricingPage() {
           <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Comparativa completa de planes</h2>
           </div>
+          <div className="table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: 'var(--surface2)' }}>
@@ -178,6 +179,7 @@ export default function PricingPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </section>
 
