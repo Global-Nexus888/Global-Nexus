@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -11,10 +11,25 @@ import RegisterPage from './pages/RegisterPage'
 import ProductPage from './pages/ProductPage'
 import DashboardPage from './pages/DashboardPage'
 import MessagesPage from './pages/MessagesPage'
+import AdminPage from './pages/AdminPage'
 import VerificationPage from './pages/VerificationPage'
 import NotFound from './pages/NotFound'
 
+const FULL_SCREEN_ROUTES = ['/admin', '/mensajes']
+
 export default function App() {
+  const { pathname } = useLocation()
+  const isFullScreen = FULL_SCREEN_ROUTES.some(r => pathname.startsWith(r))
+
+  if (isFullScreen) {
+    return (
+      <Routes>
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/mensajes" element={<MessagesPage />} />
+      </Routes>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <Navbar />
@@ -29,7 +44,6 @@ export default function App() {
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/producto/:id" element={<ProductPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/mensajes" element={<MessagesPage />} />
           <Route path="/verificacion" element={<VerificationPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
