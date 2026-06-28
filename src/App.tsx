@@ -9,6 +9,7 @@ import PricingPage from './pages/PricingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ProductPage from './pages/ProductPage'
+import DashboardPage from './pages/DashboardPage'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/producto/:id" element={<ProductPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

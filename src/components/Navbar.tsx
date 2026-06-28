@@ -60,6 +60,9 @@ export default function Navbar() {
 
         {/* Auth buttons */}
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <Link to="/dashboard" className="btn btn-ghost" style={{ fontSize: '13px', padding: '8px 16px' }}>
+            📊 Dashboard
+          </Link>
           <Link to="/login" className="btn btn-ghost" style={{ fontSize: '13px', padding: '8px 16px' }}>
             Iniciar sesión
           </Link>
