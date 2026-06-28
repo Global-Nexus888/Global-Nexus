@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useLang } from '../context/LangContext'
+import { useT } from '../lib/translations'
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
+  const { lang } = useLang()
+  const T = useT(lang)
 
   const links = [
-    { to: '/catalogo', label: 'Catálogo' },
-    { to: '/productores', label: 'Productores' },
-    { to: '/comunidad', label: 'Comunidad' },
-    { to: '/oportunidades', label: '🔥 Ofertas' },
-    { to: '/precios', label: 'Precios' },
+    { to: '/catalogo',     label: T('nav_catalog') },
+    { to: '/productores',  label: T('nav_producers') },
+    { to: '/comunidad',    label: T('nav_community') },
+    { to: '/oportunidades',label: T('nav_deals') },
+    { to: '/precios',      label: T('nav_pricing') },
   ]
 
   return (
@@ -25,12 +29,7 @@ export default function Navbar() {
 
         {/* Logo */}
         <Link to="/" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, textDecoration: 'none' }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9,
-            background: 'linear-gradient(135deg, #0D9488, #1E3A5F)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1rem',
-          }}>🌐</div>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg, #0D9488, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🌐</div>
           <div>
             <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text)', lineHeight: 1 }}>Global Nexus</div>
             <div style={{ fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '.04em', lineHeight: 1 }}>México · Europa</div>
@@ -51,25 +50,25 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* TLCUEM badge - desktop only */}
+        {/* TLCUEM badge */}
         <div className="nav-desktop" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <span className="badge badge-green" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>✓ TLCUEM 0%</span>
+          <span className="badge badge-green" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{T('nav_badge')}</span>
         </div>
 
         {/* Desktop auth */}
         <div className="nav-desktop" style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
           <Link to="/login" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>
-            Iniciar sesión
+            {T('nav_login')}
           </Link>
           <Link to="/registro" className="btn btn-primary" style={{ fontSize: '13px', padding: '7px 14px' }}>
-            Registrarse
+            {T('nav_register')}
           </Link>
         </div>
 
         {/* Mobile: auth + hamburger */}
         <div className="nav-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
           <Link to="/registro" className="btn btn-primary" style={{ fontSize: '12px', padding: '7px 13px' }}>
-            Registrarse
+            {T('nav_register')}
           </Link>
           <button
             onClick={() => setMenuOpen(o => !o)}
@@ -99,10 +98,10 @@ export default function Navbar() {
             ))}
             <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
             <Link to="/login" onClick={() => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none', display: 'block' }}>
-              Iniciar sesión
+              {T('nav_login')}
             </Link>
             <div style={{ marginTop: 4, padding: '10px 14px', background: 'var(--teal-light)', borderRadius: 10 }}>
-              <span className="badge badge-green">✓ TLCUEM 0% aranceles EU</span>
+              <span className="badge badge-green">{T('nav_badge')} aranceles EU</span>
             </div>
           </div>
         </div>

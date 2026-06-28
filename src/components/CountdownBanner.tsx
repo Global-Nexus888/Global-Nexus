@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useLang } from '../context/LangContext'
+import { useT } from '../lib/translations'
 
 const LAUNCH = new Date('2026-08-28T00:00:00')
 
@@ -20,6 +22,8 @@ export function isPreLaunch(): boolean {
 export default function CountdownBanner() {
   const [time, setTime] = useState(getTimeLeft())
   const [visible, setVisible] = useState(true)
+  const { lang } = useLang()
+  const T = useT(lang)
 
   useEffect(() => {
     const id = setInterval(() => setTime(getTimeLeft()), 1000)
@@ -35,18 +39,13 @@ export default function CountdownBanner() {
       padding: '7px 1rem',
       position: 'relative',
     }}>
-      <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '1rem', flexWrap: 'wrap',
-      }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,.45)', letterSpacing: '.05em', fontWeight: 600 }}>
-          ⚡ Precio anticipado
+          {T('cd_label')}
         </span>
-        <span style={{ fontSize: '0.8rem', color: '#5EEAD4', fontWeight: 800 }}>40% OFF</span>
+        <span style={{ fontSize: '0.8rem', color: '#5EEAD4', fontWeight: 800 }}>{T('cd_off')}</span>
         <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,.3)' }}>·</span>
 
-        {/* Timer */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {[
             { v: time.days,  l: 'd' },
@@ -64,20 +63,14 @@ export default function CountdownBanner() {
           ))}
         </div>
 
-        <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,.3)' }}>· hasta 28 Ago 2026</span>
+        <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,.3)' }}>{T('cd_until')}</span>
 
-        <a href="/precios" style={{
-          fontSize: '0.72rem', color: '#5EEAD4', fontWeight: 700, textDecoration: 'none',
-          border: '1px solid rgba(94,234,212,.3)', padding: '2px 10px', borderRadius: 100,
-        }}>
-          Ver planes →
+        <a href="/precios" style={{ fontSize: '0.72rem', color: '#5EEAD4', fontWeight: 700, textDecoration: 'none', border: '1px solid rgba(94,234,212,.3)', padding: '2px 10px', borderRadius: 100 }}>
+          {T('cd_cta')}
         </a>
       </div>
 
-      <button
-        onClick={() => setVisible(false)}
-        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,.25)', cursor: 'pointer', fontSize: 15, padding: 4, lineHeight: 1 }}
-      >×</button>
+      <button onClick={() => setVisible(false)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,.25)', cursor: 'pointer', fontSize: 15, padding: 4, lineHeight: 1 }}>×</button>
     </div>
   )
 }

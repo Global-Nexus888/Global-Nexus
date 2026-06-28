@@ -18,6 +18,11 @@ import AdminPage from './pages/AdminPage'
 import VerificationPage from './pages/VerificationPage'
 import SocialPage from './pages/SocialPage'
 import DealsPage from './pages/DealsPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
+import ContactPage from './pages/ContactPage'
+import FAQPage from './pages/FAQPage'
+import ThankYouPage from './pages/ThankYouPage'
 import NotFound from './pages/NotFound'
 
 const FULL_SCREEN_ROUTES = ['/admin', '/mensajes']
@@ -57,6 +62,11 @@ export default function App() {
           <Route path="/verificacion" element={<VerificationPage />} />
           <Route path="/comunidad" element={<SocialPage />} />
           <Route path="/oportunidades" element={<DealsPage />} />
+          <Route path="/privacidad" element={<PrivacyPage />} />
+          <Route path="/terminos" element={<TermsPage />} />
+          <Route path="/contacto" element={<ContactPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/gracias" element={<ThankYouPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
