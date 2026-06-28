@@ -1,0 +1,599 @@
+import { useState, useRef, useEffect } from 'react'
+
+/* ─── Types ─── */
+interface Message {
+  id: string
+  from: 'me' | 'them'
+  text: string
+  textOriginal?: string
+  lang: string
+  time: Date
+  translated?: boolean
+  file?: { name: string; type: 'pdf' | 'jpg'; url: string; size: string }
+  reaction?: string
+}
+
+interface Conversation {
+  id: string
+  name: string
+  company: string
+  country: string
+  countryCode: string
+  flag: string
+  lang: string
+  langLabel: string
+  timezone: string
+  tzOffset: number          // hours from UTC
+  avatar: string
+  role: 'buyer' | 'producer'
+  online: boolean
+  verified: boolean
+  product: string
+  unread: number
+  messages: Message[]
+}
+
+/* ─── Mock data ─── */
+const now = new Date()
+const m = (min: number): Date => new Date(now.getTime() - min * 60000)
+
+const CONVERSATIONS: Conversation[] = [
+  {
+    id: 'c1', name: 'Jan van der Berg', company: 'EuroSpirits BV',
+    country: 'Países Bajos', countryCode: 'NL', flag: '🇳🇱',
+    lang: 'nl', langLabel: 'Holandés', timezone: 'CET (UTC+2)', tzOffset: 2,
+    avatar: '👨‍💼', role: 'buyer', online: true, verified: true,
+    product: 'Tequila Añejo Reserva', unread: 2,
+    messages: [
+      { id: 'm1', from: 'them', lang: 'nl', time: m(120), text: 'Goedemiddag! Ik ben geïnteresseerd in uw Tequila Añejo Reserva voor onze Europese distributie.', textOriginal: 'Goedemiddag! Ik ben geïnteresseerd in uw Tequila Añejo Reserva voor onze Europese distributie.' },
+      { id: 'm2', from: 'me', lang: 'es', time: m(115), text: 'Buenos días Jan, con gusto le comparto toda la información. ¿Cuántas cajas necesita para la primera orden?' },
+      { id: 'm3', from: 'them', lang: 'nl', time: m(110), text: 'Wij hebben een minimale bestelling van 500 dozen nodig. Zijn er kortingen mogelijk?', textOriginal: 'Wij hebben een minimale bestelling van 500 dozen nodig. Zijn er kortingen mogelijk?' },
+      { id: 'm4', from: 'me', lang: 'es', time: m(60), text: 'Para pedidos de 500 cajas aplicamos 8% de descuento. Le adjunto nuestra ficha técnica y certificados.' },
+      { id: 'm5', from: 'me', lang: 'es', time: m(58), text: '', file: { name: 'Ficha_Tecnica_Tequila_Anejo.pdf', type: 'pdf', url: '#', size: '2.4 MB' } },
+      { id: 'm6', from: 'them', lang: 'nl', time: m(5), text: 'Uitstekend! Kunt u ook de SENASICA-exportvergunning sturen?', textOriginal: 'Uitstekend! Kunt u ook de SENASICA-exportvergunning sturen?' },
+      { id: 'm7', from: 'them', lang: 'nl', time: m(2), text: 'Wij willen ook de alcoholpercentage certificering zien.', textOriginal: 'Wij willen ook de alcoholpercentage certificering zien.' },
+    ],
+  },
+  {
+    id: 'c2', name: 'Marie Dubois', company: 'Maison des Alcools',
+    country: 'Francia', countryCode: 'FR', flag: '🇫🇷',
+    lang: 'fr', langLabel: 'Francés', timezone: 'CET (UTC+2)', tzOffset: 2,
+    avatar: '👩‍💼', role: 'buyer', online: true, verified: true,
+    product: 'Mezcal Artesanal Espadín', unread: 0,
+    messages: [
+      { id: 'm1', from: 'them', lang: 'fr', time: m(1440), text: 'Bonjour! Nous sommes très intéressés par votre Mezcal artisanal pour notre réseau de distribution en France.', textOriginal: 'Bonjour! Nous sommes très intéressés par votre Mezcal artisanal pour notre réseau de distribution en France.' },
+      { id: 'm2', from: 'me', lang: 'es', time: m(1430), text: 'Bonjour Marie! Encantados de trabajar con Maison des Alcools. El mezcal espadín tiene denominación de origen, ideal para el mercado francés.' },
+      { id: 'm3', from: 'them', lang: 'fr', time: m(1420), text: 'Parfait. Pouvez-vous nous envoyer les certifications et les conditions d\'exportation?', textOriginal: 'Parfait. Pouvez-vous nous envoyer les certifications et les conditions d\'exportation?' },
+      { id: 'm4', from: 'me', lang: 'es', time: m(1410), text: 'Por supuesto. Con TLCUEM el arancel de importación es 0%. Le envío los documentos de certificación ahora mismo.' },
+      { id: 'm4b', from: 'me', lang: 'es', time: m(1408), text: '', file: { name: 'Certificado_DO_Mezcal.pdf', type: 'pdf', url: '#', size: '1.8 MB' } },
+      { id: 'm5', from: 'them', lang: 'fr', time: m(1400), text: 'Merci beaucoup! Nous revenons vers vous dans 48 heures.', textOriginal: 'Merci beaucoup! Nous revenons vers vous dans 48 heures.', reaction: '🤝' },
+    ],
+  },
+  {
+    id: 'c3', name: 'Klaus Richter', company: 'Deutsche Spirits GmbH',
+    country: 'Alemania', countryCode: 'DE', flag: '🇩🇪',
+    lang: 'de', langLabel: 'Alemán', timezone: 'CET (UTC+2)', tzOffset: 2,
+    avatar: '👨‍🏭', role: 'buyer', online: false, verified: true,
+    product: 'Tequila Añejo Reserva', unread: 0,
+    messages: [
+      { id: 'm1', from: 'them', lang: 'de', time: m(4320), text: 'Guten Tag. Wir suchen einen zuverlässigen Lieferanten für Premium-Tequila für den deutschen Markt.', textOriginal: 'Guten Tag. Wir suchen einen zuverlässigen Lieferanten für Premium-Tequila für den deutschen Markt.' },
+      { id: 'm2', from: 'me', lang: 'es', time: m(4300), text: 'Guten Tag Herr Richter! Tenemos 45 años exportando tequila premium. Puedo compartirle nuestro portafolio completo.' },
+      { id: 'm3', from: 'them', lang: 'en', time: m(4280), text: 'Thank you. Could you provide your complete export documentation and pricing sheet?', textOriginal: 'Thank you. Could you provide your complete export documentation and pricing sheet.' },
+      { id: 'm4', from: 'me', lang: 'es', time: m(4260), text: 'Claro, le adjunto la lista de precios y toda la documentación para exportación a Alemania.' },
+      { id: 'm4b', from: 'me', lang: 'es', time: m(4258), text: '', file: { name: 'Lista_Precios_Export_EU.pdf', type: 'pdf', url: '#', size: '3.1 MB' } },
+      { id: 'm5', from: 'them', lang: 'de', time: m(4200), text: 'Sehr gut. Wir prüfen die Unterlagen und melden uns bis Ende der Woche.', textOriginal: 'Sehr gut. Wir prüfen die Unterlagen und melden uns bis Ende der Woche.', reaction: '👍' },
+    ],
+  },
+  {
+    id: 'c4', name: 'Sofia Andersson', company: 'Nordic Import AB',
+    country: 'Suecia', countryCode: 'SE', flag: '🇸🇪',
+    lang: 'en', langLabel: 'Inglés', timezone: 'CET (UTC+2)', tzOffset: 2,
+    avatar: '👩‍💼', role: 'buyer', online: false, verified: false,
+    product: 'Café Chiapaneco de Altura', unread: 0,
+    messages: [
+      { id: 'm1', from: 'them', lang: 'en', time: m(8640), text: 'Hi! We are interested in sourcing specialty coffee from Mexico for the Scandinavian market.' },
+      { id: 'm2', from: 'me', lang: 'es', time: m(8620), text: 'Hello Sofia! Our Chiapas highland coffee is perfect for the Scandinavian market — SHB grade, organic certified.' },
+      { id: 'm3', from: 'them', lang: 'en', time: m(8600), text: 'Sounds great. Can you send samples and pricing?' },
+      { id: 'm4', from: 'me', lang: 'es', time: m(8580), text: 'Absolutely. We ship sample kits to EU. MOQ for regular orders is 250 kg. I\'ll send the full catalogue.' },
+    ],
+  },
+]
+
+const TRANSLATE: Record<string, Record<string, string>> = {
+  nl: {
+    'Goedemiddag! Ik ben geïnteresseerd in uw Tequila Añejo Reserva voor onze Europese distributie.': 'Buenos días, estoy interesado en su Tequila Añejo Reserva para nuestra distribución europea.',
+    'Wij hebben een minimale bestelling van 500 dozen nodig. Zijn er kortingen mogelijk?': 'Necesitamos un pedido mínimo de 500 cajas. ¿Hay descuentos disponibles?',
+    'Uitstekend! Kunt u ook de SENASICA-exportvergunning sturen?': 'Excelente! ¿Puede enviar también el permiso de exportación SENASICA?',
+    'Wij willen ook de alcoholpercentage certificering zien.': 'También queremos ver la certificación de porcentaje de alcohol.',
+  },
+  fr: {
+    'Bonjour! Nous sommes très intéressés par votre Mezcal artisanal pour notre réseau de distribution en France.': 'Hola, estamos muy interesados en su Mezcal artesanal para nuestra red de distribución en Francia.',
+    "Parfait. Pouvez-vous nous envoyer les certifications et les conditions d'exportation?": '¿Puede enviarnos las certificaciones y las condiciones de exportación?',
+    'Merci beaucoup! Nous revenons vers vous dans 48 heures.': 'Muchas gracias. Nos pondremos en contacto en 48 horas.',
+  },
+  de: {
+    'Guten Tag. Wir suchen einen zuverlässigen Lieferanten für Premium-Tequila für den deutschen Markt.': 'Buenas tardes. Buscamos un proveedor confiable de tequila premium para el mercado alemán.',
+    'Sehr gut. Wir prüfen die Unterlagen und melden uns bis Ende der Woche.': 'Muy bien. Revisaremos los documentos y nos comunicaremos a fin de semana.',
+  },
+}
+
+const LANG_FLAG: Record<string, string> = { es: '🇲🇽', en: '🇬🇧', nl: '🇳🇱', fr: '🇫🇷', de: '🇩🇪', pt: '🇵🇹' }
+const LANG_NAME: Record<string, string> = { es: 'Español', en: 'English', nl: 'Nederlands', fr: 'Français', de: 'Deutsch' }
+
+function getLocalTime(tzOffset: number): string {
+  const utc = new Date()
+  const local = new Date(utc.getTime() + (tzOffset * 60 - utc.getTimezoneOffset()) * 60000)
+  return local.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function formatDate(date: Date): string {
+  const diff = (now.getTime() - date.getTime()) / 60000
+  if (diff < 60) return `Hace ${Math.round(diff)} min`
+  if (diff < 1440) return `Hace ${Math.round(diff / 60)}h`
+  if (diff < 2880) return 'Ayer'
+  return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+}
+
+/* ─── Component ─── */
+export default function MessagesPage() {
+  const [activeId, setActiveId] = useState('c1')
+  const [convos, setConvos] = useState<Conversation[]>(CONVERSATIONS)
+  const [input, setInput] = useState('')
+  const [translatedIds, setTranslatedIds] = useState<Set<string>>(new Set())
+  const [showInfo, setShowInfo] = useState(false)
+  const [replyLang, setReplyLang] = useState<string>('es')
+  const [typing, setTyping] = useState(false)
+  const [search, setSearch] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const convo = convos.find(c => c.id === activeId)!
+  const filtered = convos.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.company.toLowerCase().includes(search.toLowerCase())
+  )
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [activeId, convo?.messages.length])
+
+  // Mark as read on open
+  useEffect(() => {
+    setConvos(cs => cs.map(c => c.id === activeId ? { ...c, unread: 0 } : c))
+  }, [activeId])
+
+  const toggleTranslate = (msgId: string) => {
+    setTranslatedIds(prev => {
+      const next = new Set(prev)
+      next.has(msgId) ? next.delete(msgId) : next.add(msgId)
+      return next
+    })
+  }
+
+  const sendMessage = () => {
+    if (!input.trim()) return
+    const msg: Message = {
+      id: `msg_${Date.now()}`, from: 'me', lang: replyLang,
+      text: input.trim(), time: new Date(),
+    }
+    setConvos(cs => cs.map(c => c.id === activeId ? { ...c, messages: [...c.messages, msg] } : c))
+    setInput('')
+    // Simulate typing response
+    setTimeout(() => setTyping(true), 800)
+    setTimeout(() => {
+      setTyping(false)
+      const response: Message = {
+        id: `msg_r_${Date.now()}`, from: 'them', lang: convo.lang,
+        text: convo.lang === 'nl' ? 'Dank u wel voor uw bericht. Wij bevestigen de ontvangst en komen zo snel mogelijk bij u terug.' :
+              convo.lang === 'fr' ? 'Merci pour votre message. Nous vous répondrons dans les plus brefs délais.' :
+              convo.lang === 'de' ? 'Vielen Dank für Ihre Nachricht. Wir melden uns baldmöglichst.' :
+              'Thank you for your message. We will get back to you shortly.',
+        textOriginal: convo.lang === 'nl' ? 'Dank u wel voor uw bericht. Wij bevestigen de ontvangst en komen zo snel mogelijk bij u terug.' :
+              convo.lang === 'fr' ? 'Merci pour votre message. Nous vous répondrons dans les plus brefs délais.' :
+              convo.lang === 'de' ? 'Vielen Dank für Ihre Nachricht. Wir melden uns baldmöglichst.' :
+              'Thank you for your message. We will get back to you shortly.',
+        time: new Date(),
+      }
+      setConvos(cs => cs.map(c => c.id === activeId ? { ...c, messages: [...c.messages, response] } : c))
+    }, 2200)
+  }
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const isImg = file.type.startsWith('image/')
+    const msg: Message = {
+      id: `msg_f_${Date.now()}`, from: 'me', lang: replyLang, text: '', time: new Date(),
+      file: {
+        name: file.name,
+        type: isImg ? 'jpg' : 'pdf',
+        url: URL.createObjectURL(file),
+        size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+      },
+    }
+    setConvos(cs => cs.map(c => c.id === activeId ? { ...c, messages: [...c.messages, msg] } : c))
+    e.target.value = ''
+  }
+
+  const addReaction = (msgId: string, emoji: string) => {
+    setConvos(cs => cs.map(c => c.id === activeId ? {
+      ...c,
+      messages: c.messages.map(m => m.id === msgId ? { ...m, reaction: m.reaction === emoji ? undefined : emoji } : m),
+    } : c))
+  }
+
+  return (
+    <div style={{ height: 'calc(100vh - 64px)', display: 'flex', overflow: 'hidden', background: 'var(--bg)' }}>
+
+      {/* ── Sidebar ── */}
+      <div style={{ width: 320, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--white)', flexShrink: 0 }}>
+
+        {/* Header */}
+        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text)' }}>💬 Mensajes</h2>
+            <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--teal-light)', color: 'var(--teal-dark)', padding: '2px 8px', borderRadius: 100 }}>
+              {convos.reduce((a, c) => a + c.unread, 0)} sin leer
+            </span>
+          </div>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="🔍 Buscar conversación..."
+            style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--border)', fontSize: 13, background: 'var(--surface2)', color: 'var(--text)' }}
+          />
+        </div>
+
+        {/* Conversation list */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {filtered.map(c => {
+            const last = c.messages[c.messages.length - 1]
+            const isActive = c.id === activeId
+            return (
+              <div
+                key={c.id}
+                onClick={() => setActiveId(c.id)}
+                style={{
+                  padding: '12px 1.25rem', cursor: 'pointer', borderBottom: '1px solid var(--border)',
+                  background: isActive ? 'var(--teal-light)' : 'transparent',
+                  transition: 'background .15s',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--surface2)' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+              >
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  {/* Avatar */}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12, background: isActive ? 'rgba(13,148,136,.15)' : 'var(--surface2)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem',
+                      border: isActive ? '2px solid var(--teal)' : '2px solid var(--border)',
+                    }}>{c.avatar}</div>
+                    <div style={{
+                      position: 'absolute', bottom: -2, right: -2, width: 12, height: 12,
+                      borderRadius: '50%', background: c.online ? '#22C55E' : '#94A3B8',
+                      border: '2px solid var(--white)',
+                    }} />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{c.name}</span>
+                        {c.verified && <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--teal)' }}>✓</span>}
+                      </div>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 8 }}>{last ? formatDate(last.time) : ''}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{c.flag} {c.company}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                      <span style={{ fontSize: 11, color: isActive ? 'var(--teal-dark)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                        {last?.file ? `📎 ${last.file.name}` : last?.text?.slice(0, 45) + (last?.text?.length > 45 ? '…' : '')}
+                      </span>
+                      {c.unread > 0 && (
+                        <span style={{ background: 'var(--teal)', color: '#fff', borderRadius: 100, fontSize: 10, fontWeight: 700, padding: '1px 6px', flexShrink: 0, marginLeft: 4 }}>{c.unread}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Chat window ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Chat header */}
+        <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', border: '2px solid var(--border)' }}>
+                {convo.avatar}
+              </div>
+              <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: '50%', background: convo.online ? '#22C55E' : '#94A3B8', border: '2px solid var(--white)' }} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{convo.name}</span>
+                {convo.verified && <span className="badge badge-teal">✓ Verificado</span>}
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'var(--surface2)', color: 'var(--text-muted)', fontWeight: 600 }}>{LANG_FLAG[convo.lang]} {LANG_NAME[convo.lang]}</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 12, marginTop: 2, flexWrap: 'wrap' }}>
+                <span>{convo.flag} {convo.company} · {convo.country}</span>
+                <span style={{ color: convo.online ? 'var(--green)' : 'var(--text-muted)' }}>
+                  {convo.online ? '● En línea' : '○ Desconectado'}
+                </span>
+                <span>🕐 {getLocalTime(convo.tzOffset)} {convo.timezone}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* My lang selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface2)', padding: '6px 10px', borderRadius: 8, fontSize: 12 }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Mi idioma:</span>
+              <select
+                value={replyLang}
+                onChange={e => setReplyLang(e.target.value)}
+                style={{ border: 'none', background: 'transparent', fontSize: 12, fontWeight: 700, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <option value="es">🇲🇽 Español</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="nl">🇳🇱 Nederlands</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="de">🇩🇪 Deutsch</option>
+              </select>
+            </div>
+            <button onClick={() => setShowInfo(!showInfo)} style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', color: showInfo ? 'var(--teal)' : 'var(--text-muted)' }}>ℹ️</button>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+            {/* Product context banner */}
+            <div style={{ background: 'linear-gradient(90deg, var(--teal-light), var(--navy-light))', borderRadius: 10, padding: '10px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: '1.1rem' }}>📦</span>
+              <div style={{ fontSize: 12 }}>
+                <span style={{ fontWeight: 700, color: 'var(--text)' }}>Contexto: </span>
+                <span style={{ color: 'var(--text-muted)' }}>Negociando <strong style={{ color: 'var(--teal)' }}>{convo.product}</strong> con {convo.flag} {convo.name} desde {convo.country}</span>
+              </div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                🕐 Su hora: {getLocalTime(convo.tzOffset)}
+              </div>
+            </div>
+
+            {convo.messages.map((msg, i) => {
+              const isMe = msg.from === 'me'
+              const showDate = i === 0 || formatDate(convo.messages[i - 1].time) !== formatDate(msg.time)
+              const isTranslated = translatedIds.has(msg.id)
+              const translation = msg.textOriginal && TRANSLATE[msg.lang]?.[msg.textOriginal]
+
+              return (
+                <div key={msg.id}>
+                  {showDate && (
+                    <div style={{ textAlign: 'center', margin: '12px 0 8px' }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface2)', padding: '3px 12px', borderRadius: 100 }}>{formatDate(msg.time)}</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 2 }}>
+                    <div style={{ maxWidth: '72%', position: 'relative' }}>
+
+                      {/* Lang badge */}
+                      {!isMe && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{LANG_FLAG[msg.lang]} {LANG_NAME[msg.lang]}</span>
+                        </div>
+                      )}
+
+                      {/* Bubble */}
+                      <div style={{
+                        background: isMe ? 'linear-gradient(135deg, var(--teal), var(--teal-dark))' : 'var(--white)',
+                        color: isMe ? '#fff' : 'var(--text)',
+                        borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        padding: msg.file ? '10px 14px' : '10px 14px',
+                        border: isMe ? 'none' : '1px solid var(--border)',
+                        boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+                        position: 'relative',
+                      }}>
+
+                        {msg.file ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                              background: isMe ? 'rgba(255,255,255,.2)' : msg.file.type === 'pdf' ? '#FEE2E2' : '#DBEAFE',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem',
+                            }}>{msg.file.type === 'pdf' ? '📄' : '🖼️'}</div>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: isMe ? '#fff' : 'var(--text)' }}>{msg.file.name}</div>
+                              <div style={{ fontSize: 11, color: isMe ? 'rgba(255,255,255,.75)' : 'var(--text-muted)', marginTop: 2 }}>
+                                {msg.file.type.toUpperCase()} · {msg.file.size}
+                              </div>
+                              <a href={msg.file.url} style={{ fontSize: 11, color: isMe ? 'rgba(255,255,255,.9)' : 'var(--teal)', fontWeight: 600, marginTop: 2, display: 'block' }}>Descargar ↓</a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0 }}>
+                              {isTranslated && translation ? translation : msg.text}
+                            </p>
+                            {isTranslated && translation && (
+                              <div style={{ fontSize: 10, marginTop: 6, color: isMe ? 'rgba(255,255,255,.65)' : 'var(--text-muted)', fontStyle: 'italic' }}>
+                                Traducido del {LANG_NAME[msg.lang]}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Time */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: msg.file ? 0 : 4 }}>
+                          <span style={{ fontSize: 10, color: isMe ? 'rgba(255,255,255,.6)' : 'var(--text-muted)' }}>{formatTime(msg.time)}</span>
+                          {isMe && <span style={{ fontSize: 10, color: 'rgba(255,255,255,.7)' }}>✓✓</span>}
+                        </div>
+                      </div>
+
+                      {/* Reaction */}
+                      {msg.reaction && (
+                        <div style={{ fontSize: '1rem', marginTop: 2, textAlign: isMe ? 'right' : 'left' }}>{msg.reaction}</div>
+                      )}
+
+                      {/* Actions on hover — translate */}
+                      {!isMe && msg.text && translation && (
+                        <button
+                          onClick={() => toggleTranslate(msg.id)}
+                          style={{
+                            fontSize: 10, marginTop: 4, background: isTranslated ? 'var(--teal-light)' : 'var(--surface2)',
+                            color: isTranslated ? 'var(--teal-dark)' : 'var(--text-muted)',
+                            border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit',
+                          }}
+                        >
+                          {isTranslated ? '🌐 Original' : `🌐 Traducir al español`}
+                        </button>
+                      )}
+
+                      {/* Quick reactions */}
+                      {!isMe && !msg.file && (
+                        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                          {['👍', '🤝', '✅', '❓'].map(e => (
+                            <button key={e} onClick={() => addReaction(msg.id, e)}
+                              style={{ fontSize: 12, background: msg.reaction === e ? 'var(--teal-light)' : 'transparent', border: '1px solid var(--border)', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', lineHeight: 1.5 }}>
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Typing indicator */}
+            {typing && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: '16px 16px 16px 4px', padding: '10px 16px', display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--text-muted)', animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
+                  ))}
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{convo.name.split(' ')[0]} está escribiendo…</span>
+                </div>
+              </div>
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Info panel */}
+          {showInfo && (
+            <div style={{ width: 260, borderLeft: '1px solid var(--border)', background: 'var(--white)', overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', flexShrink: 0 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>{convo.avatar}</div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{convo.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{convo.company}</div>
+                {convo.verified && <span className="badge badge-teal" style={{ marginTop: 8 }}>✓ Perfil verificado</span>}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+                {[
+                  { icon: convo.flag, label: 'País', value: convo.country },
+                  { icon: '🗣️', label: 'Idioma nativo', value: `${LANG_FLAG[convo.lang]} ${LANG_NAME[convo.lang]}` },
+                  { icon: '🕐', label: 'Hora local', value: `${getLocalTime(convo.tzOffset)} (${convo.timezone})` },
+                  { icon: '📦', label: 'Interés', value: convo.product },
+                  { icon: '👤', label: 'Rol', value: convo.role === 'buyer' ? 'Comprador EU' : 'Productor MX' },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>{item.icon} {item.label}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text)', textAlign: 'right' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Archivos compartidos</div>
+                {convo.messages.filter(m => m.file).map(m => (
+                  <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '1rem' }}>{m.file!.type === 'pdf' ? '📄' : '🖼️'}</span>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text)' }}>{m.file!.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{m.file!.size}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input area */}
+        <div style={{ borderTop: '1px solid var(--border)', background: 'var(--white)', padding: '12px 1.25rem' }}>
+
+          {/* Timezone awareness */}
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, display: 'flex', gap: 16 }}>
+            <span>🇲🇽 Tu hora: {getLocalTime(-6)}</span>
+            <span>{convo.flag} {convo.name.split(' ')[0]}: {getLocalTime(convo.tzOffset)}</span>
+            {!convo.online && <span style={{ color: 'var(--gold)', fontWeight: 600 }}>⚠️ Fuera de horario — tu mensaje llegará al reconectarse</span>}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            {/* File upload */}
+            <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleFile} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              title="Adjuntar PDF o imagen"
+              style={{ width: 40, height: 40, borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--surface2)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            >📎</button>
+
+            {/* Text input */}
+            <div style={{ flex: 1, position: 'relative' }}>
+              <textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }}
+                placeholder={`Escribe en ${LANG_NAME[replyLang]}… (Enter para enviar)`}
+                rows={1}
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 12, border: '1.5px solid var(--border)',
+                  fontSize: 14, resize: 'none', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)',
+                  lineHeight: 1.5, maxHeight: 100, overflow: 'auto',
+                }}
+              />
+            </div>
+
+            {/* Send */}
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim()}
+              style={{
+                width: 44, height: 44, borderRadius: 12, border: 'none', cursor: input.trim() ? 'pointer' : 'not-allowed',
+                background: input.trim() ? 'linear-gradient(135deg, var(--teal), var(--teal-dark))' : 'var(--surface2)',
+                color: input.trim() ? '#fff' : 'var(--text-muted)', fontSize: '1.2rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s',
+              }}
+            >➤</button>
+          </div>
+
+          <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+            <span>🌐 Traducción automática activa</span>
+            <span>📎 PDF, JPG hasta 20MB</span>
+            <span>🔒 Cifrado extremo a extremo</span>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-6px); }
+        }
+      `}</style>
+    </div>
+  )
+}

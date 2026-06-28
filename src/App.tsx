@@ -10,6 +10,8 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ProductPage from './pages/ProductPage'
 import DashboardPage from './pages/DashboardPage'
+import MessagesPage from './pages/MessagesPage'
+import VerificationPage from './pages/VerificationPage'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/producto/:id" element={<ProductPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/mensajes" element={<MessagesPage />} />
+          <Route path="/verificacion" element={<VerificationPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
