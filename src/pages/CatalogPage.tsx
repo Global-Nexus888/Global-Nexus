@@ -92,10 +92,10 @@ export default function CatalogPage() {
       </div>
 
       {/* Layout */}
-      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-        <FilterSidebar filters={filters} onChange={updateFilters} totalResults={results.length} />
+      <div className="catalog-layout" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+        <div className="catalog-sidebar"><FilterSidebar filters={filters} onChange={updateFilters} totalResults={results.length} /></div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="catalog-main" style={{ flex: 1, minWidth: 0 }}>
           {results.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔍</div>
@@ -107,7 +107,7 @@ export default function CatalogPage() {
               <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>
                 {results.length} productos encontrados
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '1rem' }}>
+              <div className="card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '1rem' }}>
                 {results.map(p => <ProductCard key={p.id} product={p} />)}
               </div>
             </>

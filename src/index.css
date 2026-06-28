@@ -87,3 +87,72 @@ input, select {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--surface2); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── Responsive helpers ─── */
+.nav-desktop { display: flex; }
+.nav-mobile  { display: none; }
+
+/* ─── Mobile-first breakpoints ─── */
+@media (max-width: 768px) {
+  .nav-desktop { display: none !important; }
+  .nav-mobile  { display: flex !important; }
+
+  /* Pricing grid → single column */
+  .pricing-grid { grid-template-columns: 1fr !important; }
+
+  /* Generic grid overrides */
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+
+  /* Hero section */
+  .hero-grid { grid-template-columns: 1fr !important; text-align: center; }
+
+  /* Catalog layout: hide sidebar on mobile */
+  .catalog-layout { flex-direction: column !important; }
+  .catalog-sidebar { display: none !important; }
+  .catalog-main { width: 100% !important; }
+
+  /* Product / producer cards */
+  .card-grid { grid-template-columns: 1fr !important; }
+
+  /* Table scroll on mobile */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap table { min-width: 600px; }
+
+  /* Dashboard two-col → one-col */
+  .dash-grid { grid-template-columns: 1fr !important; }
+
+  /* Product page two-col → one-col */
+  .product-layout { grid-template-columns: 1fr !important; }
+  .product-sticky { position: static !important; }
+
+  /* Messages page */
+  .messages-sidebar { display: none !important; }
+
+  /* Hide-on-mobile utility */
+  .hidden-mobile { display: none !important; }
+
+  /* Padding adjustments */
+  .section-pad { padding-left: 1rem !important; padding-right: 1rem !important; }
+
+  /* Stats strips → 2 cols */
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Category grid → 2 cols */
+  .cat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Footer columns → 1 col */
+  .footer-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
+
+  /* How it works steps */
+  .steps-grid { grid-template-columns: 1fr !important; }
+
+  /* Overflow text */
+  h1 { font-size: clamp(1.6rem, 7vw, 3rem) !important; }
+  h2 { font-size: clamp(1.3rem, 5vw, 2rem) !important; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+  .cat-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+  .btn { padding: 9px 16px !important; font-size: 13px !important; }
+}

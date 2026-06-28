@@ -63,7 +63,7 @@ export default function ProductPage() {
         <span style={{ color: 'var(--text)', fontWeight: 500 }}>{product.name}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start' }}>
+      <div className="product-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start' }}>
 
         {/* LEFT COLUMN */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -199,7 +199,7 @@ export default function ProductPage() {
         </div>
 
         {/* RIGHT COLUMN — sticky sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 80 }}>
+        <div className="product-sticky" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 80 }}>
 
           {/* Price + CTA */}
           <div className="card" style={{ padding: '1.5rem' }}>

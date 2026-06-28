@@ -14,7 +14,7 @@ export default function Footer() {
     <footer style={{ background: 'var(--white)', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
       {/* Feature strip */}
       <div style={{ borderBottom: '1px solid var(--border)', padding: '2rem 1.5rem' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
+        <div className="footer-grid" style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
           {FEATURES.map((f, i) => (
             <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <div style={{ fontSize: '1.3rem', minWidth: 28, textAlign: 'center' }}>{f.icon}</div>

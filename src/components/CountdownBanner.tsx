@@ -1,22 +1,10 @@
-import { useEffect, useState } from 'react'
-import type { Lang } from '../types'
+import { useState, useEffect } from 'react'
 
-interface CountdownBannerProps {
-  lang: Lang
-}
-
-const LABELS: Record<Lang, { days: string; hours: string; mins: string; secs: string; pre: string }> = {
-  es: { days: 'días', hours: 'horas', mins: 'min', secs: 'seg', pre: '🚀 Lanzamiento oficial:' },
-  en: { days: 'days', hours: 'hours', mins: 'min', secs: 'sec', pre: '🚀 Official launch:' },
-  nl: { days: 'dagen', hours: 'uur', mins: 'min', secs: 'sec', pre: '🚀 Officiële lancering:' },
-  pt: { days: 'dias', hours: 'horas', mins: 'min', secs: 'seg', pre: '🚀 Lançamento oficial:' },
-}
+const LAUNCH = new Date('2026-08-28T00:00:00')
 
 function getTimeLeft() {
-  const target = new Date('2026-08-28T00:00:00')
-  const now = new Date()
-  const diff = target.getTime() - now.getTime()
-  if (diff <= 0) return { days: 0, hours: 0, mins: 0, secs: 0 }
+  const diff = LAUNCH.getTime() - Date.now()
+  if (diff <= 0) return null
   return {
     days:  Math.floor(diff / 86400000),
     hours: Math.floor((diff % 86400000) / 3600000),
@@ -25,49 +13,71 @@ function getTimeLeft() {
   }
 }
 
-export default function CountdownBanner({ lang }: CountdownBannerProps) {
+export function isPreLaunch(): boolean {
+  return Date.now() < LAUNCH.getTime()
+}
+
+export default function CountdownBanner() {
   const [time, setTime] = useState(getTimeLeft())
-  const t = LABELS[lang]
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
     const id = setInterval(() => setTime(getTimeLeft()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  const pad = (n: number) => String(n).padStart(2, '0')
+  if (!time || !visible) return null
 
   return (
-    <div
-      style={{
-        background: 'rgba(201,168,76,.06)',
-        borderBottom: '1px solid var(--border)',
-        padding: '.65rem 1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '1rem',
-        flexWrap: 'wrap',
-        marginTop: '60px',
-      }}
-    >
-      <span className="font-mono-jb" style={{ fontSize: '.7rem', color: 'var(--gold)', letterSpacing: '.1em' }}>
-        {t.pre}
-      </span>
-      {[
-        { val: time.days,  label: t.days },
-        { val: time.hours, label: t.hours },
-        { val: time.mins,  label: t.mins },
-        { val: time.secs,  label: t.secs },
-      ].map(({ val, label }) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '.25rem' }}>
-          <span className="font-playfair" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--white)' }}>
-            {pad(val)}
-          </span>
-          <span className="font-mono-jb" style={{ fontSize: '.6rem', color: 'var(--muted)', letterSpacing: '.08em' }}>
-            {label}
-          </span>
+    <div style={{
+      background: 'linear-gradient(90deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)',
+      borderBottom: '1px solid rgba(13,148,136,.25)',
+      padding: '7px 1rem',
+      position: 'relative',
+    }}>
+      <div style={{
+        maxWidth: 1200, margin: '0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        gap: '1rem', flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,.45)', letterSpacing: '.05em', fontWeight: 600 }}>
+          ⚡ Precio anticipado
+        </span>
+        <span style={{ fontSize: '0.8rem', color: '#5EEAD4', fontWeight: 800 }}>40% OFF</span>
+        <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,.3)' }}>·</span>
+
+        {/* Timer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {[
+            { v: time.days,  l: 'd' },
+            { v: time.hours, l: 'h' },
+            { v: time.mins,  l: 'm' },
+            { v: time.secs,  l: 's' },
+          ].map((unit, i) => (
+            <span key={unit.l} style={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+              {i > 0 && <span style={{ color: 'rgba(255,255,255,.2)', fontSize: '0.7rem', margin: '0 2px' }}>:</span>}
+              <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 800, fontSize: '0.88rem', color: '#fff' }}>
+                {String(unit.v).padStart(2, '0')}
+              </span>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,.3)', marginLeft: 1 }}>{unit.l}</span>
+            </span>
+          ))}
         </div>
-      ))}
+
+        <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,.3)' }}>· hasta 28 Ago 2026</span>
+
+        <a href="/precios" style={{
+          fontSize: '0.72rem', color: '#5EEAD4', fontWeight: 700, textDecoration: 'none',
+          border: '1px solid rgba(94,234,212,.3)', padding: '2px 10px', borderRadius: 100,
+        }}>
+          Ver planes →
+        </a>
+      </div>
+
+      <button
+        onClick={() => setVisible(false)}
+        style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(255,255,255,.25)', cursor: 'pointer', fontSize: 15, padding: 4, lineHeight: 1 }}
+      >×</button>
     </div>
   )
 }

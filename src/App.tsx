@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import CountdownBanner from './components/CountdownBanner'
 import Home from './pages/Home'
 import CatalogPage from './pages/CatalogPage'
 import ProducersPage from './pages/ProducersPage'
@@ -32,6 +33,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <CountdownBanner />
       <Navbar />
       <main style={{ flex: 1 }}>
         <Routes>

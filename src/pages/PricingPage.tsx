@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
+import { isPreLaunch } from '../components/CountdownBanner'
 
 // Stripe Payment Links (live)
 const STRIPE_LINKS = {
   pro: 'https://buy.stripe.com/aFaaEPeQWcwHcYbaVP7IY00',
   comprador: 'https://buy.stripe.com/28E8wH6kq0NZgangg97IY01',
 }
+
+const preLaunch = isPreLaunch()
 
 interface Feature {
   text: string
@@ -51,11 +54,11 @@ const PLANS: Plan[] = [
     id: 'pro',
     eyebrow: 'PRO EXPORTADOR',
     name: 'Pro Exportador',
-    price: '$59',
-    originalPrice: '$99',
+    price: preLaunch ? '$59' : '$99',
+    originalPrice: preLaunch ? '$99' : undefined,
     period: 'USD / mes',
     desc: 'Para productores listos para conquistar Europa.',
-    badge: '⭐ Más popular',
+    badge: preLaunch ? '⭐ Más popular' : '⭐ Más popular',
     features: [
       { text: 'Perfil completo + badge verificado IA', included: true },
       { text: 'Catálogo ilimitado de productos', included: true },
@@ -64,7 +67,7 @@ const PLANS: Plan[] = [
       { text: 'Dashboard de analíticas', included: true },
       { text: 'Posición destacada en búsquedas', included: true },
     ],
-    cta: 'Acceso anticipado · 40% OFF',
+    cta: preLaunch ? 'Acceso anticipado · 40% OFF' : 'Suscribirse ahora',
     ctaLink: STRIPE_LINKS.pro,
     highlight: true,
     role: 'productor',
@@ -116,7 +119,7 @@ export default function PricingPage() {
         </div>
 
         {/* Plans grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
+        <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
           {PLANS.map(plan => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
