@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
+import { supabase } from '../lib/supabase'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -19,39 +20,51 @@ export default function LoginPage() {
     transition: 'border-color .15s', fontFamily: 'inherit',
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    setTimeout(() => {
-      // Check admin credentials
-      if (email === 'brandmkrs.ads@gmail.com' && password === 'nexus2026') {
-        localStorage.setItem('gn_current_user', JSON.stringify({ email, role: 'admin' }))
-        navigate('/admin')
-        return
-      }
+    // Admin bypass (hardcoded)
+    if (email === 'brandmkrs.ads@gmail.com' && password === 'nexus2026') {
+      localStorage.setItem('gn_current_user', JSON.stringify({ email, role: 'admin' }))
+      navigate('/admin')
+      return
+    }
 
-      // Check registered users
-      const users = JSON.parse(localStorage.getItem('gn_users') || '[]')
-      const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password)
+    // Demo account bypass
+    if (email === 'demo@nexusstrategy.online' && password === 'demo2026') {
+      localStorage.setItem('gn_current_user', JSON.stringify({ email, role: 'demo', name: 'Demo Account', company: 'Global Nexus Preview' }))
+      navigate('/dashboard')
+      return
+    }
 
-      // Demo account — see both panels without subscription
-      if (email === 'demo@nexusstrategy.online' && password === 'demo2026') {
-        localStorage.setItem('gn_current_user', JSON.stringify({ email, role: 'demo', name: 'Demo Account', company: 'Global Nexus Preview' }))
-        navigate('/dashboard')
-        return
-      }
+    try {
+      // Sign in via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      if (authError) throw authError
 
-      if (user) {
-        localStorage.setItem('gn_current_user', JSON.stringify(user))
-        if (user.role === 'comprador') navigate('/dashboard-comprador')
-        else navigate('/dashboard')
-      } else {
+      // Fetch user profile from 'usuarios' table
+      const { data: profile } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single()
+
+      const user = profile || { email, role: role as string, id: authData.user.id }
+      localStorage.setItem('gn_current_user', JSON.stringify(user))
+
+      if (user.role === 'comprador') navigate('/dashboard-comprador')
+      else navigate('/dashboard')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
         setError(T('login_error'))
-        setLoading(false)
+      } else {
+        setError(msg || T('login_error'))
       }
-    }, 900)
+      setLoading(false)
+    }
   }
 
   return (

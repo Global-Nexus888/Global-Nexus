@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
+import { supabase } from '../lib/supabase'
 
 type Role = 'productor' | 'comprador'
 
@@ -25,22 +26,55 @@ export default function RegisterPage() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!agreed) { setError(lang === 'es' ? 'Debes aceptar los términos para continuar.' : 'You must accept the terms to continue.'); return }
     if (form.password.length < 6) { setError(lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be at least 6 characters.'); return }
     setError('')
     setLoading(true)
-    // Simulate registration - in production connect to your backend/Supabase/Firebase
-    setTimeout(() => {
-      // Save to localStorage for demo tracking
-      const users = JSON.parse(localStorage.getItem('gn_users') || '[]')
-      users.push({ ...form, role, createdAt: new Date().toISOString(), id: Date.now() })
-      localStorage.setItem('gn_users', JSON.stringify(users))
-      localStorage.setItem('gn_current_user', JSON.stringify({ ...form, role }))
-      setLoading(false)
+
+    try {
+      // 1. Create auth account in Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: { data: { name: form.name, role } },
+      })
+
+      if (authError) throw authError
+
+      // 2. Save profile in 'usuarios' table
+      const userId = authData.user?.id
+      if (userId) {
+        await supabase.from('usuarios').upsert({
+          id: userId,
+          email: form.email,
+          name: form.name,
+          company: form.company,
+          state: form.state,
+          country: form.country,
+          category: form.category,
+          interest: form.interest,
+          role,
+          plan: 'explorador',
+          plan_active: false,
+        })
+      }
+
+      // 3. Keep session in localStorage for UI
+      localStorage.setItem('gn_current_user', JSON.stringify({ ...form, role, id: userId }))
       setSuccess(true)
-    }, 1200)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al registrarse'
+      // If email already registered, show friendly message
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        setError(lang === 'es' ? 'Este correo ya está registrado. ¿Quieres iniciar sesión?' : 'This email is already registered. Want to sign in?')
+      } else {
+        setError(msg)
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (success) {
