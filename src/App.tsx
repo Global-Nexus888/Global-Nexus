@@ -24,10 +24,11 @@ import ContactPage from './pages/ContactPage'
 import FAQPage from './pages/FAQPage'
 import ThankYouPage from './pages/ThankYouPage'
 import AsesoriaPage from './pages/AsesoriaPage'
+import BuyerDashboardPage from './pages/BuyerDashboardPage'
 import NotFound from './pages/NotFound'
 import CookieBanner from './components/CookieBanner'
 
-const FULL_SCREEN_ROUTES = ['/admin', '/mensajes']
+const FULL_SCREEN_ROUTES = ['/admin', '/mensajes', '/dashboard', '/dashboard-comprador']
 
 export default function App() {
   const { pathname } = useLocation()
@@ -39,6 +40,8 @@ export default function App() {
         <Routes>
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/mensajes" element={<MessagesPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard-comprador" element={<BuyerDashboardPage />} />
         </Routes>
       </LangProvider>
     )
@@ -60,7 +63,6 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/registro" element={<RegisterPage />} />
           <Route path="/producto/:id" element={<ProductPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/verificacion" element={<VerificationPage />} />
           <Route path="/comunidad" element={<SocialPage />} />
           <Route path="/oportunidades" element={<DealsPage />} />

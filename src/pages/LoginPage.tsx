@@ -36,9 +36,17 @@ export default function LoginPage() {
       const users = JSON.parse(localStorage.getItem('gn_users') || '[]')
       const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password)
 
+      // Demo account — see both panels without subscription
+      if (email === 'demo@nexusstrategy.online' && password === 'demo2026') {
+        localStorage.setItem('gn_current_user', JSON.stringify({ email, role: 'demo', name: 'Demo Account', company: 'Global Nexus Preview' }))
+        navigate('/dashboard')
+        return
+      }
+
       if (user) {
         localStorage.setItem('gn_current_user', JSON.stringify(user))
-        navigate('/dashboard')
+        if (user.role === 'comprador') navigate('/dashboard-comprador')
+        else navigate('/dashboard')
       } else {
         setError(T('login_error'))
         setLoading(false)

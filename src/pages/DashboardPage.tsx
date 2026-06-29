@@ -1,487 +1,651 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { PRODUCTS, PRODUCERS } from '../lib/data'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useLang } from '../context/LangContext'
+import type { Lang } from '../context/LangContext'
 
-const PRODUCER_ID = 'p1'
-const producer = PRODUCERS.find(p => p.id === PRODUCER_ID)!
-const myProducts = PRODUCTS.filter(p => p.producerId === PRODUCER_ID)
-
-const MOCK_LEADS = [
-  { id: 'l1', buyer: 'Jan van der Berg', company: 'EuroSpirits BV', country: '🇳🇱 Países Bajos', product: 'Tequila Añejo Reserva', moq: '200 cajas', date: 'Hace 2 horas', status: 'nuevo', email: 'jan@eurospirits.nl' },
-  { id: 'l2', buyer: 'Marie Dubois', company: 'Maison des Alcools', country: '🇫🇷 Francia', product: 'Tequila Blanco Premium', moq: '300 cajas', date: 'Hace 1 día', status: 'respondido', email: 'marie@maisonalcools.fr' },
-  { id: 'l3', buyer: 'Klaus Richter', company: 'Deutsche Spirits GmbH', country: '🇩🇪 Alemania', product: 'Tequila Añejo Reserva', moq: '500 cajas', date: 'Hace 3 días', status: 'negociando', email: 'k.richter@deutschespirits.de' },
-  { id: 'l4', buyer: 'Sofia Andersson', company: 'Nordic Import AB', country: '🇸🇪 Suecia', product: 'Tequila Blanco Premium', moq: '150 cajas', date: 'Hace 5 días', status: 'cerrado', email: 'sofia@nordicimport.se' },
-]
-
-const MOCK_STATS = [
-  { label: 'Vistas este mes', value: '1,847', change: '+23%', icon: '👁️', color: 'var(--teal)' },
-  { label: 'Solicitudes recibidas', value: '28', change: '+12%', icon: '📩', color: 'var(--navy)' },
-  { label: 'Valor pipeline', value: '$84,200', change: '+38%', icon: '💰', color: 'var(--green)' },
-  { label: 'Tasa de respuesta', value: '94%', change: '+5%', icon: '⚡', color: 'var(--gold)' },
-]
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  nuevo: { label: 'Nuevo', color: '#0D9488', bg: '#CCFBF1' },
-  respondido: { label: 'Respondido', color: '#1E3A5F', bg: '#EFF6FF' },
-  negociando: { label: 'Negociando', color: '#D97706', bg: '#FEF3C7' },
-  cerrado: { label: 'Cerrado ✓', color: '#16A34A', bg: '#DCFCE7' },
+/* ─── Storage helpers ─── */
+function getUser() {
+  try { return JSON.parse(localStorage.getItem('gn_current_user') || 'null') } catch { return null }
+}
+function getProfile(email: string) {
+  try { return JSON.parse(localStorage.getItem(`gn_profile_${email}`) || '{}') } catch { return {} }
+}
+function saveProfile(email: string, data: object) {
+  localStorage.setItem(`gn_profile_${email}`, JSON.stringify(data))
+}
+function getProducts(email: string): Product[] {
+  try { return JSON.parse(localStorage.getItem(`gn_products_${email}`) || '[]') } catch { return [] }
+}
+function saveProducts(email: string, data: Product[]) {
+  localStorage.setItem(`gn_products_${email}`, JSON.stringify(data))
+}
+function getCerts(email: string): Cert[] {
+  try { return JSON.parse(localStorage.getItem(`gn_certs_${email}`) || '[]') } catch { return [] }
+}
+function saveCerts(email: string, data: Cert[]) {
+  localStorage.setItem(`gn_certs_${email}`, JSON.stringify(data))
 }
 
-const CERT_LABELS: Record<string, string> = {
-  'denominacion-origen': 'D.O.', 'organico': 'Orgánico', 'senasica': 'SENASICA',
-  'nom': 'NOM', 'cofepris': 'COFEPRIS', 'kosher-halal': 'Kosher/Halal',
+interface Product {
+  id: string; name: string; category: string; price: string; unit: string
+  minOrder: string; desc: string; photo?: string
+}
+interface Cert {
+  id: string; name: string; issuer: string; year: string
 }
 
-type Tab = 'overview' | 'productos' | 'solicitudes' | 'perfil'
+const C = { navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706', green: '#16A34A', border: '#E2E8F0', bg: '#F8FAFC', white: '#FFFFFF', text: '#0F172A', muted: '#64748B', red: '#DC2626' }
 
-export default function DashboardPage() {
-  const [tab, setTab] = useState<Tab>('overview')
-  const [leadStatus, setLeadStatus] = useState<Record<string, string>>(
-    Object.fromEntries(MOCK_LEADS.map(l => [l.id, l.status]))
-  )
-  const [selectedLead, setSelectedLead] = useState<string | null>(null)
+const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
+  es: [
+    { msg: '👋 ¡Bienvenido a Global Nexus! Soy tu asistente de orientación. Te guiaré en tus primeros pasos.', delay: 0 },
+    { msg: '🏭 Primero, completa tu **Perfil**. Una foto, descripción de tu empresa y datos de contacto aumentan 3x tus conexiones con compradores europeos.', delay: 1800 },
+    { msg: '📦 Luego sube tus **Productos** en la pestaña correspondiente. Añade foto, precio base, unidad de venta y cantidad mínima de pedido (MOQ).', delay: 3800 },
+    { msg: '🛡️ Si tienes certificaciones (NOM, SENASICA, Orgánico, COFEPRIS...), agrégalas en **Certificaciones**. Aumentan mucho tu visibilidad con compradores exigentes.', delay: 6200 },
+    { msg: '🚀 Tu perfil y productos serán **visibles públicamente el 28 de agosto de 2026** a las 12:00 pm CDMX. ¡Mientras tanto, construye todo con calma!', delay: 8500 },
+    { msg: '💬 A partir del lanzamiento, los compradores europeos podrán enviarte mensajes aquí. Para soporte directo escribe a soporte@nexusstrategy.online', delay: 11000 },
+  ],
+  en: [
+    { msg: '👋 Welcome to Global Nexus! I\'m your onboarding assistant. I\'ll guide you through your first steps.', delay: 0 },
+    { msg: '🏭 First, complete your **Profile**. A photo, company description and contact details increase your connections with European buyers by 3x.', delay: 1800 },
+    { msg: '📦 Then upload your **Products** in the corresponding tab. Add a photo, base price, sales unit and minimum order quantity (MOQ).', delay: 3800 },
+    { msg: '🛡️ If you have certifications (NOM, SENASICA, Organic, COFEPRIS...), add them in **Certifications**. They greatly increase your visibility with demanding buyers.', delay: 6200 },
+    { msg: '🚀 Your profile and products will be **publicly visible on August 28, 2026** at 12:00 pm CDMX. Meanwhile, build everything at your own pace!', delay: 8500 },
+    { msg: '💬 From launch, European buyers can message you directly here. For direct support write to soporte@nexusstrategy.online', delay: 11000 },
+  ],
+  nl: [
+    { msg: '👋 Welkom bij Global Nexus! Ik ben uw onboarding-assistent en begeleid u door de eerste stappen.', delay: 0 },
+    { msg: '🏭 Vul eerst uw **Profiel** in. Een foto, bedrijfsbeschrijving en contactgegevens verhogen uw verbindingen met Europese kopers met 3x.', delay: 1800 },
+    { msg: '📦 Upload daarna uw **Producten** in het bijbehorende tabblad. Voeg foto, basisprijs, verkoopeenheid en minimale bestelhoeveelheid (MOQ) toe.', delay: 3800 },
+    { msg: '🛡️ Als u certificeringen hebt (NOM, SENASICA, Biologisch...), voeg ze toe bij **Certificeringen**. Dit vergroot uw zichtbaarheid bij veeleisende kopers.', delay: 6200 },
+    { msg: '🚀 Uw profiel en producten zijn **publiekelijk zichtbaar op 28 augustus 2026** om 12:00 uur CDMX-tijd.', delay: 8500 },
+    { msg: '💬 Vanaf de lancering kunnen Europese kopers u hier direct berichten sturen. Ondersteuning: soporte@nexusstrategy.online', delay: 11000 },
+  ],
+  de: [
+    { msg: '👋 Willkommen bei Global Nexus! Ich bin Ihr Onboarding-Assistent und begleite Sie durch Ihre ersten Schritte.', delay: 0 },
+    { msg: '🏭 Vervollständigen Sie zuerst Ihr **Profil**. Foto, Unternehmensbeschreibung und Kontaktdaten erhöhen Ihre Verbindungen mit europäischen Käufern um das 3-fache.', delay: 1800 },
+    { msg: '📦 Laden Sie dann Ihre **Produkte** im entsprechenden Tab hoch. Fügen Sie Foto, Basispreis, Verkaufseinheit und Mindestbestellmenge (MOQ) hinzu.', delay: 3800 },
+    { msg: '🛡️ Wenn Sie Zertifizierungen haben (NOM, SENASICA, Bio...), fügen Sie sie unter **Zertifizierungen** hinzu. Dies erhöht Ihre Sichtbarkeit bei anspruchsvollen Käufern.', delay: 6200 },
+    { msg: '🚀 Ihr Profil und Produkte werden am **28. August 2026 um 12:00 Uhr CDMX-Zeit** öffentlich sichtbar.', delay: 8500 },
+    { msg: '💬 Ab dem Launch können europäische Käufer Ihnen hier direkt Nachrichten senden. Support: soporte@nexusstrategy.online', delay: 11000 },
+  ],
+}
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'overview', label: 'Resumen', icon: '📊' },
-    { id: 'productos', label: 'Mis productos', icon: '📦' },
-    { id: 'solicitudes', label: 'Solicitudes', icon: '📩' },
-    { id: 'perfil', label: 'Mi perfil', icon: '🏭' },
-  ]
+type L = {
+  tabs: string[]; welcome: string; preLaunch: string; preLaunchSub: string
+  profileTitle: string; photoBtn: string; bioLabel: string; bioPlaceholder: string
+  websiteLabel: string; whatsappLabel: string; locationLabel: string; saveBtn: string; saved: string
+  profileCompletion: string; addProduct: string; productName: string; productCat: string
+  productPrice: string; productUnit: string; productMOQ: string; productDesc: string; productPhoto: string
+  addBtn: string; deleteBtn: string; certTitle: string; certIssuer: string; certYear: string
+  addCertBtn: string; chatPlaceholder: string; chatSend: string; logoutBtn: string
+  statsProducts: string; statsCerts: string; profileProgress: string; noProducts: string; noCerts: string
+  categories: string[]; checklistItems: string[]
+}
+
+const LABELS: Record<Lang, L> = {
+  es: {
+    tabs: ['Resumen', 'Mi Perfil', 'Productos', 'Certificaciones', 'Orientación'],
+    welcome: 'Mi Panel de Productor',
+    preLaunch: '🚀 Modo Pre-Lanzamiento · Lanzamiento: 28 Ago 2026 · 12:00 pm CDMX',
+    preLaunchSub: 'Tu perfil y productos se publicarán automáticamente en la fecha de lanzamiento. Mientras tanto, arma tu perfil completo.',
+    profileTitle: 'Perfil público de mi empresa',
+    photoBtn: 'Cambiar foto',
+    bioLabel: 'Descripción de tu empresa',
+    bioPlaceholder: 'Cuéntanos sobre tu empresa, historia, productos estrella, experiencia exportadora...',
+    websiteLabel: 'Sitio web',
+    whatsappLabel: 'WhatsApp de contacto',
+    locationLabel: 'Estado / Ciudad, México',
+    saveBtn: 'Guardar cambios',
+    saved: '✓ Guardado exitosamente',
+    profileCompletion: 'Perfil completado',
+    addProduct: 'Agregar producto',
+    productName: 'Nombre del producto',
+    productCat: 'Categoría',
+    productPrice: 'Precio base (USD)',
+    productUnit: 'Unidad de venta',
+    productMOQ: 'Pedido mínimo (MOQ)',
+    productDesc: 'Descripción breve',
+    productPhoto: '+ Foto del producto',
+    addBtn: 'Agregar producto',
+    deleteBtn: 'Eliminar',
+    certTitle: 'Nombre de la certificación',
+    certIssuer: 'Organismo emisor',
+    certYear: 'Año de emisión',
+    addCertBtn: 'Agregar certificación',
+    chatPlaceholder: 'Escribe una pregunta...',
+    chatSend: 'Enviar',
+    logoutBtn: 'Cerrar sesión',
+    statsProducts: 'Productos publicados',
+    statsCerts: 'Certificaciones',
+    profileProgress: 'Perfil completo',
+    noProducts: 'Aún no tienes productos. ¡Agrega el primero para que los compradores te encuentren!',
+    noCerts: 'Agrega tus certificaciones para aumentar la confianza de los compradores europeos.',
+    categories: ['Bebidas espirituosas', 'Agricultura y alimentos', 'Artesanías y textiles', 'Cosméticos naturales', 'Farmacéutico / Herbolaria', 'Otro'],
+    checklistItems: ['Foto de perfil de empresa', 'Descripción de la empresa', 'Ubicación (Estado/Ciudad)', 'WhatsApp de contacto', 'Al menos 1 producto publicado', 'Al menos 1 certificación', 'Sitio web (opcional)'],
+  },
+  en: {
+    tabs: ['Overview', 'My Profile', 'Products', 'Certifications', 'Onboarding'],
+    welcome: 'My Producer Panel',
+    preLaunch: '🚀 Pre-Launch Mode · Launch: Aug 28, 2026 · 12:00 pm CDMX',
+    preLaunchSub: 'Your profile and products will be published automatically on launch date. Meanwhile, build your complete profile.',
+    profileTitle: 'My company public profile',
+    photoBtn: 'Change photo',
+    bioLabel: 'Company description',
+    bioPlaceholder: 'Tell us about your company, history, star products, export experience...',
+    websiteLabel: 'Website',
+    whatsappLabel: 'Contact WhatsApp',
+    locationLabel: 'State / City, Mexico',
+    saveBtn: 'Save changes',
+    saved: '✓ Saved successfully',
+    profileCompletion: 'Profile completion',
+    addProduct: 'Add product',
+    productName: 'Product name',
+    productCat: 'Category',
+    productPrice: 'Base price (USD)',
+    productUnit: 'Sales unit',
+    productMOQ: 'Minimum order (MOQ)',
+    productDesc: 'Brief description',
+    productPhoto: '+ Product photo',
+    addBtn: 'Add product',
+    deleteBtn: 'Delete',
+    certTitle: 'Certification name',
+    certIssuer: 'Issuing body',
+    certYear: 'Year issued',
+    addCertBtn: 'Add certification',
+    chatPlaceholder: 'Ask a question...',
+    chatSend: 'Send',
+    logoutBtn: 'Sign out',
+    statsProducts: 'Published products',
+    statsCerts: 'Certifications',
+    profileProgress: 'Profile complete',
+    noProducts: 'No products yet. Add your first one so buyers can find you!',
+    noCerts: 'Add your certifications to increase trust with European buyers.',
+    categories: ['Spirits & Beverages', 'Agriculture & Food', 'Crafts & Textiles', 'Natural Cosmetics', 'Pharmaceutical / Herbalism', 'Other'],
+    checklistItems: ['Company profile photo', 'Company description', 'Location (State/City)', 'WhatsApp contact', 'At least 1 product published', 'At least 1 certification', 'Website (optional)'],
+  },
+  nl: {
+    tabs: ['Overzicht', 'Mijn Profiel', 'Producten', 'Certificeringen', 'Onboarding'],
+    welcome: 'Mijn Producentenpanel',
+    preLaunch: '🚀 Pre-Lancering · Lancering: 28 aug 2026 · 12:00 uur CDMX',
+    preLaunchSub: 'Uw profiel en producten worden automatisch gepubliceerd op de lanceringsdatum. Bouw ondertussen uw volledige profiel.',
+    profileTitle: 'Openbaar bedrijfsprofiel',
+    photoBtn: 'Foto wijzigen',
+    bioLabel: 'Bedrijfsbeschrijving',
+    bioPlaceholder: 'Vertel ons over uw bedrijf, geschiedenis, topproducten, exportervaring...',
+    websiteLabel: 'Website',
+    whatsappLabel: 'Contact WhatsApp',
+    locationLabel: 'Staat / Stad, Mexico',
+    saveBtn: 'Wijzigingen opslaan',
+    saved: '✓ Succesvol opgeslagen',
+    profileCompletion: 'Profielvoltooiing',
+    addProduct: 'Product toevoegen',
+    productName: 'Productnaam',
+    productCat: 'Categorie',
+    productPrice: 'Basisprijs (USD)',
+    productUnit: 'Verkoopeenheid',
+    productMOQ: 'Minimale bestelling (MOQ)',
+    productDesc: 'Korte beschrijving',
+    productPhoto: '+ Productfoto',
+    addBtn: 'Product toevoegen',
+    deleteBtn: 'Verwijderen',
+    certTitle: 'Naam certificering',
+    certIssuer: 'Uitgevende instantie',
+    certYear: 'Uitgiftejaar',
+    addCertBtn: 'Certificering toevoegen',
+    chatPlaceholder: 'Stel een vraag...',
+    chatSend: 'Verzenden',
+    logoutBtn: 'Uitloggen',
+    statsProducts: 'Gepubliceerde producten',
+    statsCerts: 'Certificeringen',
+    profileProgress: 'Profiel voltooid',
+    noProducts: 'Nog geen producten. Voeg uw eerste toe zodat kopers u kunnen vinden!',
+    noCerts: 'Voeg uw certificeringen toe om het vertrouwen van Europese kopers te vergroten.',
+    categories: ['Dranken & Spiritualiën', 'Landbouw & Voeding', 'Ambachten & Textiel', 'Natuurlijke Cosmetica', 'Farmaceutisch / Kruidengeneeskunde', 'Overig'],
+    checklistItems: ['Bedrijfsprofielfoto', 'Bedrijfsbeschrijving', 'Locatie (Staat/Stad)', 'WhatsApp-contact', 'Minimaal 1 product gepubliceerd', 'Minimaal 1 certificering', 'Website (optioneel)'],
+  },
+  de: {
+    tabs: ['Übersicht', 'Mein Profil', 'Produkte', 'Zertifizierungen', 'Onboarding'],
+    welcome: 'Mein Produzenten-Panel',
+    preLaunch: '🚀 Vor-Launch-Modus · Launch: 28. Aug 2026 · 12:00 Uhr CDMX',
+    preLaunchSub: 'Ihr Profil und Produkte werden automatisch am Starttermin veröffentlicht. Bauen Sie inzwischen Ihr vollständiges Profil auf.',
+    profileTitle: 'Öffentliches Unternehmensprofil',
+    photoBtn: 'Foto ändern',
+    bioLabel: 'Unternehmensbeschreibung',
+    bioPlaceholder: 'Erzählen Sie uns von Ihrem Unternehmen, Geschichte, Hauptprodukten, Exporterfahrung...',
+    websiteLabel: 'Website',
+    whatsappLabel: 'Kontakt WhatsApp',
+    locationLabel: 'Bundesstaat / Stadt, Mexiko',
+    saveBtn: 'Änderungen speichern',
+    saved: '✓ Erfolgreich gespeichert',
+    profileCompletion: 'Profilfortschritt',
+    addProduct: 'Produkt hinzufügen',
+    productName: 'Produktname',
+    productCat: 'Kategorie',
+    productPrice: 'Basispreis (USD)',
+    productUnit: 'Verkaufseinheit',
+    productMOQ: 'Mindestbestellung (MOQ)',
+    productDesc: 'Kurze Beschreibung',
+    productPhoto: '+ Produktfoto',
+    addBtn: 'Produkt hinzufügen',
+    deleteBtn: 'Löschen',
+    certTitle: 'Name der Zertifizierung',
+    certIssuer: 'Ausstellende Stelle',
+    certYear: 'Ausgabejahr',
+    addCertBtn: 'Zertifizierung hinzufügen',
+    chatPlaceholder: 'Frage stellen...',
+    chatSend: 'Senden',
+    logoutBtn: 'Abmelden',
+    statsProducts: 'Veröffentlichte Produkte',
+    statsCerts: 'Zertifizierungen',
+    profileProgress: 'Profil vollständig',
+    noProducts: 'Noch keine Produkte. Fügen Sie Ihr erstes hinzu, damit Käufer Sie finden!',
+    noCerts: 'Fügen Sie Zertifizierungen hinzu, um das Vertrauen europäischer Käufer zu stärken.',
+    categories: ['Spirituosen & Getränke', 'Landwirtschaft & Lebensmittel', 'Kunsthandwerk & Textilien', 'Naturkosmetik', 'Pharmazeutisch / Kräuterheilkunde', 'Sonstige'],
+    checklistItems: ['Unternehmensprofilfoto', 'Unternehmensbeschreibung', 'Standort (Bundesstaat/Stadt)', 'WhatsApp-Kontakt', 'Mindestens 1 Produkt veröffentlicht', 'Mindestens 1 Zertifizierung', 'Website (optional)'],
+  },
+}
+
+const inp = (extra?: React.CSSProperties): React.CSSProperties => ({
+  width: '100%', padding: '10px 12px', border: `1.5px solid ${C.border}`,
+  borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: C.white,
+  boxSizing: 'border-box', color: C.text, outline: 'none', ...extra,
+})
+
+function TutorialChat({ lang }: { lang: Lang }) {
+  const L = LABELS[lang]
+  const msgs = TUTORIAL[lang]
+  const [shown, setShown] = useState<typeof msgs>([])
+  const [input, setInput] = useState('')
+  const [userMsgs, setUserMsgs] = useState<string[]>([])
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    msgs.forEach(m => setTimeout(() => setShown(prev => [...prev, m]), m.delay))
+  }, [])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [shown, userMsgs])
+
+  const send = () => {
+    if (!input.trim()) return
+    const msg = input.trim(); setInput('')
+    setUserMsgs(s => [...s, msg])
+    setTimeout(() => setShown(prev => [...prev, {
+      msg: lang === 'es' ? '📩 Gracias por tu pregunta. Para soporte directo escribe a soporte@nexusstrategy.online — respondemos en menos de 24 horas.'
+         : lang === 'nl' ? '📩 Bedankt voor uw vraag. Schrijf voor directe ondersteuning naar soporte@nexusstrategy.online'
+         : lang === 'de' ? '📩 Danke für Ihre Frage. Für direkte Unterstützung schreiben Sie an soporte@nexusstrategy.online'
+         : '📩 Thanks for your question. For direct support write to soporte@nexusstrategy.online — we respond in under 24 hours.',
+      delay: 0,
+    }]), 1000)
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 500 }}>
+      <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, background: `linear-gradient(135deg, ${C.navy}08, ${C.teal}08)` }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🌐</div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: C.navy }}>Global Nexus · Soporte</div>
+          <div style={{ fontSize: 11, color: C.green, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} /> En línea</div>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {shown.map((m, i) => (
+          <div key={`b${i}`} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', maxWidth: '80%' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.teal}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.75rem', flexShrink: 0 }}>🌐</div>
+            <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: '4px 12px 12px 12px', padding: '10px 14px', fontSize: 13, lineHeight: 1.7, color: C.text }}
+              dangerouslySetInnerHTML={{ __html: m.msg.replace(/\*\*(.*?)\*\*/g, `<strong style="color:${C.teal}">$1</strong>`) }} />
+          </div>
+        ))}
+        {userMsgs.map((s, i) => (
+          <div key={`u${i}`} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, borderRadius: '12px 4px 12px 12px', padding: '10px 14px', fontSize: 13, color: '#fff', maxWidth: '70%' }}>{s}</div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ padding: '.75rem 1rem', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 8 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
+          placeholder={L.chatPlaceholder} style={{ ...inp(), flex: 1, padding: '9px 12px' }} />
+        <button onClick={send} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', flexShrink: 0 }}>{L.chatSend}</button>
+      </div>
+    </div>
+  )
+}
 
-      {/* Dashboard header */}
-      <div style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0D9488 100%)', padding: '2rem 1.5rem' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 14, fontSize: '2rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.3)',
-              }}>{producer.logo}</div>
+/* ════════════════ MAIN ════════════════ */
+export default function DashboardPage() {
+  const navigate = useNavigate()
+  const { lang } = useLang()
+  const L = LABELS[lang]
+  const user = getUser()
+
+  useEffect(() => {
+    if (!user) { navigate('/login'); return }
+    if (user.role === 'comprador') navigate('/dashboard-comprador')
+  }, [])
+
+  const email = user?.email || ''
+  const [profile, setProfile] = useState(() => getProfile(email))
+  const [products, setProducts] = useState<Product[]>(() => getProducts(email))
+  const [certs, setCerts] = useState<Cert[]>(() => getCerts(email))
+  const [tab, setTab] = useState(0)
+  const [saveMsg, setSaveMsg] = useState(false)
+  const [showAddProduct, setShowAddProduct] = useState(false)
+  const [showAddCert, setShowAddCert] = useState(false)
+  const photoRef = useRef<HTMLInputElement>(null)
+  const productPhotoRef = useRef<HTMLInputElement>(null)
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({})
+  const [newCert, setNewCert] = useState<Partial<Cert>>({})
+
+  if (!user) return null
+
+  const pChecks = [!!profile.photo, !!profile.bio, !!profile.location, !!profile.whatsapp, products.length > 0, certs.length > 0, !!profile.website]
+  const pPct = Math.round((pChecks.filter(Boolean).length / pChecks.length) * 100)
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => { const u = { ...profile, photo: ev.target?.result as string }; setProfile(u); saveProfile(email, u) }
+    reader.readAsDataURL(file)
+  }
+
+  const handleProductPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setNewProduct(p => ({ ...p, photo: ev.target?.result as string }))
+    reader.readAsDataURL(file)
+  }
+
+  const saveProfileData = () => {
+    saveProfile(email, profile); setSaveMsg(true)
+    setTimeout(() => setSaveMsg(false), 2500)
+  }
+
+  const addProduct = () => {
+    if (!newProduct.name || !newProduct.category) return
+    const updated = [...products, { ...newProduct, id: Date.now().toString() } as Product]
+    setProducts(updated); saveProducts(email, updated); setNewProduct({}); setShowAddProduct(false)
+  }
+
+  const addCert = () => {
+    if (!newCert.name) return
+    const updated = [...certs, { ...newCert, id: Date.now().toString() } as Cert]
+    setCerts(updated); saveCerts(email, updated); setNewCert({}); setShowAddCert(false)
+  }
+
+  const logout = () => { localStorage.removeItem('gn_current_user'); navigate('/login') }
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg }}>
+
+      {/* Header */}
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1a4a7a 70%, #0b5c54)`, color: '#fff' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.25rem 1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: '1rem' }}>
+            {/* Avatar */}
+            <div onClick={() => setTab(1)} style={{ width: 58, height: 58, borderRadius: 14, background: 'rgba(255,255,255,.15)', overflow: 'hidden', flexShrink: 0, border: '2px solid rgba(255,255,255,.35)', cursor: 'pointer', position: 'relative' }}>
+              {profile.photo
+                ? <img src={profile.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem' }}>🏭</div>
+              }
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 900, fontSize: 'clamp(.95rem,2.5vw,1.1rem)', lineHeight: 1.2 }}>{user.name || 'Mi empresa'}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', marginTop: 2 }}>🏭 {lang === 'es' ? 'Productor' : lang === 'nl' ? 'Producent' : lang === 'de' ? 'Produzent' : 'Producer'} · {user.company || user.state || 'México'}</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div>
-                <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 12, fontWeight: 600, letterSpacing: '.05em', textTransform: 'uppercase' }}>Panel del productor</div>
-                <div style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 800, lineHeight: 1.2 }}>{producer.name}</div>
-                <div style={{ color: 'rgba(255,255,255,.75)', fontSize: 13, marginTop: 2 }}>📍 {producer.state} · Plan Pro Exportador</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', textAlign: 'right' }}>{L.profileProgress}</div>
+                <div style={{ fontWeight: 800, color: pPct >= 71 ? '#5EEAD4' : '#FCD34D', fontSize: '1rem', textAlign: 'right' }}>{pPct}%</div>
+                <div style={{ width: 70, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.2)', marginTop: 2 }}>
+                  <div style={{ width: `${pPct}%`, height: '100%', borderRadius: 3, background: pPct >= 71 ? '#5EEAD4' : '#FCD34D', transition: 'width .5s' }} />
+                </div>
               </div>
+              <button onClick={logout} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,.2)', background: 'rgba(255,255,255,.08)', color: '#fff', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}>{L.logoutBtn}</button>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <span style={{ background: 'rgba(255,255,255,.15)', color: '#fff', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid rgba(255,255,255,.25)' }}>
-                ✓ Verificado
-              </span>
-              <Link to="/catalogo" style={{ background: 'rgba(255,255,255,.15)', color: '#fff', padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid rgba(255,255,255,.25)', textDecoration: 'none' }}>
-                Ver mi catálogo →
-              </Link>
-            </div>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 2, overflowX: 'auto' }}>
+            {L.tabs.map((t, i) => (
+              <button key={i} onClick={() => setTab(i)} style={{ padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', color: tab === i ? '#5EEAD4' : 'rgba(255,255,255,.6)', fontWeight: tab === i ? 700 : 400, fontSize: 13, borderBottom: `2px solid ${tab === i ? '#5EEAD4' : 'transparent'}`, whiteSpace: 'nowrap', transition: 'all .15s' }}>{t}</button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Tab nav */}
-      <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 64, zIndex: 50 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem', display: 'flex', gap: 4 }}>
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{
-                padding: '14px 18px', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                background: 'transparent', display: 'flex', alignItems: 'center', gap: 6,
-                color: tab === t.id ? 'var(--teal)' : 'var(--text-muted)',
-                borderBottom: tab === t.id ? '2.5px solid var(--teal)' : '2.5px solid transparent',
-                transition: 'all .15s',
-              }}
-            >
-              {t.icon} {t.label}
-              {t.id === 'solicitudes' && (
-                <span style={{ background: 'var(--teal)', color: '#fff', borderRadius: 100, fontSize: 10, fontWeight: 700, padding: '1px 6px', marginLeft: 2 }}>
-                  {MOCK_LEADS.filter(l => l.status === 'nuevo').length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem' }}>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
+        {/* Pre-launch banner */}
+        <div style={{ background: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)', border: '1.5px solid #FCD34D', borderRadius: 12, padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>{L.preLaunch}</div>
+            <div style={{ fontSize: 12, color: '#78350F', lineHeight: 1.55, marginTop: 3 }}>{L.preLaunchSub}</div>
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 100, background: '#FEF3C7', color: '#D97706', border: '1px solid #FCD34D', whiteSpace: 'nowrap' }}>
+            ⏳ 28 Ago 2026
+          </div>
+        </div>
 
         {/* ── OVERVIEW ── */}
-        {tab === 'overview' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-            {/* ── VISUAL FLOW ── */}
-            <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '1.5rem' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '1rem' }}>
-                Tu flujo en Global Nexus
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap' }}>
-                {[
-                  { icon: '🏭', step: '01', title: 'Mi Perfil & Catálogo', desc: 'Publica tus productos en inglés y español con fotos, precios y certificaciones.', tab: 'perfil', color: 'var(--teal)', bg: 'var(--teal-light)' },
-                  { icon: '💬', step: '02', title: 'Sala de Chat Activa', desc: 'Recibe y responde mensajes de compradores EU con traducción automática integrada.', tab: 'solicitudes', color: 'var(--navy)', bg: '#EFF6FF' },
-                  { icon: '🌍', step: '03', title: 'Directorio de Demandas EU', desc: 'Explora las solicitudes activas de compradores europeos buscando tus productos.', tab: 'solicitudes', color: 'var(--gold)', bg: '#FEF9C3' },
-                ].map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 200 }}>
-                    <button onClick={() => setTab(item.tab as Tab)} style={{
-                      flex: 1, background: item.bg, border: `1.5px solid ${item.color}22`,
-                      borderRadius: 12, padding: '1rem', textAlign: 'left', cursor: 'pointer',
-                      transition: 'transform .15s',
-                    }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)' }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: '1.3rem' }}>{item.icon}</span>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: item.color, letterSpacing: '.08em' }}>{item.step}</span>
-                      </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: item.color, marginBottom: 4 }}>{item.title}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>{item.desc}</div>
-                    </button>
-                    {idx < 2 && (
-                      <div style={{ padding: '0 10px', fontSize: '1.1rem', color: 'var(--border)', flexShrink: 0 }}>➔</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── 3 MAIN PANELS ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem' }}>
-              {/* Panel 1: Mi Perfil */}
-              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--teal)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>🏭 Mi Perfil (Catálogo)</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Publicado en inglés y español · Badge ✓ Verificado</div>
-                {myProducts.slice(0, 2).map(p => (
-                  <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{p.icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--teal)' }}>${p.price} USD/{p.unit}</div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => setTab('perfil')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
-                  Gestionar perfil →
-                </button>
-              </div>
-
-              {/* Panel 2: Chat activo */}
-              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--navy)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Sala de Chat Activa</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Mensajes con compradores · Traducción automática</div>
-                {MOCK_LEADS.slice(0, 2).map(lead => (
-                  <div key={lead.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700 }}>{lead.buyer}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: STATUS_CONFIG[leadStatus[lead.id]].bg, color: STATUS_CONFIG[leadStatus[lead.id]].color }}>
-                        {STATUS_CONFIG[leadStatus[lead.id]].label}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.country} · {lead.date}</div>
-                  </div>
-                ))}
-                <button onClick={() => setTab('solicitudes')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: 'var(--navy)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
-                  Ver todas las conversaciones →
-                </button>
-              </div>
-
-              {/* Panel 3: Demandas EU */}
-              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--gold)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#B45309', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>🌍 Directorio de Demandas EU</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Compradores buscando activamente tus productos</div>
-                {[
-                  { flag: '🇩🇪', company: 'Deutsche Spirits GmbH', product: 'Tequila Añejo', moq: '500 cajas' },
-                  { flag: '🇳🇱', company: 'EuroSpirits BV', product: 'Mezcal Artesanal', moq: '200 botellas' },
-                ].map((d, i) => (
-                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: '1rem' }}>{d.flag}</span>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700 }}>{d.company}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Busca: {d.product} · {d.moq}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => setTab('solicitudes')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: '#B45309', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
-                  Ver directorio completo →
-                </button>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
-              {MOCK_STATS.map(s => (
-                <div key={s.label} className="card" style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div style={{ fontSize: '1.5rem' }}>{s.icon}</div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', background: 'var(--green-light)', padding: '2px 8px', borderRadius: 100 }}>{s.change}</span>
-                  </div>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{s.label}</div>
+        {tab === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: '1rem' }}>
+              {[
+                { icon: '📦', label: L.statsProducts, value: products.length, color: C.teal },
+                { icon: '🛡️', label: L.statsCerts, value: certs.length, color: '#7C3AED' },
+                { icon: '👁️', label: lang === 'es' ? 'Vistas (al lanzamiento)' : 'Views (at launch)', value: '—', color: C.navy },
+                { icon: '🤝', label: lang === 'es' ? 'Leads EU (al lanzamiento)' : 'EU Leads (at launch)', value: '—', color: C.gold },
+              ].map((s, i) => (
+                <div key={i} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: '1.25rem' }}>
+                  <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{ fontSize: 'clamp(1.3rem,3vw,1.8rem)', fontWeight: 900, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Recent leads + products */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
-
-              {/* Recent solicitudes */}
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ fontWeight: 700, fontSize: 15 }}>Solicitudes recientes</h3>
-                  <button onClick={() => setTab('solicitudes')} style={{ fontSize: 12, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Ver todas →</button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {MOCK_LEADS.slice(0, 3).map(lead => (
-                    <div key={lead.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'var(--surface2)', borderRadius: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--teal-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>👤</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{lead.buyer}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.country} · {lead.product}</div>
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 100, background: STATUS_CONFIG[leadStatus[lead.id]].bg, color: STATUS_CONFIG[leadStatus[lead.id]].color, flexShrink: 0 }}>
-                        {STATUS_CONFIG[leadStatus[lead.id]].label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {/* Checklist */}
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.navy }}>📋 {L.profileProgress} · {pPct}%</div>
               </div>
-
-              {/* Quick stats sidebar */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* TLCUEM badge */}
-                <div style={{ background: 'linear-gradient(135deg, #0D9488, #1E3A5F)', borderRadius: 'var(--radius)', padding: '1.25rem', color: '#fff' }}>
-                  <div style={{ fontSize: '1.2rem', marginBottom: 6 }}>🤝</div>
-                  <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>Beneficio TLCUEM activo</div>
-                  <div style={{ fontSize: 12, opacity: .85, lineHeight: 1.5 }}>Tus productos llegan a los 27 países EU con 0% de arancel. Documentación aduanal generada automáticamente.</div>
-                </div>
-
-                {/* Mis productos quick */}
-                <div className="card" style={{ padding: '1.25rem' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Mis productos activos</div>
-                  {myProducts.map(p => (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{p.icon}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--teal)', fontWeight: 600 }}>${p.price} USD/{p.unit}</div>
-                      </div>
-                      <span style={{ fontSize: 10, color: p.inStock ? 'var(--green)' : 'var(--text-muted)', fontWeight: 600 }}>{p.inStock ? '●' : '○'}</span>
-                    </div>
-                  ))}
-                  <button onClick={() => setTab('productos')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, textAlign: 'left' }}>
-                    Gestionar productos →
-                  </button>
-                </div>
+              <div style={{ width: '100%', height: 8, borderRadius: 4, background: C.bg, marginBottom: '1.25rem' }}>
+                <div style={{ width: `${pPct}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${C.teal}, ${C.navy})`, transition: 'width .6s' }} />
               </div>
+              {L.checklistItems.map((item, i) => (
+                <div key={i} onClick={() => !pChecks[i] && setTab([1,1,1,1,2,3,1][i])}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < 6 ? `1px solid ${C.border}` : 'none', cursor: pChecks[i] ? 'default' : 'pointer' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0, background: pChecks[i] ? '#DCFCE7' : C.bg, border: `1.5px solid ${pChecks[i] ? C.green : C.border}`, color: C.green }}>
+                    {pChecks[i] ? '✓' : ''}
+                  </div>
+                  <span style={{ fontSize: 13, color: pChecks[i] ? C.muted : C.text, textDecoration: pChecks[i] ? 'line-through' : 'none', flex: 1 }}>{item}</span>
+                  {!pChecks[i] && <span style={{ fontSize: 11, color: C.teal, fontWeight: 600 }}>Completar →</span>}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ── PRODUCTOS ── */}
-        {tab === 'productos' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Mis productos ({myProducts.length})</h2>
-              <button className="btn btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>+ Agregar producto</button>
-            </div>
-
-            {myProducts.map(p => (
-              <div key={p.id} className="card" style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 12, background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', flexShrink: 0 }}>
-                  {p.icon}
-                </div>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 700, fontSize: 15 }}>{p.name}</span>
-                    {p.verified && <span className="badge badge-teal">✓ Verificado</span>}
-                    {p.trending && <span className="badge badge-gold">🔥 Trending</span>}
-                    {!p.inStock && <span className="badge badge-gray">Sin stock</span>}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{p.description}</div>
-                  <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
-                    {p.certifications.map(c => <span key={c} className="badge badge-gray">{CERT_LABELS[c]}</span>)}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--teal)' }}>${p.price.toFixed(2)} <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 400 }}>USD/{p.unit}</span></div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>MOQ: {p.moq} {p.moqUnit}</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <Link to={`/producto/${p.id}`} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 7, background: 'var(--teal-light)', color: 'var(--teal)', fontWeight: 600, textDecoration: 'none' }}>Ver pública</Link>
-                    <button style={{ fontSize: 12, padding: '6px 12px', borderRadius: 7, background: 'var(--surface2)', color: 'var(--text-muted)', fontWeight: 600, border: 'none', cursor: 'pointer' }}>✏️ Editar</button>
-                  </div>
-                </div>
+        {/* ── PROFILE ── */}
+        {tab === 1 && (
+          <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.75rem' }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '1.5rem', color: C.navy }}>{L.profileTitle}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '1.5rem' }}>
+              <div style={{ width: 84, height: 84, borderRadius: 18, background: C.bg, border: `2px dashed ${C.border}`, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                {profile.photo
+                  ? <img src={profile.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>🏭</div>
+                }
               </div>
-            ))}
-
-            <div style={{ background: 'var(--surface2)', borderRadius: 'var(--radius)', padding: '1.5rem', textAlign: 'center', border: '2px dashed var(--border)' }}>
-              <div style={{ fontSize: '2rem', marginBottom: 8 }}>➕</div>
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Agregar nuevo producto</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Publica nuevos productos y llega a compradores en 27 países EU</div>
-              <button className="btn btn-outline" style={{ fontSize: 13 }}>Agregar producto</button>
+              <div>
+                <button onClick={() => photoRef.current?.click()} style={{ padding: '9px 18px', borderRadius: 8, border: `1.5px solid ${C.teal}`, background: 'transparent', color: C.teal, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>{L.photoBtn}</button>
+                <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 5 }}>JPG, PNG, WebP · máx 3MB</div>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* ── SOLICITUDES ── */}
-        {tab === 'solicitudes' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Solicitudes de compradores EU ({MOCK_LEADS.length})</h2>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                  <span key={k} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 100, background: v.bg, color: v.color, fontWeight: 600 }}>
-                    {v.label}: {MOCK_LEADS.filter(l => leadStatus[l.id] === k).length}
-                  </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 6 }}>{L.bioLabel}</label>
+                <textarea value={profile.bio || ''} onChange={e => setProfile(p => ({ ...p, bio: e.target.value }))}
+                  placeholder={L.bioPlaceholder} rows={4}
+                  style={{ ...inp(), resize: 'vertical', lineHeight: 1.65 }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: '1rem' }}>
+                {[
+                  { key: 'location', label: L.locationLabel, placeholder: 'Jalisco, Guadalajara' },
+                  { key: 'whatsapp', label: L.whatsappLabel, placeholder: '+52 33 1234 5678' },
+                  { key: 'website', label: L.websiteLabel, placeholder: 'https://miempresa.com' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 6 }}>{f.label}</label>
+                    <input value={(profile as Record<string,string>)[f.key] || ''} onChange={e => setProfile(p => ({ ...p, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder} style={inp()} />
+                  </div>
                 ))}
               </div>
+              <button onClick={saveProfileData} style={{ padding: '11px 24px', borderRadius: 10, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', alignSelf: 'flex-start', transition: 'opacity .2s' }}>
+                {saveMsg ? L.saved : L.saveBtn}
+              </button>
             </div>
-
-            {MOCK_LEADS.map(lead => (
-              <div key={lead.id} className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--navy-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>👤</div>
-
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, fontSize: 15 }}>{lead.buyer}</span>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{lead.company}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: STATUS_CONFIG[leadStatus[lead.id]].bg, color: STATUS_CONFIG[leadStatus[lead.id]].color }}>
-                        {STATUS_CONFIG[leadStatus[lead.id]].label}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                      <span>{lead.country}</span>
-                      <span>📦 {lead.product}</span>
-                      <span>📊 MOQ: {lead.moq}</span>
-                      <span>🕐 {lead.date}</span>
-                    </div>
-                    <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>✉️ {lead.email}</div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                    <select
-                      value={leadStatus[lead.id]}
-                      onChange={e => setLeadStatus(s => ({ ...s, [lead.id]: e.target.value }))}
-                      style={{ fontSize: 12, padding: '6px 10px', borderRadius: 7, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
-                    >
-                      <option value="nuevo">Nuevo</option>
-                      <option value="respondido">Respondido</option>
-                      <option value="negociando">Negociando</option>
-                      <option value="cerrado">Cerrado ✓</option>
-                    </select>
-                    <button
-                      onClick={() => setSelectedLead(selectedLead === lead.id ? null : lead.id)}
-                      className="btn btn-primary"
-                      style={{ fontSize: 12, padding: '7px 14px' }}
-                    >
-                      💬 Responder
-                    </button>
-                  </div>
-                </div>
-
-                {selectedLead === lead.id && (
-                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Respuesta a {lead.buyer}</div>
-                    <textarea
-                      rows={3}
-                      placeholder={`Hola ${lead.buyer.split(' ')[0]}, gracias por tu interés en ${lead.product}. Podemos ofrecer...`}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border)', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }}
-                    />
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <button
-                        className="btn btn-primary"
-                        style={{ fontSize: 12, padding: '8px 16px' }}
-                        onClick={() => { setLeadStatus(s => ({ ...s, [lead.id]: 'respondido' })); setSelectedLead(null) }}
-                      >Enviar respuesta</button>
-                      <button onClick={() => setSelectedLead(null)} className="btn btn-ghost" style={{ fontSize: 12 }}>Cancelar</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         )}
 
-        {/* ── PERFIL ── */}
-        {tab === 'perfil' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', alignItems: 'start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: '1rem' }}>Información del productor</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* ── PRODUCTS ── */}
+        {tab === 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1rem', color: C.navy }}>📦 {L.tabs[2]} ({products.length})</h2>
+              <button onClick={() => setShowAddProduct(o => !o)} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddProduct ? C.border : C.teal, color: showAddProduct ? C.text : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                {showAddProduct ? `✕ ${lang === 'es' ? 'Cancelar' : 'Cancel'}` : `+ ${L.addProduct}`}
+              </button>
+            </div>
+
+            {showAddProduct && (
+              <div style={{ background: C.white, border: `1.5px solid ${C.teal}30`, borderRadius: 14, padding: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem', marginBottom: '1rem' }}>
                   {[
-                    { label: 'Nombre de la empresa', value: producer.name },
-                    { label: 'Estado / Región', value: producer.state },
-                    { label: 'Año de fundación', value: String(producer.founded) },
-                    { label: 'Empleados', value: producer.employees },
-                    { label: 'Descripción', value: producer.description, textarea: true },
-                  ].map(field => (
-                    <div key={field.label}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 4 }}>{field.label}</label>
-                      {field.textarea ? (
-                        <textarea
-                          defaultValue={field.value}
-                          rows={3}
-                          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border)', fontSize: 14, resize: 'vertical', fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--text)' }}
-                        />
-                      ) : (
-                        <input
-                          defaultValue={field.value}
-                          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--border)', fontSize: 14, background: 'var(--surface)', color: 'var(--text)' }}
-                        />
-                      )}
+                    { key: 'name', label: L.productName, placeholder: 'Tequila Añejo Reserva', required: true },
+                    { key: 'price', label: L.productPrice, placeholder: '$45.00' },
+                    { key: 'unit', label: L.productUnit, placeholder: lang === 'es' ? 'Caja 12 botellas' : 'Box 12 bottles' },
+                    { key: 'minOrder', label: L.productMOQ, placeholder: lang === 'es' ? '100 cajas' : '100 boxes' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{f.label}{f.required ? ' *' : ''}</label>
+                      <input value={(newProduct as Record<string,string>)[f.key] || ''} onChange={e => setNewProduct(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inp()} />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.productCat} *</label>
+                    <select value={newProduct.category || ''} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} style={{ ...inp(), cursor: 'pointer' }}>
+                      <option value="">—</option>
+                      {L.categories.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.productDesc}</label>
+                  <textarea value={newProduct.desc || ''} onChange={e => setNewProduct(p => ({ ...p, desc: e.target.value }))} rows={2} style={{ ...inp(), resize: 'vertical' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+                  <div style={{ width: 68, height: 68, borderRadius: 10, background: C.bg, border: `2px dashed ${C.border}`, overflow: 'hidden', flexShrink: 0 }}>
+                    {newProduct.photo ? <img src={newProduct.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem' }}>📷</div>}
+                  </div>
+                  <button onClick={() => productPhotoRef.current?.click()} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: 'pointer', fontSize: 13, color: C.text }}>
+                    {L.productPhoto}
+                  </button>
+                  <input ref={productPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProductPhoto} />
+                </div>
+                <button onClick={addProduct} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  + {L.addBtn}
+                </button>
+              </div>
+            )}
+
+            {products.length === 0
+              ? <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: 12 }}>📦</div>
+                  <div style={{ fontSize: 14, color: C.muted, maxWidth: 320, margin: '0 auto' }}>{L.noProducts}</div>
+                </div>
+              : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: '1rem' }}>
+                  {products.map(p => (
+                    <div key={p.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: 150, background: C.bg, overflow: 'hidden' }}>
+                        {p.photo ? <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>📦</div>}
+                      </div>
+                      <div style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: C.teal, fontWeight: 600, marginBottom: 6 }}>{p.category}</div>
+                        {p.price && <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{p.price} / {p.unit}</div>}
+                        {p.minOrder && <div style={{ fontSize: 11, color: C.muted }}>MOQ: {p.minOrder}</div>}
+                        {p.desc && <div style={{ fontSize: 12, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>{p.desc}</div>}
+                        <button onClick={() => { const u = products.filter(x => x.id !== p.id); setProducts(u); saveProducts(email, u) }}
+                          style={{ marginTop: 10, padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: '#DC2626', fontSize: 12, cursor: 'pointer' }}>{L.deleteBtn}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <button className="btn btn-primary" style={{ marginTop: '1rem', fontSize: 13 }}>Guardar cambios</button>
-              </div>
-
-              <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: '1rem' }}>Certificaciones activas</h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {producer.certifications.map(c => (
-                    <span key={c} style={{ padding: '6px 14px', borderRadius: 8, background: 'var(--teal-light)', color: 'var(--teal-dark)', fontSize: 13, fontWeight: 600 }}>✓ {CERT_LABELS[c]}</span>
-                  ))}
-                </div>
-                <div style={{ marginTop: '1rem', fontSize: 13, color: 'var(--text-muted)' }}>
-                  Para agregar o actualizar certificaciones, contacta a <a href="mailto:verificaciones@nexusstrategy.online" style={{ color: 'var(--teal)', fontWeight: 600 }}>verificaciones@nexusstrategy.online</a>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Plan */}
-              <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #0D9488)', borderRadius: 'var(--radius)', padding: '1.5rem', color: '#fff' }}>
-                <div style={{ fontSize: 11, opacity: .75, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Tu plan actual</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: 4 }}>Pro Exportador</div>
-                <div style={{ fontSize: 13, opacity: .85, marginBottom: '1rem' }}>Acceso completo a compradores EU</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {['Contactos ilimitados', 'Perfil verificado', 'Soporte prioritario', 'Docs. aduanales auto'].map(f => (
-                    <div key={f} style={{ fontSize: 12, display: 'flex', gap: 8 }}><span>✓</span>{f}</div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,.2)', fontSize: 12, opacity: .75 }}>
-                  Próxima renovación: 27 Jul 2026
-                </div>
-              </div>
-
-              {/* Export countries */}
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Exportas actualmente a</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {producer.exportCountries.map(c => (
-                    <div key={c} style={{ fontSize: '1.4rem' }} title={c}>{
-                      { DE: '🇩🇪', NL: '🇳🇱', FR: '🇫🇷', ES: '🇪🇸', IT: '🇮🇹', BE: '🇧🇪', SE: '🇸🇪', PL: '🇵🇱', AT: '🇦🇹', FI: '🇫🇮', DK: '🇩🇰' }[c] || c
-                    }</div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            }
           </div>
         )}
+
+        {/* ── CERTIFICATIONS ── */}
+        {tab === 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1rem', color: C.navy }}>🛡️ {L.tabs[3]} ({certs.length})</h2>
+              <button onClick={() => setShowAddCert(o => !o)} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddCert ? C.border : C.teal, color: showAddCert ? C.text : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                {showAddCert ? `✕ ${lang === 'es' ? 'Cancelar' : 'Cancel'}` : `+ ${L.addCertBtn}`}
+              </button>
+            </div>
+
+            {showAddCert && (
+              <div style={{ background: C.white, border: `1.5px solid ${C.teal}30`, borderRadius: 14, padding: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                  {[
+                    { key: 'name', label: L.certTitle, placeholder: 'NOM, SENASICA, Orgánico...', required: true },
+                    { key: 'issuer', label: L.certIssuer, placeholder: 'COFEPRIS, SENASICA...' },
+                    { key: 'year', label: L.certYear, placeholder: '2024', type: 'number' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{f.label}{f.required ? ' *' : ''}</label>
+                      <input type={f.type || 'text'} value={(newCert as Record<string,string>)[f.key] || ''} onChange={e => setNewCert(c => ({ ...c, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inp()} />
+                    </div>
+                  ))}
+                </div>
+                <button onClick={addCert} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  + {L.addBtn}
+                </button>
+              </div>
+            )}
+
+            {certs.length === 0
+              ? <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: 12 }}>🛡️</div>
+                  <div style={{ fontSize: 14, color: C.muted, maxWidth: 320, margin: '0 auto' }}>{L.noCerts}</div>
+                </div>
+              : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {certs.map(c => (
+                    <div key={c.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: C.tealLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>🛡️</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
+                        <div style={{ fontSize: 12, color: C.muted }}>{[c.issuer, c.year].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <button onClick={() => { const u = certs.filter(x => x.id !== c.id); setCerts(u); saveCerts(email, u) }}
+                        style={{ padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: '#DC2626', fontSize: 12, cursor: 'pointer' }}>{L.deleteBtn}</button>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+        )}
+
+        {/* ── TUTORIAL CHAT ── */}
+        {tab === 4 && <TutorialChat lang={lang} />}
+
       </div>
     </div>
   )

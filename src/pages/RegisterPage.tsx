@@ -79,11 +79,11 @@ export default function RegisterPage() {
                 : 'Your registration has been saved successfully. Your profile will be automatically activated on August 28, 2026 at 12:00 pm CDMX time (Mexico City). From that date you can connect with European buyers and appear in the catalog. Thank you for being part of the launch!'}
             </div>
           </div>
-          <button onClick={() => navigate('/precios')} className="btn btn-primary" style={{ width: '100%', padding: '13px', fontSize: '15px', marginBottom: '0.75rem' }}>
-            {T('reg_success_btn')}
+          <button onClick={() => navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')} className="btn btn-primary" style={{ width: '100%', padding: '13px', fontSize: '15px', marginBottom: '0.75rem' }}>
+            {lang === 'es' ? '→ Ir a mi panel ahora' : lang === 'nl' ? '→ Naar mijn dashboard' : lang === 'de' ? '→ Zu meinem Dashboard' : '→ Go to my panel now'}
           </button>
-          <button onClick={() => navigate('/dashboard')} className="btn btn-ghost" style={{ width: '100%', padding: '11px', fontSize: '14px' }}>
-            {lang === 'es' ? 'Ir a mi dashboard' : lang === 'nl' ? 'Naar mijn dashboard' : lang === 'de' ? 'Zu meinem Dashboard' : 'Go to my dashboard'}
+          <button onClick={() => navigate('/precios')} className="btn btn-ghost" style={{ width: '100%', padding: '11px', fontSize: '14px' }}>
+            {T('reg_success_btn')}
           </button>
         </div>
       </div>
