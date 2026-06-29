@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
+import AIChat from '../components/AIChat'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -643,8 +644,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── TUTORIAL CHAT ── */}
-        {tab === 4 && <TutorialChat lang={lang} />}
+        {/* ── AI CHAT ── */}
+        {tab === 4 && <AIChat lang={lang} role="producer" height={560} />}
 
       </div>
     </div>

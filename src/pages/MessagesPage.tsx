@@ -1,5 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 
+/* ─── Deal stages ─── */
+const DEAL_STAGES = [
+  { id: 'contacto',    icon: '📩', label: 'Contacto',    sub: 'Primer mensaje' },
+  { id: 'interes',     icon: '💬', label: 'Interés',     sub: 'Negociación activa' },
+  { id: 'propuesta',   icon: '📋', label: 'Propuesta',   sub: 'RFQ / Cotización' },
+  { id: 'muestras',    icon: '📦', label: 'Muestras',    sub: 'Aprobación' },
+  { id: 'acuerdo',     icon: '✅', label: 'Acuerdo',     sub: 'Términos aceptados' },
+  { id: 'cierre',      icon: '🤝', label: 'Cierre',      sub: 'Trato cerrado' },
+]
+
 /* ─── Types ─── */
 interface Message {
   id: string
@@ -23,7 +33,7 @@ interface Conversation {
   lang: string
   langLabel: string
   timezone: string
-  tzOffset: number          // hours from UTC
+  tzOffset: number
   avatar: string
   role: 'buyer' | 'producer'
   online: boolean
@@ -31,6 +41,7 @@ interface Conversation {
   product: string
   unread: number
   messages: Message[]
+  stage: string
 }
 
 /* ─── Mock data ─── */
@@ -39,7 +50,7 @@ const m = (min: number): Date => new Date(now.getTime() - min * 60000)
 
 const CONVERSATIONS: Conversation[] = [
   {
-    id: 'c1', name: 'Jan van der Berg', company: 'EuroSpirits BV',
+    id: 'c1', name: 'Jan van der Berg', company: 'EuroSpirits BV', stage: 'interes',
     country: 'Países Bajos', countryCode: 'NL', flag: '🇳🇱',
     lang: 'nl', langLabel: 'Holandés', timezone: 'CET (UTC+2)', tzOffset: 2,
     avatar: '👨‍💼', role: 'buyer', online: true, verified: true,
@@ -55,7 +66,7 @@ const CONVERSATIONS: Conversation[] = [
     ],
   },
   {
-    id: 'c2', name: 'Marie Dubois', company: 'Maison des Alcools',
+    id: 'c2', name: 'Marie Dubois', company: 'Maison des Alcools', stage: 'propuesta',
     country: 'Francia', countryCode: 'FR', flag: '🇫🇷',
     lang: 'fr', langLabel: 'Francés', timezone: 'CET (UTC+2)', tzOffset: 2,
     avatar: '👩‍💼', role: 'buyer', online: true, verified: true,
@@ -70,7 +81,7 @@ const CONVERSATIONS: Conversation[] = [
     ],
   },
   {
-    id: 'c3', name: 'Klaus Richter', company: 'Deutsche Spirits GmbH',
+    id: 'c3', name: 'Klaus Richter', company: 'Deutsche Spirits GmbH', stage: 'muestras',
     country: 'Alemania', countryCode: 'DE', flag: '🇩🇪',
     lang: 'de', langLabel: 'Alemán', timezone: 'CET (UTC+2)', tzOffset: 2,
     avatar: '👨‍🏭', role: 'buyer', online: false, verified: true,
@@ -85,7 +96,7 @@ const CONVERSATIONS: Conversation[] = [
     ],
   },
   {
-    id: 'c4', name: 'Sofia Andersson', company: 'Nordic Import AB',
+    id: 'c4', name: 'Sofia Andersson', company: 'Nordic Import AB', stage: 'contacto',
     country: 'Suecia', countryCode: 'SE', flag: '🇸🇪',
     lang: 'en', langLabel: 'Inglés', timezone: 'CET (UTC+2)', tzOffset: 2,
     avatar: '👩‍💼', role: 'buyer', online: false, verified: false,
@@ -145,11 +156,16 @@ export default function MessagesPage() {
   const [input, setInput] = useState('')
   const [translatedIds, setTranslatedIds] = useState<Set<string>>(new Set())
   const [showInfo, setShowInfo] = useState(false)
+  const [showFlow, setShowFlow] = useState(false)
   const [replyLang, setReplyLang] = useState<string>('es')
   const [typing, setTyping] = useState(false)
   const [search, setSearch] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const setStage = (stageId: string) => {
+    setConvos(cs => cs.map(c => c.id === activeId ? { ...c, stage: stageId } : c))
+  }
 
   const convo = convos.find(c => c.id === activeId)!
   const filtered = convos.filter(c =>
@@ -333,7 +349,18 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Stage badge */}
+            {(() => {
+              const st = DEAL_STAGES.find(s => s.id === convo.stage)
+              return st ? (
+                <div onClick={() => setShowFlow(f => !f)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'var(--teal-light)', border: '1px solid var(--teal)', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 12 }}>
+                  <span>{st.icon}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--teal-dark)' }}>{st.label}</span>
+                  <span style={{ color: 'var(--teal)', fontSize: 10 }}>▾</span>
+                </div>
+              ) : null
+            })()}
             {/* My lang selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surface2)', padding: '6px 10px', borderRadius: 8, fontSize: 12 }}>
               <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Mi idioma:</span>
@@ -352,6 +379,41 @@ export default function MessagesPage() {
             <button onClick={() => setShowInfo(!showInfo)} style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', color: showInfo ? 'var(--teal)' : 'var(--text-muted)' }}>ℹ️</button>
           </div>
         </div>
+
+        {/* Deal flow panel */}
+        {showFlow && (
+          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg, #F0FDFA, #EFF6FF)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)' }}>🛤️ Estado del trato · haz clic para cambiar etapa</div>
+              <button onClick={() => setShowFlow(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--text-muted)' }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', gap: 0, overflowX: 'auto' }}>
+              {DEAL_STAGES.map((s, i) => {
+                const stageIdx = DEAL_STAGES.findIndex(x => x.id === convo.stage)
+                const isActive = s.id === convo.stage
+                const isDone = i < stageIdx
+                return (
+                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <button
+                      onClick={() => setStage(s.id)}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 10, border: `2px solid ${isActive ? 'var(--teal)' : isDone ? '#22C55E' : 'var(--border)'}`, background: isActive ? 'var(--teal-light)' : isDone ? '#DCFCE7' : 'var(--white)', cursor: 'pointer', transition: 'all .15s', minWidth: 80 }}
+                    >
+                      <span style={{ fontSize: '1.2rem' }}>{s.icon}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? 'var(--teal-dark)' : isDone ? '#16A34A' : 'var(--text-muted)' }}>{s.label}</span>
+                      <span style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.3 }}>{s.sub}</span>
+                    </button>
+                    {i < DEAL_STAGES.length - 1 && (
+                      <div style={{ width: 24, height: 2, background: isDone || isActive ? 'var(--teal)' : 'var(--border)', flexShrink: 0 }} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ marginTop: '0.75rem', fontSize: 11, color: 'var(--text-muted)' }}>
+              💡 Flujo: Comprador EU encuentra productor en catálogo → envía Contacto → Productor acepta → Negociación → RFQ/Propuesta → Muestras → Acuerdo → Cierre con documentos TLCUEM
+            </div>
+          </div>
+        )}
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
@@ -417,7 +479,22 @@ export default function MessagesPage() {
                               <div style={{ fontSize: 11, color: isMe ? 'rgba(255,255,255,.75)' : 'var(--text-muted)', marginTop: 2 }}>
                                 {msg.file.type.toUpperCase()} · {msg.file.size}
                               </div>
-                              <a href={msg.file.url} style={{ fontSize: 11, color: isMe ? 'rgba(255,255,255,.9)' : 'var(--teal)', fontWeight: 600, marginTop: 2, display: 'block' }}>Descargar ↓</a>
+                              <a
+                                href={msg.file.url}
+                                download={msg.file.name}
+                                onClick={e => {
+                                  if (msg.file!.url === '#') {
+                                    e.preventDefault()
+                                    const w = window.open('', '_blank')
+                                    if (w) {
+                                      w.document.write(`<html><head><title>${msg.file!.name}</title><style>body{font-family:sans-serif;padding:2rem;max-width:800px;margin:0 auto}h1{color:#1E3A5F}table{width:100%;border-collapse:collapse;margin-top:1rem}td,th{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f1f5f9}.footer{margin-top:2rem;font-size:12px;color:#64748B;border-top:1px solid #ddd;padding-top:1rem}</style></head><body><h1>📄 ${msg.file!.name}</h1><p><strong>Global Nexus · nexusstrategy.online</strong></p><p>Documento compartido en chat privado · ${new Date().toLocaleDateString('es-MX', {year:'numeric',month:'long',day:'numeric'})}</p><hr/><p style="color:#64748B;margin-top:2rem">Este documento fue compartido a través de la plataforma Global Nexus como parte de una negociación comercial bajo el marco del TLCUEM (Tratado de Libre Comercio entre México y la Unión Europea).</p><div class="footer">Global Nexus — Plataforma B2B México·Europa · nexusstrategy.online · soporte@nexusstrategy.online</div></body></html>`)
+                                      w.document.close()
+                                      setTimeout(() => w.print(), 500)
+                                    }
+                                  }
+                                }}
+                                style={{ fontSize: 11, color: isMe ? 'rgba(255,255,255,.9)' : 'var(--teal)', fontWeight: 600, marginTop: 2, display: 'block' }}
+                              >⬇ Descargar PDF</a>
                             </div>
                           </div>
                         ) : (

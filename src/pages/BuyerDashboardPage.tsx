@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
+import AIChat from '../components/AIChat'
 
 function getUser() { try { return JSON.parse(localStorage.getItem('gn_current_user') || 'null') } catch { return null } }
 function getBProfile(email: string) { try { return JSON.parse(localStorage.getItem(`gn_bprofile_${email}`) || '{}') } catch { return {} } }
@@ -512,8 +513,8 @@ export default function BuyerDashboardPage() {
           </div>
         )}
 
-        {/* ── TUTORIAL CHAT ── */}
-        {tab === 3 && <BuyerChat lang={lang} />}
+        {/* ── AI CHAT ── */}
+        {tab === 3 && <AIChat lang={lang} role="buyer" height={560} />}
 
       </div>
     </div>
