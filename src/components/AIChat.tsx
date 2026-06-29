@@ -63,17 +63,26 @@ export default function AIChat({ lang, role = 'producer', height = 520 }: { lang
         body: JSON.stringify({ messages: newMessages }),
       })
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json() as { text?: string; error?: string }
-      if (data.error) throw new Error(data.error)
+
+      if (!res.ok || data.error) {
+        const msg = data.error || `HTTP ${res.status}`
+        // API key not configured — friendly message
+        if (msg.includes('API key not configured') || res.status === 500) {
+          throw new Error('__no_key__')
+        }
+        throw new Error(msg)
+      }
 
       setMessages([...newMessages, { role: 'assistant', content: data.text || '' }])
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error'
-      setError(lang === 'es' ? `Error al conectar con el asistente: ${msg}. Verifica la configuración de la API.`
-               : lang === 'nl' ? `Fout bij verbinden met assistent: ${msg}`
-               : lang === 'de' ? `Fehler beim Verbinden mit dem Assistenten: ${msg}`
-               : `Error connecting to assistant: ${msg}`)
+      const noKey = msg === '__no_key__'
+      setError(
+        noKey
+          ? (lang === 'es' ? '⚙️ El asistente IA no está configurado aún. El administrador debe agregar la clave ANTHROPIC_API_KEY en Vercel.' : '⚙️ AI assistant is not configured yet. Admin must add ANTHROPIC_API_KEY in Vercel.')
+          : (lang === 'es' ? `Error: ${msg}` : lang === 'nl' ? `Fout: ${msg}` : lang === 'de' ? `Fehler: ${msg}` : `Error: ${msg}`)
+      )
     } finally {
       setLoading(false)
     }

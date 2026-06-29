@@ -114,20 +114,21 @@ export default async function handler(request: Request) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 800,
         system: SYSTEM_PROMPT,
         messages: messages.slice(-10), // last 10 messages for context
       }),
     })
 
-    const data = await response.json() as { content: { text: string }[]; error?: { message: string } }
+    const data = await response.json() as { content: { text: string }[]; error?: { message: string; type?: string } }
 
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Anthropic API error')
+      const detail = data.error?.message || `HTTP ${response.status}`
+      throw new Error(`Anthropic: ${detail}`)
     }
 
-    const text = data.content[0]?.text || ''
+    const text = data.content?.[0]?.text || ''
 
     return new Response(JSON.stringify({ text }), {
       headers: {
