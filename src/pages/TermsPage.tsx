@@ -9,8 +9,8 @@ export default function TermsPage() {
 
       {[
         {
-          title: '1. Descripción del servicio',
-          body: 'Global Nexus es una plataforma B2B que facilita la conexión comercial entre productores mexicanos certificados y compradores de la Unión Europea, aprovechando el Tratado de Libre Comercio entre México y la Unión Europea (TLCUEM). La plataforma proporciona herramientas de catálogo, mensajería, verificación de documentos y gestión comercial.',
+          title: '1. Descripción del servicio y Deslinde de Responsabilidad',
+          body: 'Global Nexus (Nexus Strategy) es una plataforma tecnológica de conectividad y comunicación B2B. Su función es facilitar el contacto y la comunicación entre productores mexicanos y compradores europeos mediante herramientas digitales de catálogo, mensajería, verificación documental y directorio comercial. NEXUS STRATEGY NO ES PARTE, NI INTERVIENE, EN LOS CONTRATOS COMERCIALES QUE LOS USUARIOS CELEBREN ENTRE SÍ. Nexus Strategy no es responsable ni garantiza: (a) el cumplimiento de contratos de compraventa entre usuarios, (b) el pago o cobro de mercancías, (c) el despacho aduanal, permisos fitosanitarios o retención de productos por autoridades, (d) la calidad, autenticidad o conformidad de las mercancías acordadas entre las partes, (e) el cumplimiento de obligaciones de envío, entrega o devolución. Nexus Strategy es un facilitador tecnológico. Las transacciones comerciales ocurren exclusivamente entre los usuarios registrados, quienes asumen plena responsabilidad sobre las mismas.',
         },
         {
           title: '2. Aceptación de los términos',
@@ -29,8 +29,8 @@ export default function TermsPage() {
           body: 'Usted es responsable de: (a) Mantener la confidencialidad de sus credenciales, (b) La veracidad de la información y documentos subidos a la plataforma, (c) El cumplimiento de las regulaciones de exportación/importación aplicables, (d) Las transacciones comerciales que realice a través de conexiones establecidas en la plataforma. Global Nexus actúa como intermediario y no es parte de las transacciones comerciales entre usuarios.',
         },
         {
-          title: '6. Verificación de documentos',
-          body: 'Global Nexus revisa documentos subidos para verificar la identidad y legitimidad de los usuarios. La verificación no garantiza la calidad de los productos ni el cumplimiento de todas las regulaciones aplicables. Los usuarios son responsables de obtener todos los permisos, certificaciones y cumplimientos regulatorios necesarios para su actividad.',
+          title: '6. Alcance de la Verificación de Perfiles ("Perfil Verificado")',
+          body: 'El badge "✓ Verificado" en Global Nexus significa exclusivamente que la plataforma ha validado: (a) la existencia legal de la empresa o persona moral, (b) su registro fiscal vigente (RFC en México / VAT-ID en la Unión Europea), y (c) la autenticidad de los datos de contacto directo declarados. La verificación de Global Nexus NO implica: (i) aval de la calidad de productos o servicios, (ii) cumplimiento de normas ISO, NOM, SENASICA u otras certificaciones de producto, (iii) historial crediticio o capacidad de pago, (iv) garantía de exportación o importación exitosa. El badge verificado es una validación de identidad empresarial, no una auditoría de calidad ni una certificación técnica. Los usuarios deben realizar su propia diligencia debida (due diligence) antes de formalizar cualquier acuerdo comercial.',
         },
         {
           title: '7. Propiedad intelectual',

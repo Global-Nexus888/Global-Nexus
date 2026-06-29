@@ -9,9 +9,12 @@ export default function Navbar() {
   const { lang } = useLang()
   const T = useT(lang)
 
+  const asesoriaLabel = lang === 'en' ? 'Advisory' : lang === 'nl' ? 'Advies' : lang === 'de' ? 'Beratung' : 'Asesoría'
+
   const links = [
     { to: '/catalogo',     label: T('nav_catalog') },
     { to: '/productores',  label: T('nav_producers') },
+    { to: '/asesoria',     label: `🎓 ${asesoriaLabel}` },
     { to: '/comunidad',    label: T('nav_community') },
     { to: '/oportunidades',label: T('nav_deals') },
     { to: '/precios',      label: T('nav_pricing') },

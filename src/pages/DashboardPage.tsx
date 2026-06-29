@@ -111,6 +111,105 @@ export default function DashboardPage() {
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+            {/* ── VISUAL FLOW ── */}
+            <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '1.5rem' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: '1rem' }}>
+                Tu flujo en Global Nexus
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap' }}>
+                {[
+                  { icon: '🏭', step: '01', title: 'Mi Perfil & Catálogo', desc: 'Publica tus productos en inglés y español con fotos, precios y certificaciones.', tab: 'perfil', color: 'var(--teal)', bg: 'var(--teal-light)' },
+                  { icon: '💬', step: '02', title: 'Sala de Chat Activa', desc: 'Recibe y responde mensajes de compradores EU con traducción automática integrada.', tab: 'solicitudes', color: 'var(--navy)', bg: '#EFF6FF' },
+                  { icon: '🌍', step: '03', title: 'Directorio de Demandas EU', desc: 'Explora las solicitudes activas de compradores europeos buscando tus productos.', tab: 'solicitudes', color: 'var(--gold)', bg: '#FEF9C3' },
+                ].map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 200 }}>
+                    <button onClick={() => setTab(item.tab as Tab)} style={{
+                      flex: 1, background: item.bg, border: `1.5px solid ${item.color}22`,
+                      borderRadius: 12, padding: '1rem', textAlign: 'left', cursor: 'pointer',
+                      transition: 'transform .15s',
+                    }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: '1.3rem' }}>{item.icon}</span>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: item.color, letterSpacing: '.08em' }}>{item.step}</span>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: item.color, marginBottom: 4 }}>{item.title}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>{item.desc}</div>
+                    </button>
+                    {idx < 2 && (
+                      <div style={{ padding: '0 10px', fontSize: '1.1rem', color: 'var(--border)', flexShrink: 0 }}>➔</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── 3 MAIN PANELS ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem' }}>
+              {/* Panel 1: Mi Perfil */}
+              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--teal)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>🏭 Mi Perfil (Catálogo)</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Publicado en inglés y español · Badge ✓ Verificado</div>
+                {myProducts.slice(0, 2).map(p => (
+                  <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                    <span style={{ fontSize: '1.2rem' }}>{p.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--teal)' }}>${p.price} USD/{p.unit}</div>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => setTab('perfil')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: 'var(--teal)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
+                  Gestionar perfil →
+                </button>
+              </div>
+
+              {/* Panel 2: Chat activo */}
+              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--navy)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>💬 Sala de Chat Activa</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Mensajes con compradores · Traducción automática</div>
+                {MOCK_LEADS.slice(0, 2).map(lead => (
+                  <div key={lead.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>{lead.buyer}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: STATUS_CONFIG[leadStatus[lead.id]].bg, color: STATUS_CONFIG[leadStatus[lead.id]].color }}>
+                        {STATUS_CONFIG[leadStatus[lead.id]].label}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lead.country} · {lead.date}</div>
+                  </div>
+                ))}
+                <button onClick={() => setTab('solicitudes')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: 'var(--navy)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
+                  Ver todas las conversaciones →
+                </button>
+              </div>
+
+              {/* Panel 3: Demandas EU */}
+              <div className="card" style={{ padding: '1.25rem', borderTop: '3px solid var(--gold)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#B45309', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>🌍 Directorio de Demandas EU</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Compradores buscando activamente tus productos</div>
+                {[
+                  { flag: '🇩🇪', company: 'Deutsche Spirits GmbH', product: 'Tequila Añejo', moq: '500 cajas' },
+                  { flag: '🇳🇱', company: 'EuroSpirits BV', product: 'Mezcal Artesanal', moq: '200 botellas' },
+                ].map((d, i) => (
+                  <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span style={{ fontSize: '1rem' }}>{d.flag}</span>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700 }}>{d.company}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Busca: {d.product} · {d.moq}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => setTab('solicitudes')} style={{ width: '100%', marginTop: 10, fontSize: 12, color: '#B45309', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textAlign: 'center', padding: '6px' }}>
+                  Ver directorio completo →
+                </button>
+              </div>
+            </div>
+
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
               {MOCK_STATS.map(s => (

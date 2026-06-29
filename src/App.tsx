@@ -23,7 +23,9 @@ import TermsPage from './pages/TermsPage'
 import ContactPage from './pages/ContactPage'
 import FAQPage from './pages/FAQPage'
 import ThankYouPage from './pages/ThankYouPage'
+import AsesoriaPage from './pages/AsesoriaPage'
 import NotFound from './pages/NotFound'
+import CookieBanner from './components/CookieBanner'
 
 const FULL_SCREEN_ROUTES = ['/admin', '/mensajes']
 
@@ -67,10 +69,12 @@ export default function App() {
           <Route path="/contacto" element={<ContactPage />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/gracias" element={<ThankYouPage />} />
+          <Route path="/asesoria" element={<AsesoriaPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
+      <CookieBanner />
     </div>
     </LangProvider>
   )

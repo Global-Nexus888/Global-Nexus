@@ -52,7 +52,7 @@ export default function RegisterPage() {
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '2rem', lineHeight: 1.7 }}>
             {T('reg_success_sub')}
           </p>
-          <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal)', borderRadius: 'var(--radius)', padding: '1.25rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+          <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal)', borderRadius: 'var(--radius)', padding: '1.25rem', marginBottom: '1rem', textAlign: 'left' }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--teal-dark)', marginBottom: 8 }}>
               👋 {lang === 'es' ? 'Hola' : lang === 'nl' ? 'Hallo' : lang === 'de' ? 'Hallo' : 'Hello'}, {form.name || form.company}
             </div>
@@ -61,6 +61,22 @@ export default function RegisterPage() {
                lang === 'nl' ? `Account aangemaakt als ${role === 'productor' ? '🏭 Producent' : '🇪🇺 EU-koper'} · ${form.email}` :
                lang === 'de' ? `Konto erstellt als ${role === 'productor' ? '🏭 Produzent' : '🇪🇺 EU-Käufer'} · ${form.email}` :
                `Account created as ${role === 'productor' ? '🏭 Producer' : '🇪🇺 EU Buyer'} · ${form.email}`}
+            </div>
+          </div>
+
+          {/* Launch date notice */}
+          <div style={{ background: '#FFF7ED', border: '1.5px solid #FCD34D', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E', marginBottom: 5 }}>
+              🚀 {lang === 'es' ? 'Fecha de activación de tu perfil' : lang === 'nl' ? 'Activeringsdatum van uw profiel' : lang === 'de' ? 'Aktivierungsdatum Ihres Profils' : 'Profile activation date'}
+            </div>
+            <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.65 }}>
+              {lang === 'es'
+                ? 'Tu registro ha sido guardado exitosamente. Tu perfil se activará automáticamente el 28 de agosto de 2026 a las 12:00 pm hora CDMX (Ciudad de México). A partir de esa fecha podrás conectar con compradores europeos y aparecer en el catálogo. ¡Gracias por ser parte del lanzamiento!'
+                : lang === 'nl'
+                ? 'Uw registratie is succesvol opgeslagen. Uw profiel wordt automatisch geactiveerd op 28 augustus 2026 om 12:00 uur CDMX-tijd (Mexico-Stad). Vanaf die datum kunt u verbinding maken met Europese kopers. Bedankt dat u deel uitmaakt van de lancering!'
+                : lang === 'de'
+                ? 'Ihre Registrierung wurde erfolgreich gespeichert. Ihr Profil wird automatisch am 28. August 2026 um 12:00 Uhr CDMX-Zeit (Mexiko-Stadt) aktiviert. Ab diesem Datum können Sie sich mit europäischen Käufern verbinden. Danke, dass Sie Teil der Markteinführung sind!'
+                : 'Your registration has been saved successfully. Your profile will be automatically activated on August 28, 2026 at 12:00 pm CDMX time (Mexico City). From that date you can connect with European buyers and appear in the catalog. Thank you for being part of the launch!'}
             </div>
           </div>
           <button onClick={() => navigate('/precios')} className="btn btn-primary" style={{ width: '100%', padding: '13px', fontSize: '15px', marginBottom: '0.75rem' }}>
