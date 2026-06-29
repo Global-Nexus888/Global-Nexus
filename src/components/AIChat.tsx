@@ -26,6 +26,10 @@ const QUICK: Record<Lang, string[]> = {
   de: ['Was ist TLCUEM?', 'Welche Zertifizierungen brauche ich?', 'Wie funktioniert der Chat mit Käufern?', 'Wann wird mein Profil aktiv?', 'Tipps für Tequila-Export'],
 }
 
+const SYSTEM_PROMPT = `You are the Global Nexus AI Assistant — expert in the Mexico-EU B2B platform nexusstrategy.online and the TLCUEM free trade agreement.
+Key facts: 0% tariff on Mexican exports to 27 EU countries, 450M consumers. Key exports: tequila, mezcal, coffee, honey, avocado, crafts, cosmetics. Certifications: NOM, SENASICA, COFEPRIS, Denominación de Origen, ISO 22000, HACCP, BRC, Organic. Certificate of origin: EUR.1 or REX. Platform launch: August 28 2026. Plans: Pro Exportador $59/mo, Comprador EU $149/mo. Deal flow: Buyer finds producer → contact → chat → negotiate → documents → samples → RFQ → agreement → logistics → shipment → closed.
+Always reply in the SAME language the user writes in. Be concise, helpful, and professional.`
+
 const C = { navy: '#1E3A5F', teal: '#0D9488', border: '#E2E8F0', bg: '#F8FAFC', white: '#FFFFFF', text: '#0F172A', muted: '#64748B', green: '#16A34A' }
 
 function renderMarkdown(text: string) {
@@ -57,24 +61,30 @@ export default function AIChat({ lang, role = 'producer', height = 520 }: { lang
     setLoading(true)
 
     try {
-      const res = await fetch('/api/chat', {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY as string
+      if (!apiKey) throw new Error('__no_key__')
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-haiku-20241022',
+          max_tokens: 800,
+          system: SYSTEM_PROMPT,
+          messages: newMessages.slice(-10),
+        }),
       })
 
-      const data = await res.json() as { text?: string; error?: string }
+      const data = await res.json() as { content?: { text: string }[]; error?: { message: string } }
 
-      if (!res.ok || data.error) {
-        const msg = data.error || `HTTP ${res.status}`
-        // API key not configured — friendly message
-        if (msg.includes('API key not configured') || res.status === 500) {
-          throw new Error('__no_key__')
-        }
-        throw new Error(msg)
-      }
+      if (!res.ok || data.error) throw new Error(data.error?.message || `HTTP ${res.status}`)
 
-      setMessages([...newMessages, { role: 'assistant', content: data.text || '' }])
+      setMessages([...newMessages, { role: 'assistant', content: data.content?.[0]?.text || '' }])
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error'
       const noKey = msg === '__no_key__'
