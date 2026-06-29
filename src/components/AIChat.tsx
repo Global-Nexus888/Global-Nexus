@@ -73,7 +73,7 @@ export default function AIChat({ lang, role = 'producer', height = 520 }: { lang
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
+          model: 'claude-opus-4-8',
           max_tokens: 800,
           system: SYSTEM_PROMPT,
           messages: newMessages.slice(-10),
