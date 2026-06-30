@@ -14,11 +14,7 @@ function saveProfile(email: string, data: object) {
   localStorage.setItem(`gn_profile_${email}`, JSON.stringify(data))
 }
 function getProducts(email: string): Product[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(`gn_products_${email}`) || '[]') as (Product & { photo?: string })[]
-    // Migrate old single-photo format to photos array
-    return raw.map(p => ({ ...p, photos: p.photos?.length ? p.photos : p.photo ? [p.photo] : [] }))
-  } catch { return [] }
+  try { return JSON.parse(localStorage.getItem(`gn_products_${email}`) || '[]') } catch { return [] }
 }
 function saveProducts(email: string, data: Product[]) {
   localStorage.setItem(`gn_products_${email}`, JSON.stringify(data))
@@ -32,7 +28,7 @@ function saveCerts(email: string, data: Cert[]) {
 
 interface Product {
   id: string; name: string; category: string; price: string; unit: string
-  minOrder: string; desc: string; photos: string[]; origin?: string; certTags?: string[]
+  minOrder: string; desc: string; photo?: string
 }
 interface Cert {
   id: string; name: string; issuer: string; year: string
@@ -336,12 +332,9 @@ export default function DashboardPage() {
   const [saveMsg, setSaveMsg] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [showAddCert, setShowAddCert] = useState(false)
-  const [editingProductId, setEditingProductId] = useState<string | null>(null)
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [productActivePhoto, setProductActivePhoto] = useState<Record<string, number>>({})
   const photoRef = useRef<HTMLInputElement>(null)
-  const productPhotosRef = useRef<HTMLInputElement>(null)
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({ photos: [] })
+  const productPhotoRef = useRef<HTMLInputElement>(null)
+  const [newProduct, setNewProduct] = useState<Partial<Product>>({})
   const [newCert, setNewCert] = useState<Partial<Cert>>({})
 
   if (!user) return null
@@ -356,33 +349,11 @@ export default function DashboardPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleProductPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).slice(0, 5 - (newProduct.photos?.length || 0))
-    if (!files.length) return
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = ev => setNewProduct(p => ({ ...p, photos: [...(p.photos || []), ev.target?.result as string].slice(0, 5) }))
-      reader.readAsDataURL(file)
-    })
-    e.target.value = ''
-  }
-
-  const removeProductPhoto = (idx: number) => {
-    setNewProduct(p => ({ ...p, photos: (p.photos || []).filter((_, i) => i !== idx) }))
-  }
-
-  const startEditing = (p: Product) => {
-    setNewProduct({ ...p })
-    setEditingProductId(p.id)
-    setShowAddProduct(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const saveEditedProduct = () => {
-    if (!newProduct.name || !newProduct.category) return
-    const updated = products.map(p => p.id === editingProductId ? { ...newProduct, id: p.id } as Product : p)
-    setProducts(updated); saveProducts(email, updated)
-    setNewProduct({ photos: [] }); setShowAddProduct(false); setEditingProductId(null)
+  const handleProductPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setNewProduct(p => ({ ...p, photo: ev.target?.result as string }))
+    reader.readAsDataURL(file)
   }
 
   const saveProfileData = () => {
@@ -392,8 +363,8 @@ export default function DashboardPage() {
 
   const addProduct = () => {
     if (!newProduct.name || !newProduct.category) return
-    const updated = [...products, { ...newProduct, photos: newProduct.photos || [], id: Date.now().toString() } as Product]
-    setProducts(updated); saveProducts(email, updated); setNewProduct({ photos: [] }); setShowAddProduct(false)
+    const updated = [...products, { ...newProduct, id: Date.now().toString() } as Product]
+    setProducts(updated); saveProducts(email, updated); setNewProduct({}); setShowAddProduct(false)
   }
 
   const addCert = () => {
@@ -446,26 +417,13 @@ export default function DashboardPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '1.5rem 1.25rem' }}>
 
         {/* Pre-launch banner */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          <div style={{ flex: 2, minWidth: 240, background: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)', border: '1.5px solid #FCD34D', borderRadius: 12, padding: '1rem 1.25rem', display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>{L.preLaunch}</div>
-              <div style={{ fontSize: 12, color: '#78350F', lineHeight: 1.55, marginTop: 3 }}>{L.preLaunchSub}</div>
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 100, background: '#FEF3C7', color: '#D97706', border: '1px solid #FCD34D', whiteSpace: 'nowrap' }}>
-              ⏳ 28 Ago 2026
-            </div>
+        <div style={{ background: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)', border: '1.5px solid #FCD34D', borderRadius: 12, padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>{L.preLaunch}</div>
+            <div style={{ fontSize: 12, color: '#78350F', lineHeight: 1.55, marginTop: 3 }}>{L.preLaunchSub}</div>
           </div>
-          <div style={{ flex: 1, minWidth: 200, background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)', border: '1.5px solid #86EFAC', borderRadius: 12, padding: '1rem 1.25rem', display: 'flex', gap: 10, alignItems: 'center' }}>
-            <div style={{ fontSize: '1.5rem' }}>🎁</div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 12, color: '#166534' }}>
-                {lang === 'es' ? 'Perfil gratis hasta el 29 Sep' : lang === 'nl' ? 'Profiel gratis t/m 29 sep' : lang === 'de' ? 'Profil kostenlos bis 29. Sep' : 'Profile free until Sep 29'}
-              </div>
-              <div style={{ fontSize: 11, color: '#15803D', marginTop: 2, lineHeight: 1.4 }}>
-                {lang === 'es' ? 'Primer cobro: 29 de septiembre 2026' : lang === 'nl' ? 'Eerste betaling: 29 september 2026' : lang === 'de' ? 'Erste Zahlung: 29. September 2026' : 'First charge: September 29, 2026'}
-              </div>
-            </div>
+          <div style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 100, background: '#FEF3C7', color: '#D97706', border: '1px solid #FCD34D', whiteSpace: 'nowrap' }}>
+            ⏳ 28 Ago 2026
           </div>
         </div>
 
@@ -583,7 +541,7 @@ export default function DashboardPage() {
                     {products.slice(0,3).map((p,i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: '#F8FAFC', border: `1px solid ${C.border}` }}>
                         <div style={{ width: 40, height: 40, borderRadius: 8, background: C.bg, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                          {p.photos?.[0] ? <img src={p.photos[0]} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '📦'}
+                          {p.photo ? <img src={p.photo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '📦'}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
@@ -675,59 +633,20 @@ export default function DashboardPage() {
         {tab === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h2 style={{ fontWeight: 800, fontSize: '1rem', color: C.navy, margin: 0 }}>📦 {L.tabs[2]} ({products.length})</h2>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>
-                  {lang === 'es' ? 'Hasta 5 fotos por producto · Arrastra para reordenar' : 'Up to 5 photos per product · Click to edit or delete'}
-                </div>
-              </div>
-              <button onClick={() => { setShowAddProduct(o => !o); setEditingProductId(null); setNewProduct({ photos: [] }) }}
-                style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddProduct ? '#FEE2E2' : C.teal, color: showAddProduct ? C.red : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1rem', color: C.navy }}>📦 {L.tabs[2]} ({products.length})</h2>
+              <button onClick={() => setShowAddProduct(o => !o)} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddProduct ? C.border : C.teal, color: showAddProduct ? C.text : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                 {showAddProduct ? `✕ ${lang === 'es' ? 'Cancelar' : 'Cancel'}` : `+ ${L.addProduct}`}
               </button>
             </div>
 
-            {/* Add / Edit product form */}
             {showAddProduct && (
-              <div style={{ background: C.white, border: `2px solid ${C.teal}40`, borderRadius: 16, padding: '1.75rem', boxShadow: '0 4px 20px rgba(13,148,136,.08)' }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: C.navy, marginBottom: '1.25rem' }}>
-                  {editingProductId ? (lang === 'es' ? '✏️ Editar producto' : '✏️ Edit product') : (lang === 'es' ? '+ Nuevo producto' : '+ New product')}
-                </div>
-
-                {/* Photo upload — up to 5 images */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: C.muted, display: 'block', marginBottom: 8 }}>
-                    📷 {lang === 'es' ? `Fotos del producto (${newProduct.photos?.length || 0}/5)` : `Product photos (${newProduct.photos?.length || 0}/5)`}
-                  </label>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {(newProduct.photos || []).map((photo, idx) => (
-                      <div key={idx} style={{ position: 'relative', width: 90, height: 90 }}>
-                        <img src={photo} alt="" style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 10, border: `2px solid ${idx === 0 ? C.teal : C.border}` }} />
-                        {idx === 0 && <div style={{ position: 'absolute', top: 3, left: 3, fontSize: 9, fontWeight: 800, background: C.teal, color: '#fff', padding: '2px 5px', borderRadius: 4 }}>PORTADA</div>}
-                        <button onClick={() => removeProductPhoto(idx)} style={{ position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: '50%', background: '#DC2626', border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, padding: 0 }}>✕</button>
-                      </div>
-                    ))}
-                    {(newProduct.photos?.length || 0) < 5 && (
-                      <button onClick={() => productPhotosRef.current?.click()} style={{ width: 90, height: 90, borderRadius: 10, border: `2px dashed ${C.border}`, background: C.bg, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: C.muted, fontSize: 11, fontWeight: 600 }}>
-                        <span style={{ fontSize: '1.5rem' }}>📷</span>
-                        <span>{lang === 'es' ? '+ Foto' : '+ Photo'}</span>
-                      </button>
-                    )}
-                  </div>
-                  <input ref={productPhotosRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleProductPhotos} />
-                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
-                    {lang === 'es' ? 'La primera imagen será la portada del catálogo. JPG, PNG, WebP.' : 'First image will be the catalog cover. JPG, PNG, WebP.'}
-                  </div>
-                </div>
-
-                {/* Fields grid */}
+              <div style={{ background: C.white, border: `1.5px solid ${C.teal}30`, borderRadius: 14, padding: '1.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem', marginBottom: '1rem' }}>
                   {[
                     { key: 'name', label: L.productName, placeholder: 'Tequila Añejo Reserva', required: true },
                     { key: 'price', label: L.productPrice, placeholder: '$45.00' },
                     { key: 'unit', label: L.productUnit, placeholder: lang === 'es' ? 'Caja 12 botellas' : 'Box 12 bottles' },
                     { key: 'minOrder', label: L.productMOQ, placeholder: lang === 'es' ? '100 cajas' : '100 boxes' },
-                    { key: 'origin', label: lang === 'es' ? 'Origen (Estado)' : 'Origin (State)', placeholder: 'Jalisco, México' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{f.label}{f.required ? ' *' : ''}</label>
@@ -742,128 +661,48 @@ export default function DashboardPage() {
                     </select>
                   </div>
                 </div>
-
-                <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ marginBottom: '1rem' }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.productDesc}</label>
-                  <textarea value={newProduct.desc || ''} onChange={e => setNewProduct(p => ({ ...p, desc: e.target.value }))} rows={3}
-                    placeholder={lang === 'es' ? 'Descripción detallada del producto, características, certificaciones incluidas, condiciones de venta...' : 'Detailed product description, features, included certifications, sales terms...'}
-                    style={{ ...inp(), resize: 'vertical', lineHeight: 1.6 }} />
+                  <textarea value={newProduct.desc || ''} onChange={e => setNewProduct(p => ({ ...p, desc: e.target.value }))} rows={2} style={{ ...inp(), resize: 'vertical' }} />
                 </div>
-
-                {/* Cert tags quick select */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 8 }}>
-                    🛡️ {lang === 'es' ? 'Certificaciones de este producto' : 'Product certifications'}
-                  </label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {['NOM', 'SENASICA', 'COFEPRIS', 'Orgánico', 'Kosher', 'HACCP', 'ISO 22000', 'BRC', 'Denominación Origen', 'Fairtrade'].map(tag => {
-                      const active = newProduct.certTags?.includes(tag)
-                      return (
-                        <button key={tag} onClick={() => setNewProduct(p => ({
-                          ...p,
-                          certTags: active ? (p.certTags || []).filter(t => t !== tag) : [...(p.certTags || []), tag],
-                        }))} style={{ padding: '4px 10px', borderRadius: 100, border: `1.5px solid ${active ? C.teal : C.border}`, background: active ? C.tealLight : C.white, color: active ? '#0F766E' : C.muted, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all .1s' }}>
-                          {active ? '✓ ' : ''}{tag}
-                        </button>
-                      )
-                    })}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1rem' }}>
+                  <div style={{ width: 68, height: 68, borderRadius: 10, background: C.bg, border: `2px dashed ${C.border}`, overflow: 'hidden', flexShrink: 0 }}>
+                    {newProduct.photo ? <img src={newProduct.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem' }}>📷</div>}
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={editingProductId ? saveEditedProduct : addProduct}
-                    disabled={!newProduct.name || !newProduct.category}
-                    style={{ padding: '11px 24px', borderRadius: 10, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: !newProduct.name || !newProduct.category ? 0.5 : 1 }}>
-                    {editingProductId ? (lang === 'es' ? '💾 Guardar cambios' : '💾 Save changes') : `+ ${L.addBtn}`}
+                  <button onClick={() => productPhotoRef.current?.click()} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, cursor: 'pointer', fontSize: 13, color: C.text }}>
+                    {L.productPhoto}
                   </button>
-                  <button onClick={() => { setShowAddProduct(false); setEditingProductId(null); setNewProduct({ photos: [] }) }}
-                    style={{ padding: '11px 20px', borderRadius: 10, border: `1.5px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                    {lang === 'es' ? 'Cancelar' : 'Cancel'}
-                  </button>
+                  <input ref={productPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProductPhoto} />
                 </div>
+                <button onClick={addProduct} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  + {L.addBtn}
+                </button>
               </div>
             )}
 
-            {/* Product cards */}
             {products.length === 0
               ? <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
                   <div style={{ fontSize: '3rem', marginBottom: 12 }}>📦</div>
-                  <div style={{ fontSize: 14, color: C.muted, maxWidth: 320, margin: '0 auto', marginBottom: 16 }}>{L.noProducts}</div>
-                  <button onClick={() => setShowAddProduct(true)} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: C.teal, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                    + {lang === 'es' ? 'Agregar mi primer producto' : 'Add my first product'}
-                  </button>
+                  <div style={{ fontSize: 14, color: C.muted, maxWidth: 320, margin: '0 auto' }}>{L.noProducts}</div>
                 </div>
-              : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: '1.1rem' }}>
-                  {products.map(p => {
-                    const activeIdx = productActivePhoto[p.id] || 0
-                    return (
-                      <div key={p.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)', transition: 'box-shadow .2s' }}>
-                        {/* Photo gallery */}
-                        <div style={{ position: 'relative', width: '100%', height: 180, background: C.bg }}>
-                          {p.photos?.length > 0
-                            ? <img src={p.photos[activeIdx]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>📦</div>
-                          }
-                          {/* Photo dots */}
-                          {p.photos?.length > 1 && (
-                            <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5 }}>
-                              {p.photos.map((_, i) => (
-                                <button key={i} onClick={() => setProductActivePhoto(s => ({ ...s, [p.id]: i }))}
-                                  style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', background: i === activeIdx ? '#fff' : 'rgba(255,255,255,.55)', cursor: 'pointer', padding: 0 }} />
-                              ))}
-                            </div>
-                          )}
-                          {/* Photo counter */}
-                          {p.photos?.length > 1 && (
-                            <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, fontWeight: 700, background: 'rgba(0,0,0,.5)', color: '#fff', padding: '2px 7px', borderRadius: 100 }}>
-                              {activeIdx + 1}/{p.photos.length}
-                            </div>
-                          )}
-                          <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, fontWeight: 700, background: C.tealLight, color: '#0F766E', padding: '3px 8px', borderRadius: 100 }}>TLCUEM ✓</div>
-                        </div>
-
-                        <div style={{ padding: '1rem' }}>
-                          <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 3, color: C.text }}>{p.name}</div>
-                          <div style={{ fontSize: 11, color: C.teal, fontWeight: 700, marginBottom: 4 }}>{p.category}</div>
-                          {p.origin && <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>📍 {p.origin}</div>}
-                          {p.price && <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>${p.price} <span style={{ fontSize: 11, fontWeight: 400, color: C.muted }}>/ {p.unit}</span></div>}
-                          {p.minOrder && <div style={{ fontSize: 11, color: C.muted }}>MOQ: {p.minOrder}</div>}
-                          {p.desc && <div style={{ fontSize: 12, color: C.muted, marginTop: 6, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.desc}</div>}
-
-                          {p.certTags && p.certTags.length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                              {p.certTags.map(tag => (
-                                <span key={tag} style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 100, background: '#F5F3FF', color: '#7C3AED', border: '1px solid #DDD6FE' }}>🛡️ {tag}</span>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                            <button onClick={() => { startEditing(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: `1.5px solid ${C.teal}`, background: C.tealLight, color: '#0F766E', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                              ✏️ {lang === 'es' ? 'Editar' : 'Edit'}
-                            </button>
-                            {deleteConfirmId === p.id ? (
-                              <div style={{ display: 'flex', gap: 4 }}>
-                                <button onClick={() => { const u = products.filter(x => x.id !== p.id); setProducts(u); saveProducts(email, u); setDeleteConfirmId(null) }}
-                                  style={{ padding: '7px 10px', borderRadius: 8, border: 'none', background: '#DC2626', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                                  {lang === 'es' ? '¿Sí, eliminar?' : 'Yes, delete?'}
-                                </button>
-                                <button onClick={() => setDeleteConfirmId(null)}
-                                  style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.white, fontSize: 12, cursor: 'pointer' }}>✕</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => setDeleteConfirmId(p.id)}
-                                style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid #FCA5A5`, background: '#FEF2F2', color: '#DC2626', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </div>
+              : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(230px,1fr))', gap: '1rem' }}>
+                  {products.map(p => (
+                    <div key={p.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: 150, background: C.bg, overflow: 'hidden' }}>
+                        {p.photo ? <img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>📦</div>}
                       </div>
-                    )
-                  })}
+                      <div style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: C.teal, fontWeight: 600, marginBottom: 6 }}>{p.category}</div>
+                        {p.price && <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{p.price} / {p.unit}</div>}
+                        {p.minOrder && <div style={{ fontSize: 11, color: C.muted }}>MOQ: {p.minOrder}</div>}
+                        {p.desc && <div style={{ fontSize: 12, color: C.muted, marginTop: 5, lineHeight: 1.5 }}>{p.desc}</div>}
+                        <button onClick={() => { const u = products.filter(x => x.id !== p.id); setProducts(u); saveProducts(email, u) }}
+                          style={{ marginTop: 10, padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: '#DC2626', fontSize: 12, cursor: 'pointer' }}>{L.deleteBtn}</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
             }
           </div>
