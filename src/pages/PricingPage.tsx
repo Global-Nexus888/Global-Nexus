@@ -19,26 +19,26 @@ function getBadge(lang: Lang) {
 function getTrustBadges(lang: Lang) {
   if (lang === 'en') return [
     { icon: '🔒', text: 'Secure payments via Stripe' },
+    { icon: '🎁', text: 'Register free · First charge Sep 29' },
     { icon: '↩️', text: 'Cancel anytime' },
-    { icon: '💳', text: 'No card for free plan' },
     { icon: '🌍', text: 'Billing in USD' },
   ]
   if (lang === 'nl') return [
     { icon: '🔒', text: 'Veilige betalingen via Stripe' },
+    { icon: '🎁', text: 'Gratis registreren · Eerste betaling 29 sep' },
     { icon: '↩️', text: 'Annuleer wanneer u wilt' },
-    { icon: '💳', text: 'Geen kaart voor gratis plan' },
     { icon: '🌍', text: 'Facturering in USD' },
   ]
   if (lang === 'de') return [
     { icon: '🔒', text: 'Sichere Zahlungen via Stripe' },
+    { icon: '🎁', text: 'Kostenlos registrieren · Erste Zahlung 29. Sep' },
     { icon: '↩️', text: 'Jederzeit kündbar' },
-    { icon: '💳', text: 'Keine Karte für Gratis-Plan' },
     { icon: '🌍', text: 'Abrechnung in USD' },
   ]
   return [
     { icon: '🔒', text: 'Pagos seguros con Stripe' },
+    { icon: '🎁', text: 'Regístrate gratis · Primer cobro 29 Sep' },
     { icon: '↩️', text: 'Cancela cuando quieras' },
-    { icon: '💳', text: 'Sin tarjeta para plan gratis' },
     { icon: '🌍', text: 'Facturación en USD' },
   ]
 }
@@ -163,6 +163,29 @@ export default function PricingPage() {
             {i.title}
           </h1>
           <p style={{ fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.65 }}>{i.sub}</p>
+        </div>
+
+        {/* Pre-launch payment model banner */}
+        <div style={{ background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)', border: '2px solid #86EFAC', borderRadius: 14, padding: '1rem 1.5rem', marginBottom: '2rem', display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '1.75rem' }}>🎁</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#166534' }}>
+              {lang === 'es' ? '¡Regístrate hoy, paga el 29 de septiembre!' : lang === 'nl' ? 'Registreer vandaag, betaal op 29 september!' : lang === 'de' ? 'Jetzt registrieren, am 29. September zahlen!' : 'Register today, pay on September 29!'}
+            </div>
+            <div style={{ fontSize: 13, color: '#15803D', marginTop: 3, lineHeight: 1.5 }}>
+              {lang === 'es'
+                ? 'Conecta tu tarjeta hoy (sin cargos) y arma tu perfil completo. El primer cobro será el 29 de septiembre, exactamente un mes después del lanzamiento. Hasta entonces, todo gratis.'
+                : lang === 'nl'
+                ? 'Koppel vandaag uw kaart (geen kosten) en bouw uw volledige profiel. De eerste betaling vindt plaats op 29 september, één maand na de lancering.'
+                : lang === 'de'
+                ? 'Verknüpfen Sie Ihre Karte heute (keine Gebühren) und bauen Sie Ihr vollständiges Profil auf. Die erste Zahlung erfolgt am 29. September, einen Monat nach dem Launch.'
+                : 'Connect your card today (no charges) and build your complete profile. First charge will be September 29th, one month after launch. Everything free until then.'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'center', background: '#166534', color: '#fff', padding: '10px 18px', borderRadius: 10, whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>{lang === 'es' ? 'Primer cobro' : lang === 'nl' ? 'Eerste betaling' : lang === 'de' ? 'Erste Zahlung' : 'First charge'}</div>
+            <div style={{ fontSize: 18, fontWeight: 900 }}>29 Sep 2026</div>
+          </div>
         </div>
 
         <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1.25rem', alignItems: 'start' }}>

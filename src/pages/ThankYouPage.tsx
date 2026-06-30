@@ -16,9 +16,9 @@ const COPY: Record<Lang, {
   launchNote: string; supportNote: string
 }> = {
   es: {
-    title: '¡Pago confirmado! Bienvenido a Global Nexus',
-    sub: 'Tu suscripción está activa. Tu perfil se publicará automáticamente el 28 de agosto de 2026 a las 12:00 pm CDMX.',
-    planActive: 'Activo',
+    title: '¡Registro confirmado! Bienvenido a Global Nexus',
+    sub: 'Tu tarjeta está registrada. No se realizará ningún cargo hasta el 29 de septiembre de 2026. Tu perfil se publicará automáticamente el 28 de agosto.',
+    planActive: 'Activo · Primer cobro 29 Sep',
     nextTitle: '¿Qué sigue ahora?',
     steps_pro: [
       'Completa tu perfil de productor: foto, descripción de empresa, ubicación y WhatsApp.',
@@ -40,9 +40,9 @@ const COPY: Record<Lang, {
     supportNote: 'Soporte: soporte@nexusstrategy.online',
   },
   en: {
-    title: 'Payment confirmed! Welcome to Global Nexus',
-    sub: 'Your subscription is active. Your profile will be published automatically on August 28, 2026 at 12:00 pm CDMX.',
-    planActive: 'Active',
+    title: 'Registration confirmed! Welcome to Global Nexus',
+    sub: 'Your card is registered. No charge will be made until September 29, 2026. Your profile will be published automatically on August 28.',
+    planActive: 'Active · First charge Sep 29',
     nextTitle: 'What\'s next?',
     steps_pro: [
       'Complete your producer profile: photo, company description, location and WhatsApp.',
@@ -64,9 +64,9 @@ const COPY: Record<Lang, {
     supportNote: 'Support: soporte@nexusstrategy.online',
   },
   nl: {
-    title: 'Betaling bevestigd! Welkom bij Global Nexus',
-    sub: 'Uw abonnement is actief. Uw profiel wordt automatisch gepubliceerd op 28 augustus 2026 om 12:00 uur CDMX.',
-    planActive: 'Actief',
+    title: 'Registratie bevestigd! Welkom bij Global Nexus',
+    sub: 'Uw kaart is geregistreerd. Er wordt geen bedrag afgeschreven vóór 29 september 2026. Uw profiel wordt automatisch gepubliceerd op 28 augustus.',
+    planActive: 'Actief · Eerste betaling 29 sep',
     nextTitle: 'Wat nu?',
     steps_pro: [
       'Vul uw producentenprofiel in: foto, bedrijfsbeschrijving, locatie en WhatsApp.',
@@ -88,9 +88,9 @@ const COPY: Record<Lang, {
     supportNote: 'Ondersteuning: soporte@nexusstrategy.online',
   },
   de: {
-    title: 'Zahlung bestätigt! Willkommen bei Global Nexus',
-    sub: 'Ihr Abonnement ist aktiv. Ihr Profil wird automatisch am 28. August 2026 um 12:00 Uhr CDMX veröffentlicht.',
-    planActive: 'Aktiv',
+    title: 'Registrierung bestätigt! Willkommen bei Global Nexus',
+    sub: 'Ihre Karte ist registriert. Es wird keine Zahlung vor dem 29. September 2026 erhoben. Ihr Profil wird automatisch am 28. August veröffentlicht.',
+    planActive: 'Aktiv · Erste Zahlung 29. Sep',
     nextTitle: 'Was kommt als nächstes?',
     steps_pro: [
       'Vervollständigen Sie Ihr Produzentenprofil: Foto, Unternehmensbeschreibung, Standort und WhatsApp.',
@@ -160,7 +160,20 @@ export default function ThankYouPage() {
             <div style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>{info.price} · <span style={{ color: '#16A34A', fontWeight: 700 }}>✓ {C.planActive}</span></div>
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#16A34A', border: '1px solid #86EFAC' }}>
-            PAGADO
+            {lang === 'es' ? '✓ ACTIVO' : lang === 'nl' ? '✓ ACTIEF' : lang === 'de' ? '✓ AKTIV' : '✓ ACTIVE'}
+          </div>
+        </div>
+
+        {/* No charge banner */}
+        <div style={{ background: 'linear-gradient(135deg, #ECFDF5, #F0FDF4)', border: '2px solid #86EFAC', borderRadius: 12, padding: '1rem 1.25rem', marginBottom: '1rem', display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: '1.5rem' }}>🎁</span>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#166534' }}>
+              {lang === 'es' ? '¡Sin cargos hasta el 29 de septiembre!' : lang === 'nl' ? 'Geen kosten tot 29 september!' : lang === 'de' ? 'Keine Gebühren bis 29. September!' : 'No charges until September 29!'}
+            </div>
+            <div style={{ fontSize: 12, color: '#15803D', marginTop: 2 }}>
+              {lang === 'es' ? 'Tu tarjeta está registrada pero no se cobrará nada hasta el 29 Sep 2026 — un mes después del lanzamiento.' : lang === 'nl' ? 'Uw kaart is geregistreerd maar er wordt niets afgeschreven tot 29 sep 2026.' : lang === 'de' ? 'Ihre Karte ist registriert, aber es wird nichts bis 29. Sep 2026 abgerechnet.' : 'Your card is registered but nothing will be charged until Sep 29, 2026 — one month after launch.'}
+            </div>
           </div>
         </div>
 
