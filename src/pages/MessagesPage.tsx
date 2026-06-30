@@ -157,27 +157,11 @@ const QUICK_PHRASES: Record<string, string[]> = {
   de: ['Guten Morgen, wie läuft der Prozess?', 'Anbei die angeforderte Dokumentation.', '0% Zoll unter dem TLCUEM-Abkommen anwendbar.', 'Unsere MOQ beträgt 500 Einheiten.', 'Ich bestätige den Eingang Ihres Angebots.', 'Wann können wir ein Videogespräch vereinbaren?', 'Wir senden diese Woche Muster.', 'Deal abgeschlossen, wir fahren mit dem Vertrag fort.'],
 }
 
-/* ─── Real-time translation via MyMemory API (free, no key needed) ─── */
-async function translateText(text: string, fromLang: string, toLang: string): Promise<string> {
-  if (!text.trim() || fromLang === toLang) return text
-  try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`
-    const res = await fetch(url)
-    const data = await res.json() as { responseData?: { translatedText?: string }; responseStatus?: number }
-    if (data.responseStatus === 200 && data.responseData?.translatedText) {
-      return data.responseData.translatedText
-    }
-  } catch { /* silent fail */ }
-  return text
-}
-
 /* ─── Component ─── */
 export default function MessagesPage() {
   const [activeId, setActiveId] = useState('c1')
   const [convos, setConvos] = useState<Conversation[]>(CONVERSATIONS)
   const [input, setInput] = useState('')
-  const [translations, setTranslations] = useState<Record<string, string>>({}) // msgId → translated text
-  const [translating, setTranslating] = useState<Set<string>>(new Set())
   const [showInfo, setShowInfo] = useState(false)
   const [showFlow, setShowFlow] = useState(false)
   const [replyLang, setReplyLang] = useState<string>('es')
@@ -186,30 +170,6 @@ export default function MessagesPage() {
   const [showPhrases, setShowPhrases] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-
-  // Auto-translate incoming messages — only re-run when activeId changes or new messages arrive
-  const translatedRef = useRef<Set<string>>(new Set())
-  useEffect(() => {
-    const convo = convos.find(c => c.id === activeId)
-    if (!convo) return
-    const toTranslate = convo.messages.filter(m =>
-      m.from === 'them' && m.text && m.lang !== 'es' && !translatedRef.current.has(m.id)
-    )
-    if (toTranslate.length === 0) return
-
-    toTranslate.forEach(async (msg) => {
-      translatedRef.current.add(msg.id) // mark immediately to prevent duplicate calls
-      const staticTrans = msg.textOriginal && TRANSLATE[msg.lang]?.[msg.textOriginal]
-      if (staticTrans) {
-        setTranslations(prev => ({ ...prev, [msg.id]: staticTrans }))
-      } else {
-        setTranslating(prev => new Set(prev).add(msg.id))
-        const translated = await translateText(msg.text, msg.lang, 'es')
-        setTranslations(prev => ({ ...prev, [msg.id]: translated }))
-        setTranslating(prev => { const s = new Set(prev); s.delete(msg.id); return s })
-      }
-    })
-  }, [activeId, convos.find(c => c.id === activeId)?.messages.length])
 
   const setStage = (stageId: string) => {
     setConvos(cs => cs.map(c => c.id === activeId ? { ...c, stage: stageId } : c))
@@ -238,20 +198,14 @@ export default function MessagesPage() {
     setConvos(cs => cs.map(c => c.id === activeId ? { ...c, messages: [...c.messages, msg] } : c))
     setInput('')
     setTimeout(() => setTyping(true), 800)
-    setTimeout(async () => {
+    setTimeout(() => {
       setTyping(false)
       const responseText = convo.lang === 'nl' ? 'Dank u wel voor uw bericht. Wij bevestigen de ontvangst en komen zo snel mogelijk bij u terug.' :
             convo.lang === 'fr' ? 'Merci pour votre message. Nous vous répondrons dans les plus brefs délais.' :
             convo.lang === 'de' ? 'Vielen Dank für Ihre Nachricht. Wir melden uns baldmöglichst.' :
             'Thank you for your message. We will get back to you shortly.'
-      const msgId = `msg_r_${Date.now()}`
-      const response: Message = { id: msgId, from: 'them', lang: convo.lang, text: responseText, textOriginal: responseText, time: new Date() }
+      const response: Message = { id: `msg_r_${Date.now()}`, from: 'them', lang: convo.lang, text: responseText, textOriginal: responseText, time: new Date() }
       setConvos(cs => cs.map(c => c.id === activeId ? { ...c, messages: [...c.messages, response] } : c))
-      // Auto-translate the response immediately
-      if (convo.lang !== 'es') {
-        const translated = await translateText(responseText, convo.lang, 'es')
-        setTranslations(prev => ({ ...prev, [msgId]: translated }))
-      }
     }, 2200)
   }
 
@@ -477,9 +431,10 @@ export default function MessagesPage() {
             {convo.messages.map((msg, i) => {
               const isMe = msg.from === 'me'
               const showDate = i === 0 || formatDate(convo.messages[i - 1].time) !== formatDate(msg.time)
-              const translation = translations[msg.id]
-              const isTranslating = translating.has(msg.id)
-              const showTranslation = !isMe && !!translation && msg.lang !== 'es'
+              const translation = !isMe && msg.lang !== 'es'
+                ? (msg.textOriginal && TRANSLATE[msg.lang]?.[msg.textOriginal]) || TRANSLATE[msg.lang]?.[msg.text]
+                : undefined
+              const showTranslation = !!translation
 
               return (
                 <div key={msg.id}>
@@ -496,7 +451,7 @@ export default function MessagesPage() {
                       {!isMe && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{LANG_FLAG[msg.lang]} {LANG_NAME[msg.lang]}</span>
-                          {translation && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--teal)', background: 'var(--teal-light)', padding: '1px 5px', borderRadius: 4 }}>🌐 ES</span>}
+                          {showTranslation && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--teal)', background: 'var(--teal-light)', padding: '1px 5px', borderRadius: 4 }}>🌐 ES</span>}
                         </div>
                       )}
                       {isMe && (
@@ -561,13 +516,6 @@ export default function MessagesPage() {
                                 <p style={{ fontSize: 12, lineHeight: 1.5, margin: 0, color: 'var(--text-muted)', fontStyle: 'italic', paddingTop: 2 }}>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: 4 }}>original:</span>{msg.text}
                                 </p>
-                              </div>
-                            ) : isTranslating ? (
-                              <div>
-                                <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0 }}>{msg.text}</p>
-                                <div style={{ fontSize: 10, color: 'var(--teal)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                  <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span> Traduciendo…
-                                </div>
                               </div>
                             ) : (
                               <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0 }}>{msg.text}</p>
