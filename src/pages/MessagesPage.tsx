@@ -187,29 +187,29 @@ export default function MessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Auto-translate all incoming messages when conversation changes
+  // Auto-translate incoming messages — only re-run when activeId changes or new messages arrive
+  const translatedRef = useRef<Set<string>>(new Set())
   useEffect(() => {
     const convo = convos.find(c => c.id === activeId)
     if (!convo) return
     const toTranslate = convo.messages.filter(m =>
-      m.from === 'them' && m.text && m.lang !== 'es' && !translations[m.id] && !translating.has(m.id)
+      m.from === 'them' && m.text && m.lang !== 'es' && !translatedRef.current.has(m.id)
     )
     if (toTranslate.length === 0) return
 
     toTranslate.forEach(async (msg) => {
-      setTranslating(prev => new Set(prev).add(msg.id))
-      // Use static dict first (instant), then API fallback
+      translatedRef.current.add(msg.id) // mark immediately to prevent duplicate calls
       const staticTrans = msg.textOriginal && TRANSLATE[msg.lang]?.[msg.textOriginal]
       if (staticTrans) {
         setTranslations(prev => ({ ...prev, [msg.id]: staticTrans }))
-        setTranslating(prev => { const s = new Set(prev); s.delete(msg.id); return s })
       } else {
+        setTranslating(prev => new Set(prev).add(msg.id))
         const translated = await translateText(msg.text, msg.lang, 'es')
         setTranslations(prev => ({ ...prev, [msg.id]: translated }))
         setTranslating(prev => { const s = new Set(prev); s.delete(msg.id); return s })
       }
     })
-  }, [activeId, convos])
+  }, [activeId, convos.find(c => c.id === activeId)?.messages.length])
 
   const setStage = (stageId: string) => {
     setConvos(cs => cs.map(c => c.id === activeId ? { ...c, stage: stageId } : c))

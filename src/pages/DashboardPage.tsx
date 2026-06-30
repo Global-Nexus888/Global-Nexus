@@ -14,7 +14,11 @@ function saveProfile(email: string, data: object) {
   localStorage.setItem(`gn_profile_${email}`, JSON.stringify(data))
 }
 function getProducts(email: string): Product[] {
-  try { return JSON.parse(localStorage.getItem(`gn_products_${email}`) || '[]') } catch { return [] }
+  try {
+    const raw = JSON.parse(localStorage.getItem(`gn_products_${email}`) || '[]') as (Product & { photo?: string })[]
+    // Migrate old single-photo format to photos array
+    return raw.map(p => ({ ...p, photos: p.photos?.length ? p.photos : p.photo ? [p.photo] : [] }))
+  } catch { return [] }
 }
 function saveProducts(email: string, data: Product[]) {
   localStorage.setItem(`gn_products_${email}`, JSON.stringify(data))
