@@ -431,40 +431,157 @@ export default function DashboardPage() {
         {/* ── OVERVIEW ── */}
         {tab === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: '1rem' }}>
+
+            {/* Stats row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '1rem' }}>
               {[
-                { icon: '📦', label: L.statsProducts, value: products.length, color: C.teal },
-                { icon: '🛡️', label: L.statsCerts, value: certs.length, color: '#7C3AED' },
-                { icon: '👁️', label: lang === 'es' ? 'Vistas (al lanzamiento)' : 'Views (at launch)', value: '—', color: C.navy },
-                { icon: '🤝', label: lang === 'es' ? 'Leads EU (al lanzamiento)' : 'EU Leads (at launch)', value: '—', color: C.gold },
-              ].map((s, i) => (
-                <div key={i} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: '1.25rem' }}>
-                  <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{s.icon}</div>
-                  <div style={{ fontSize: 'clamp(1.3rem,3vw,1.8rem)', fontWeight: 900, color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>{s.label}</div>
+                { icon: '📦', label: L.statsProducts, value: products.length, color: C.teal, sub: lang==='es'?'publicados':'published' },
+                { icon: '🛡️', label: L.statsCerts, value: certs.length, color: '#7C3AED', sub: lang==='es'?'verificadas':'verified' },
+                { icon: '🇪🇺', label: lang==='es'?'Países EU alcanzables':lang==='nl'?'Bereikbare EU-landen':lang==='de'?'Erreichbare EU-Länder':'Reachable EU countries', value: 27, color: C.navy, sub: 'TLCUEM' },
+                { icon: '💰', label: lang==='es'?'Ahorro arancelario':lang==='nl'?'Tariefbesparing':lang==='de'?'Zollersparnis':'Tariff savings', value: '0%', color: C.gold, sub: lang==='es'?'bajo TLCUEM':'under TLCUEM' },
+              ].map((s,i) => (
+                <div key={i} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>{s.icon}</div>
+                  <div style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginTop: 4 }}>{s.label}</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.sub}</div>
                 </div>
               ))}
             </div>
 
-            {/* Checklist */}
-            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: C.navy }}>📋 {L.profileProgress} · {pPct}%</div>
-              </div>
-              <div style={{ width: '100%', height: 8, borderRadius: 4, background: C.bg, marginBottom: '1.25rem' }}>
-                <div style={{ width: `${pPct}%`, height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${C.teal}, ${C.navy})`, transition: 'width .6s' }} />
-              </div>
-              {L.checklistItems.map((item, i) => (
-                <div key={i} onClick={() => !pChecks[i] && setTab([1,1,1,1,2,3,1][i])}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < 6 ? `1px solid ${C.border}` : 'none', cursor: pChecks[i] ? 'default' : 'pointer' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0, background: pChecks[i] ? '#DCFCE7' : C.bg, border: `1.5px solid ${pChecks[i] ? C.green : C.border}`, color: C.green }}>
-                    {pChecks[i] ? '✓' : ''}
-                  </div>
-                  <span style={{ fontSize: 13, color: pChecks[i] ? C.muted : C.text, textDecoration: pChecks[i] ? 'line-through' : 'none', flex: 1 }}>{item}</span>
-                  {!pChecks[i] && <span style={{ fontSize: 11, color: C.teal, fontWeight: 600 }}>Completar →</span>}
+            {/* Map + Checklist row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+
+              {/* SVG Trade Route Map */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>🌍 {lang==='es'?'Rutas comerciales activas':lang==='nl'?'Actieve handelsroutes':lang==='de'?'Aktive Handelsrouten':'Active trade routes'}</span>
+                  <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 100, background: '#DCFCE7', color: '#16A34A', fontWeight: 700 }}>TLCUEM · 0%</span>
                 </div>
-              ))}
+                <svg viewBox="0 0 420 220" style={{ width: '100%', height: 'auto' }} xmlns="http://www.w3.org/2000/svg">
+                  <rect width="420" height="220" fill="#EFF6FF" rx="10"/>
+                  <path d="M60 110 Q70 95 90 90 Q110 85 120 95 Q130 105 125 120 Q120 135 105 140 Q90 145 75 135 Q60 125 60 110Z" fill="#DCFCE7" stroke="#86EFAC" strokeWidth="1.5"/>
+                  <path d="M105 140 Q112 155 118 165 Q115 170 110 168 Q105 165 102 155 Z" fill="#DCFCE7" stroke="#86EFAC" strokeWidth="1"/>
+                  <text x="195" y="150" fontSize="8" fill="#93C5FD" textAnchor="middle" fontWeight="600">ATLÁNTICO</text>
+                  <path d="M285 70 Q295 60 315 58 Q335 56 345 68 Q355 78 350 92 Q345 105 330 110 Q315 115 300 108 Q285 100 280 88 Q278 78 285 70Z" fill="#FEF3C7" stroke="#FCD34D" strokeWidth="1.5"/>
+                  <path d="M280 88 Q285 100 295 105 Q295 112 288 114 Q280 115 276 108 Q272 100 275 92 Z" fill="#FEF3C7" stroke="#FCD34D" strokeWidth="1"/>
+                  <path d="M315 58 Q320 50 330 48 Q340 50 343 58 Q340 66 330 68 Q320 68 315 62 Z" fill="#DBEAFE" stroke="#93C5FD" strokeWidth="1"/>
+                  <path d="M108 115 C160 95 210 135 268 100" fill="none" stroke="#0D9488" strokeWidth="2" strokeDasharray="6,4" opacity="0.8">
+                    <animate attributeName="stroke-dashoffset" values="100;0" dur="3s" repeatCount="indefinite"/>
+                  </path>
+                  <path d="M95 105 C130 60 200 55 268 75" fill="none" stroke="#1E3A5F" strokeWidth="1.5" strokeDasharray="5,4" opacity="0.6">
+                    <animate attributeName="stroke-dashoffset" values="100;0" dur="4s" repeatCount="indefinite"/>
+                  </path>
+                  <text x="185" y="108" fontSize="12" textAnchor="middle">🚢</text>
+                  <text x="170" y="72" fontSize="10" textAnchor="middle">✈️</text>
+                  <circle cx="108" cy="118" r="5" fill="#0D9488" opacity="0.9"/>
+                  <text x="108" y="132" fontSize="7" fill="#0D9488" textAnchor="middle" fontWeight="700">Veracruz</text>
+                  <circle cx="268" cy="100" r="4" fill="#D97706" opacity="0.9"/>
+                  <text x="268" y="112" fontSize="7" fill="#D97706" textAnchor="middle" fontWeight="700">Valencia</text>
+                  <circle cx="270" cy="75" r="4" fill="#1E3A5F" opacity="0.9"/>
+                  <text x="278" y="68" fontSize="7" fill="#1E3A5F" textAnchor="middle" fontWeight="700">Rotterdam</text>
+                  <circle cx="95" cy="108" r="3" fill="#16A34A" opacity="0.8"/>
+                  <text x="82" y="118" fontSize="6" fill="#16A34A" fontWeight="600">Manzanillo</text>
+                  <text x="90" y="82" fontSize="9" fill="#166534" fontWeight="700" textAnchor="middle">MÉXICO</text>
+                  <text x="315" y="90" fontSize="9" fill="#1E3A5F" fontWeight="700" textAnchor="middle">EUROPA</text>
+                  <rect x="285" y="175" width="120" height="38" rx="6" fill="white" opacity="0.9"/>
+                  <line x1="291" y1="185" x2="305" y2="185" stroke="#0D9488" strokeWidth="2" strokeDasharray="4,3"/>
+                  <text x="308" y="188" fontSize="7" fill="#0D9488" fontWeight="600">Vía marítima</text>
+                  <line x1="291" y1="198" x2="305" y2="198" stroke="#1E3A5F" strokeWidth="1.5" strokeDasharray="3,3"/>
+                  <text x="308" y="201" fontSize="7" fill="#1E3A5F" fontWeight="600">Vía aérea</text>
+                  <rect x="8" y="170" width="130" height="44" rx="6" fill="#1E3A5F" opacity="0.9"/>
+                  <text x="14" y="184" fontSize="7" fill="rgba(255,255,255,0.7)" fontWeight="500">VOLUMEN COMERCIAL</text>
+                  <text x="14" y="200" fontSize="14" fill="#5EEAD4" fontWeight="900">450M</text>
+                  <text x="55" y="200" fontSize="7" fill="rgba(255,255,255,0.7)"> consumidores EU</text>
+                </svg>
+              </div>
+
+              {/* Profile checklist */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>📋 {L.profileProgress}</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: pPct >= 71 ? C.green : C.gold }}>{pPct}%</div>
+                </div>
+                <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#F1F5F9', marginBottom: '1rem' }}>
+                  <div style={{ width: `${pPct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${C.teal}, ${C.navy})`, transition: 'width .6s' }} />
+                </div>
+                {L.checklistItems.map((item, i) => (
+                  <div key={i} onClick={() => !pChecks[i] && setTab([1,1,1,1,2,3,1][i])}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < 6 ? `1px solid ${C.border}` : 'none', cursor: pChecks[i] ? 'default' : 'pointer' }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, background: pChecks[i] ? '#DCFCE7' : '#F8FAFC', border: `1.5px solid ${pChecks[i] ? C.green : C.border}`, color: C.green, fontWeight: 800 }}>
+                      {pChecks[i] ? '✓' : ''}
+                    </div>
+                    <span style={{ fontSize: 12, color: pChecks[i] ? C.muted : C.text, textDecoration: pChecks[i] ? 'line-through' : 'none', flex: 1 }}>{item}</span>
+                    {!pChecks[i] && <span style={{ fontSize: 10, color: C.teal, fontWeight: 700 }}>→</span>}
+                  </div>
+                ))}
+                <button onClick={() => setTab(1)} style={{ width: '100%', marginTop: '0.75rem', padding: '9px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                  {lang==='es'?'Completar mi perfil →':lang==='nl'?'Profiel voltooien →':lang==='de'?'Profil vervollständigen →':'Complete my profile →'}
+                </button>
+              </div>
             </div>
+
+            {/* Products preview + deal flow */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+              {/* My products preview */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>📦 {lang==='es'?'Mis productos':lang==='nl'?'Mijn producten':lang==='de'?'Meine Produkte':'My products'}</div>
+                  <button onClick={() => setTab(2)} style={{ fontSize: 11, color: C.teal, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{lang==='es'?'Ver todos →':'View all →'}</button>
+                </div>
+                {products.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', color: C.muted }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>📦</div>
+                    <div style={{ fontSize: 12, marginBottom: 12 }}>{L.noProducts}</div>
+                    <button onClick={() => setTab(2)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: C.teal, color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                      {lang==='es'?'+ Agregar producto':'+ Add product'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {products.slice(0,3).map((p,i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: '#F8FAFC', border: `1px solid ${C.border}` }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 8, background: C.bg, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                          {p.photo ? <img src={p.photo} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '📦'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                          <div style={{ fontSize: 11, color: C.muted }}>{p.category} · ${p.price} USD/{p.unit}</div>
+                        </div>
+                        <div style={{ fontSize: 10, padding: '2px 7px', borderRadius: 100, background: '#CCFBF1', color: C.teal, fontWeight: 700, whiteSpace: 'nowrap' }}>TLCUEM ✓</div>
+                      </div>
+                    ))}
+                    {products.length > 3 && <div style={{ fontSize: 11, color: C.muted, textAlign: 'center', paddingTop: 4 }}>+{products.length-3} {lang==='es'?'más':'more'}</div>}
+                  </div>
+                )}
+              </div>
+
+              {/* Deal flow tracker */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: '1rem' }}>🤝 {lang==='es'?'Flujo de contacto':lang==='nl'?'Contactstroom':lang==='de'?'Kontaktablauf':'Contact flow'}</div>
+                {[
+                  { icon: '🔍', label: lang==='es'?'Comprador EU te encuentra en el catálogo':'EU Buyer finds you in catalog' },
+                  { icon: '📩', label: lang==='es'?'Envía solicitud de contacto':'Sends contact request' },
+                  { icon: '💬', label: lang==='es'?'Chat privado y negociación':'Private chat & negotiation' },
+                  { icon: '📋', label: lang==='es'?'RFQ y propuesta comercial':'RFQ & commercial offer' },
+                  { icon: '✅', label: lang==='es'?'Acuerdo y logística TLCUEM':'Agreement & TLCUEM logistics' },
+                ].map((s,i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: i<4 ? 10 : 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#F1F5F9', border: `2px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>{s.icon}</div>
+                      {i < 4 && <div style={{ width: 1, height: 12, background: C.border, marginTop: 2 }} />}
+                    </div>
+                    <div style={{ paddingTop: 4 }}>
+                      <div style={{ fontSize: 11, color: C.text, lineHeight: 1.4 }}>{s.label}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: '1rem', padding: '8px 12px', borderRadius: 8, background: '#FFF7ED', border: '1px solid #FCD34D' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#92400E' }}>🚀 {lang==='es'?'Activo el 28 Ago 2026':'Active Aug 28, 2026'}</div>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
