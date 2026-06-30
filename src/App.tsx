@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CountdownBanner from './components/CountdownBanner'
@@ -30,8 +31,20 @@ import CookieBanner from './components/CookieBanner'
 
 const FULL_SCREEN_ROUTES = ['/admin', '/mensajes', '/dashboard', '/dashboard-comprador']
 
+declare global { interface Window { gtag?: (...args: unknown[]) => void } }
+
 export default function App() {
   const { pathname } = useLocation()
+
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: pathname,
+        page_title: document.title,
+        page_location: window.location.href,
+      })
+    }
+  }, [pathname])
   const isFullScreen = FULL_SCREEN_ROUTES.some(r => pathname.startsWith(r))
 
   if (isFullScreen) {
