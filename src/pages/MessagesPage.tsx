@@ -149,6 +149,14 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
 }
 
+const QUICK_PHRASES: Record<string, string[]> = {
+  es: ['Buenos días, ¿cómo va el proceso?', 'Adjunto la documentación solicitada.', 'Aplicamos 0% de arancel bajo TLCUEM.', 'Nuestro MOQ es de 500 unidades.', 'Confirmo recibo de su propuesta.', '¿Cuándo podemos agendar una videollamada?', 'Le enviamos muestras esta semana.', 'Trato cerrado, procedemos con el contrato.'],
+  en: ['Good morning, how is the process going?', 'Please find the requested documentation attached.', '0% tariff applies under TLCUEM/EU-Mexico agreement.', 'Our MOQ is 500 units.', 'I confirm receipt of your proposal.', 'When can we schedule a video call?', 'We will send samples this week.', 'Deal closed, proceeding with contract.'],
+  nl: ['Goedemorgen, hoe verloopt het proces?', 'Hierbij de gevraagde documentatie.', '0% tarief van toepassing onder TLCUEM.', 'Onze MOQ is 500 eenheden.', 'Ik bevestig ontvangst van uw voorstel.', 'Wanneer kunnen we een videogesprek inplannen?', 'We sturen deze week monsters.', 'Deal gesloten, we gaan verder met het contract.'],
+  fr: ['Bonjour, comment avance le processus?', 'Veuillez trouver la documentation demandée ci-jointe.', 'Tarif 0% applicable sous TLCUEM.', 'Notre MOQ est de 500 unités.', 'Je confirme réception de votre proposition.', 'Quand pouvons-nous planifier un appel vidéo?', 'Nous enverrons des échantillons cette semaine.', 'Accord conclu, nous procédons au contrat.'],
+  de: ['Guten Morgen, wie läuft der Prozess?', 'Anbei die angeforderte Dokumentation.', '0% Zoll unter dem TLCUEM-Abkommen anwendbar.', 'Unsere MOQ beträgt 500 Einheiten.', 'Ich bestätige den Eingang Ihres Angebots.', 'Wann können wir ein Videogespräch vereinbaren?', 'Wir senden diese Woche Muster.', 'Deal abgeschlossen, wir fahren mit dem Vertrag fort.'],
+}
+
 /* ─── Component ─── */
 export default function MessagesPage() {
   const [activeId, setActiveId] = useState('c1')
@@ -160,6 +168,8 @@ export default function MessagesPage() {
   const [replyLang, setReplyLang] = useState<string>('es')
   const [typing, setTyping] = useState(false)
   const [search, setSearch] = useState('')
+  const [autoTranslate, setAutoTranslate] = useState(false)
+  const [showPhrases, setShowPhrases] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -250,12 +260,13 @@ export default function MessagesPage() {
 
         {/* Header */}
         <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <h2 style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text)' }}>💬 Mensajes</h2>
             <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--teal-light)', color: 'var(--teal-dark)', padding: '2px 8px', borderRadius: 100 }}>
               {convos.reduce((a, c) => a + c.unread, 0)} sin leer
             </span>
           </div>
+          <div style={{fontSize:10, color:'var(--teal)', fontWeight:700, marginBottom: 8}}>🌍 4 idiomas · TLCUEM</div>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -376,6 +387,13 @@ export default function MessagesPage() {
                 <option value="de">🇩🇪 Deutsch</option>
               </select>
             </div>
+            {/* Auto-translate toggle */}
+            <button
+              onClick={() => setAutoTranslate(a => !a)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8, border: `1.5px solid ${autoTranslate ? 'var(--teal)' : 'var(--border)'}`, background: autoTranslate ? 'var(--teal-light)' : 'var(--surface2)', color: autoTranslate ? 'var(--teal-dark)' : 'var(--text-muted)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              🌐 Auto-traducir todo
+            </button>
             <button onClick={() => setShowInfo(!showInfo)} style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', color: showInfo ? 'var(--teal)' : 'var(--text-muted)' }}>ℹ️</button>
           </div>
         </div>
@@ -435,8 +453,9 @@ export default function MessagesPage() {
             {convo.messages.map((msg, i) => {
               const isMe = msg.from === 'me'
               const showDate = i === 0 || formatDate(convo.messages[i - 1].time) !== formatDate(msg.time)
-              const isTranslated = translatedIds.has(msg.id)
+              const isTranslated = translatedIds.has(msg.id) || (autoTranslate && !isMe)
               const translation = msg.textOriginal && TRANSLATE[msg.lang]?.[msg.textOriginal]
+              const showTranslation = isTranslated && !!translation
 
               return (
                 <div key={msg.id}>
@@ -453,6 +472,12 @@ export default function MessagesPage() {
                       {!isMe && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{LANG_FLAG[msg.lang]} {LANG_NAME[msg.lang]}</span>
+                          {translation && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--teal)', background: 'var(--teal-light)', padding: '1px 5px', borderRadius: 4 }}>🌐 ES</span>}
+                        </div>
+                      )}
+                      {isMe && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{LANG_FLAG[replyLang] || '🌐'}</span>
                         </div>
                       )}
 
@@ -499,13 +524,18 @@ export default function MessagesPage() {
                           </div>
                         ) : (
                           <div>
-                            <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0 }}>
-                              {isTranslated && translation ? translation : msg.text}
-                            </p>
-                            {isTranslated && translation && (
-                              <div style={{ fontSize: 10, marginTop: 6, color: isMe ? 'rgba(255,255,255,.65)' : 'var(--text-muted)', fontStyle: 'italic' }}>
-                                Traducido del {LANG_NAME[msg.lang]}
+                            {showTranslation ? (
+                              <div>
+                                <div style={{ background: 'rgba(13,148,136,.08)', borderRadius: 6, padding: '6px 8px', marginBottom: 6 }}>
+                                  <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0, color: 'var(--text)' }}>{translation}</p>
+                                  <div style={{ fontSize: 9, color: 'var(--teal)', fontWeight: 700, marginTop: 3 }}>🌐 Traducido al español</div>
+                                </div>
+                                <p style={{ fontSize: 12, lineHeight: 1.5, margin: 0, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                  <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase' }}>(original)</span> {msg.text}
+                                </p>
                               </div>
+                            ) : (
+                              <p style={{ fontSize: 14, lineHeight: 1.55, margin: 0 }}>{msg.text}</p>
                             )}
                           </div>
                         )}
@@ -522,8 +552,8 @@ export default function MessagesPage() {
                         <div style={{ fontSize: '1rem', marginTop: 2, textAlign: isMe ? 'right' : 'left' }}>{msg.reaction}</div>
                       )}
 
-                      {/* Actions on hover — translate */}
-                      {!isMe && msg.text && translation && (
+                      {/* Manual translate button */}
+                      {!isMe && msg.text && translation && !autoTranslate && (
                         <button
                           onClick={() => toggleTranslate(msg.id)}
                           style={{
@@ -619,6 +649,22 @@ export default function MessagesPage() {
             {!convo.online && <span style={{ color: 'var(--gold)', fontWeight: 600 }}>⚠️ Fuera de horario — tu mensaje llegará al reconectarse</span>}
           </div>
 
+          {/* Quick phrases panel */}
+          {showPhrases && (
+            <div style={{ marginBottom: 10, background: 'var(--surface2)', borderRadius: 10, padding: '10px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>💬 Frases rápidas — {LANG_FLAG[replyLang]} {replyLang.toUpperCase()}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {(QUICK_PHRASES[replyLang] || QUICK_PHRASES['es']).map((phrase, i) => (
+                  <button key={i} onClick={() => { setInput(phrase); setShowPhrases(false) }}
+                    style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--white)', fontSize: 12, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.4 }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--teal-light)'; e.currentTarget.style.borderColor = 'var(--teal)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--white)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                  >{phrase}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             {/* File upload */}
             <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={handleFile} />
@@ -627,6 +673,12 @@ export default function MessagesPage() {
               title="Adjuntar PDF o imagen"
               style={{ width: 40, height: 40, borderRadius: 10, border: '1.5px solid var(--border)', background: 'var(--surface2)', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             >📎</button>
+            {/* Quick phrases button */}
+            <button
+              onClick={() => setShowPhrases(p => !p)}
+              title="Frases rápidas"
+              style={{ height: 40, padding: '0 10px', borderRadius: 10, border: `1.5px solid ${showPhrases ? 'var(--teal)' : 'var(--border)'}`, background: showPhrases ? 'var(--teal-light)' : 'var(--surface2)', fontSize: 12, fontWeight: 700, color: showPhrases ? 'var(--teal-dark)' : 'var(--text-muted)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}
+            >💬 Frases</button>
 
             {/* Text input */}
             <div style={{ flex: 1, position: 'relative' }}>

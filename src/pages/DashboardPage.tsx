@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
-import AIChat from '../components/AIChat'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -86,7 +85,7 @@ type L = {
 
 const LABELS: Record<Lang, L> = {
   es: {
-    tabs: ['Resumen', 'Mi Perfil', 'Productos', 'Certificaciones', 'Orientación'],
+    tabs: ['Resumen', 'Mi Perfil', 'Productos', 'Certificaciones', '💬 Mensajes'],
     welcome: 'Mi Panel de Productor',
     preLaunch: '🚀 Modo Pre-Lanzamiento · Lanzamiento: 28 Ago 2026 · 12:00 pm CDMX',
     preLaunchSub: 'Tu perfil y productos se publicarán automáticamente en la fecha de lanzamiento. Mientras tanto, arma tu perfil completo.',
@@ -126,7 +125,7 @@ const LABELS: Record<Lang, L> = {
     checklistItems: ['Foto de perfil de empresa', 'Descripción de la empresa', 'Ubicación (Estado/Ciudad)', 'WhatsApp de contacto', 'Al menos 1 producto publicado', 'Al menos 1 certificación', 'Sitio web (opcional)'],
   },
   en: {
-    tabs: ['Overview', 'My Profile', 'Products', 'Certifications', 'Onboarding'],
+    tabs: ['Overview', 'My Profile', 'Products', 'Certifications', '💬 Messages'],
     welcome: 'My Producer Panel',
     preLaunch: '🚀 Pre-Launch Mode · Launch: Aug 28, 2026 · 12:00 pm CDMX',
     preLaunchSub: 'Your profile and products will be published automatically on launch date. Meanwhile, build your complete profile.',
@@ -166,7 +165,7 @@ const LABELS: Record<Lang, L> = {
     checklistItems: ['Company profile photo', 'Company description', 'Location (State/City)', 'WhatsApp contact', 'At least 1 product published', 'At least 1 certification', 'Website (optional)'],
   },
   nl: {
-    tabs: ['Overzicht', 'Mijn Profiel', 'Producten', 'Certificeringen', 'Onboarding'],
+    tabs: ['Overzicht', 'Mijn Profiel', 'Producten', 'Certificeringen', '💬 Berichten'],
     welcome: 'Mijn Producentenpanel',
     preLaunch: '🚀 Pre-Lancering · Lancering: 28 aug 2026 · 12:00 uur CDMX',
     preLaunchSub: 'Uw profiel en producten worden automatisch gepubliceerd op de lanceringsdatum. Bouw ondertussen uw volledige profiel.',
@@ -206,7 +205,7 @@ const LABELS: Record<Lang, L> = {
     checklistItems: ['Bedrijfsprofielfoto', 'Bedrijfsbeschrijving', 'Locatie (Staat/Stad)', 'WhatsApp-contact', 'Minimaal 1 product gepubliceerd', 'Minimaal 1 certificering', 'Website (optioneel)'],
   },
   de: {
-    tabs: ['Übersicht', 'Mein Profil', 'Produkte', 'Zertifizierungen', 'Onboarding'],
+    tabs: ['Übersicht', 'Mein Profil', 'Produkte', 'Zertifizierungen', '💬 Nachrichten'],
     welcome: 'Mein Produzenten-Panel',
     preLaunch: '🚀 Vor-Launch-Modus · Launch: 28. Aug 2026 · 12:00 Uhr CDMX',
     preLaunchSub: 'Ihr Profil und Produkte werden automatisch am Starttermin veröffentlicht. Bauen Sie inzwischen Ihr vollständiges Profil auf.',
@@ -761,8 +760,61 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── AI CHAT ── */}
-        {tab === 4 && <AIChat lang={lang} role="producer" height={560} />}
+        {/* ── MESSAGING HUB ── */}
+        {tab === 4 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.5rem' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>💬</div>
+                <div>
+                  <h2 style={{ fontWeight: 900, fontSize: '1.15rem', color: C.navy, margin: 0 }}>💬 Mensajería B2B</h2>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                    {lang === 'es' ? 'Conecta directamente con compradores europeos en su idioma' : lang === 'nl' ? 'Verbinding met Europese kopers in hun taal' : lang === 'de' ? 'Verbindung mit europäischen Käufern in ihrer Sprache' : 'Connect directly with European buyers in their language'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                {[
+                  { icon: '🌐', label: lang==='es'?'Traducción automática multilingüe':lang==='nl'?'Automatische meertalige vertaling':lang==='de'?'Automatische mehrsprachige Übersetzung':'Automatic multilingual translation' },
+                  { icon: '📄', label: lang==='es'?'Documentos PDF compartidos':lang==='nl'?'Gedeelde PDF-documenten':lang==='de'?'Geteilte PDF-Dokumente':'Shared PDF documents' },
+                  { icon: '🤝', label: lang==='es'?'Seguimiento de negociaciones':lang==='nl'?'Onderhandelingsopvolging':lang==='de'?'Verhandlungsverfolgung':'Deal tracking & negotiation' },
+                ].map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: `${C.teal}08`, border: `1px solid ${C.teal}20` }}>
+                    <span style={{ fontSize: '1.3rem' }}>{f.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <a href="/mensajes" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 28px', borderRadius: 12, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', marginBottom: '2rem', boxShadow: `0 4px 16px ${C.teal}40` }}>
+                💬 {lang==='es'?'Ir a Mensajes':'Messages'} →
+              </a>
+
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: '1.5rem' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: '1rem' }}>
+                  💬 {lang==='es'?'Frases rápidas B2B':lang==='nl'?'Snelle B2B-zinnen':lang==='de'?'Schnelle B2B-Phrasen':'Quick B2B phrases'} <span style={{ fontSize: 11, fontWeight: 400, color: C.muted }}>({lang==='es'?'clic para copiar':'click to copy'})</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    'Thank you for your interest. I\'d like to share our product catalog and pricing.',
+                    'We offer 0% tariff under TLCUEM/EU-Mexico trade agreement.',
+                    'Our minimum order quantity is [MOQ]. Can we discuss terms?',
+                    'I\'m sending you our certificates (NOM, SENASICA, COFEPRIS) for review.',
+                  ].map((phrase, i) => (
+                    <button key={i} onClick={() => { navigator.clipboard?.writeText(phrase) }}
+                      style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 9, border: `1.5px solid ${C.border}`, background: C.bg, fontSize: 13, color: C.text, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.5, transition: 'all .15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = C.teal; e.currentTarget.style.background = C.tealLight }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.bg }}
+                    >
+                      <span style={{ fontSize: 10, fontWeight: 700, color: C.teal, marginRight: 8 }}>📋</span>{phrase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

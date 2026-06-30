@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
-import AIChat from '../components/AIChat'
 
 function getUser() { try { return JSON.parse(localStorage.getItem('gn_current_user') || 'null') } catch { return null } }
 function getBProfile(email: string) { try { return JSON.parse(localStorage.getItem(`gn_bprofile_${email}`) || '{}') } catch { return {} } }
@@ -60,7 +59,7 @@ const LABELS: Record<Lang, {
   checklistItems: string[]; industries: string[]
 }> = {
   es: {
-    tabs: ['Resumen', 'Mi Perfil', 'Mis Búsquedas', 'Orientación'],
+    tabs: ['Resumen', 'Mi Perfil', 'Mis Búsquedas', '💬 Mensajes'],
     preLaunch: '🚀 Modo Pre-Lanzamiento · 28 Ago 2026 · 12:00 pm CDMX',
     preLaunchSub: 'La conexión con productores mexicanos se activará en la fecha de lanzamiento. Mientras tanto, completa tu perfil y guarda tus búsquedas.',
     profileTitle: 'Perfil de Comprador Europeo',
@@ -90,7 +89,7 @@ const LABELS: Record<Lang, {
     industries: ['Alimentación y bebidas', 'Distribución / Importación', 'Retail / E-commerce', 'Farmacéutica / Cosmética', 'HoReCa (Hotel/Restaurante/Catering)', 'Otra'],
   },
   en: {
-    tabs: ['Overview', 'My Profile', 'My Searches', 'Onboarding'],
+    tabs: ['Overview', 'My Profile', 'My Searches', '💬 Mensajes'],
     preLaunch: '🚀 Pre-Launch Mode · Aug 28, 2026 · 12:00 pm CDMX',
     preLaunchSub: 'Connection with Mexican producers activates on launch date. Meanwhile, complete your profile and save your searches.',
     profileTitle: 'European Buyer Profile',
@@ -120,7 +119,7 @@ const LABELS: Record<Lang, {
     industries: ['Food & Beverages', 'Distribution / Import', 'Retail / E-commerce', 'Pharmaceutical / Cosmetics', 'HoReCa (Hotel/Restaurant/Catering)', 'Other'],
   },
   nl: {
-    tabs: ['Overzicht', 'Mijn Profiel', 'Mijn Zoekopdrachten', 'Onboarding'],
+    tabs: ['Overzicht', 'Mijn Profiel', 'Mijn Zoekopdrachten', '💬 Mensajes'],
     preLaunch: '🚀 Pre-Lancering · 28 aug 2026 · 12:00 uur CDMX',
     preLaunchSub: 'Verbinding met Mexicaanse producenten wordt actief op de lanceringsdatum. Vul ondertussen uw profiel in en sla uw zoekopdrachten op.',
     profileTitle: 'Europees Kopersprofiel',
@@ -150,7 +149,7 @@ const LABELS: Record<Lang, {
     industries: ['Voeding & Dranken', 'Distributie / Import', 'Retail / E-commerce', 'Farmaceutisch / Cosmetica', 'HoReCa (Hotel/Restaurant/Catering)', 'Overig'],
   },
   de: {
-    tabs: ['Übersicht', 'Mein Profil', 'Meine Suchen', 'Onboarding'],
+    tabs: ['Übersicht', 'Mein Profil', 'Meine Suchen', '💬 Mensajes'],
     preLaunch: '🚀 Vor-Launch-Modus · 28. Aug 2026 · 12:00 Uhr CDMX',
     preLaunchSub: 'Die Verbindung mit mexikanischen Produzenten wird am Starttermin aktiviert. Vervollständigen Sie inzwischen Ihr Profil.',
     profileTitle: 'Europäisches Käuferprofil',
@@ -609,8 +608,61 @@ export default function BuyerDashboardPage() {
           </div>
         )}
 
-        {/* ── AI CHAT ── */}
-        {tab === 3 && <AIChat lang={lang} role="buyer" height={560} />}
+        {/* ── MESSAGING HUB ── */}
+        {tab === 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.5rem' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: `linear-gradient(135deg, ${C.navy}, #1a4a7a)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🌍</div>
+                <div>
+                  <h2 style={{ fontWeight: 900, fontSize: '1.15rem', color: C.navy, margin: 0 }}>🌍 Conecta con productores mexicanos en tu idioma</h2>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
+                    {lang === 'es' ? 'Chat directo, documentos y seguimiento en tiempo real' : lang === 'nl' ? 'Directe chat, documenten en realtime opvolging' : lang === 'de' ? 'Direkter Chat, Dokumente und Echtzeit-Tracking' : 'Direct chat, documents and real-time tracking'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                {[
+                  { icon: '🌐', label: lang==='es'?'Traducción automática multilingüe':lang==='nl'?'Automatische meertalige vertaling':lang==='de'?'Automatische mehrsprachige Übersetzung':'Automatic multilingual translation' },
+                  { icon: '📄', label: lang==='es'?'Documentos PDF compartidos':lang==='nl'?'Gedeelde PDF-documenten':lang==='de'?'Geteilte PDF-Dokumente':'Shared PDF documents' },
+                  { icon: '🤝', label: lang==='es'?'Seguimiento de negociaciones':lang==='nl'?'Onderhandelingsopvolging':lang==='de'?'Verhandlungsverfolgung':'Deal tracking & negotiation' },
+                ].map((f, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: '#EFF6FF', border: '1px solid #93C5FD' }}>
+                    <span style={{ fontSize: '1.3rem' }}>{f.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <a href="/mensajes" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 28px', borderRadius: 12, background: `linear-gradient(135deg, ${C.navy}, #1a4a7a)`, color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', marginBottom: '2rem', boxShadow: '0 4px 16px rgba(30,58,95,.3)' }}>
+                💬 {lang==='es'?'Ir a Mensajes':'Messages'} →
+              </a>
+
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: '1.5rem' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: '1rem' }}>
+                  💬 {lang==='es'?'Frases rápidas B2B':lang==='nl'?'Snelle B2B-zinnen':lang==='de'?'Schnelle B2B-Phrasen':'Quick B2B phrases'} <span style={{ fontSize: 11, fontWeight: 400, color: C.muted }}>({lang==='es'?'clic para copiar':'click to copy'})</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    'I\'m interested in sourcing [product] for the European market.',
+                    'Can you provide samples and export documentation?',
+                    'What is your MOQ and pricing for EU import?',
+                    'We require TLCUEM certificate of origin (EUR.1) for customs.',
+                  ].map((phrase, i) => (
+                    <button key={i} onClick={() => { navigator.clipboard?.writeText(phrase) }}
+                      style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 9, border: '1.5px solid #E2E8F0', background: '#F8FAFC', fontSize: 13, color: C.text, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.5, transition: 'all .15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#93C5FD'; e.currentTarget.style.background = '#EFF6FF' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#F8FAFC' }}
+                    >
+                      <span style={{ fontSize: 10, fontWeight: 700, color: C.navy, marginRight: 8 }}>📋</span>{phrase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
