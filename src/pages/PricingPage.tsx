@@ -5,8 +5,8 @@ import { pricingI18n } from '../lib/i18n/pricing'
 import { usePageMeta } from '../hooks/usePageMeta'
 
 const STRIPE_LINKS = {
-  pro: 'https://buy.stripe.com/aFaaEPeQWcwHcYbaVP7IY00',
-  comprador: 'https://buy.stripe.com/28E8wH6kq0NZgangg97IY01',
+  pro: 'https://buy.stripe.com/6oU8wHcIO0NZ8HV3tn7IY04',
+  comprador: 'https://buy.stripe.com/00w9AL4ci54fcYbd3X7IY03',
 }
 const preLaunch = isPreLaunch()
 
