@@ -16,9 +16,9 @@ const COPY: Record<Lang, {
   launchNote: string; supportNote: string
 }> = {
   es: {
-    title: '¡Pago confirmado! Bienvenido a Global Nexus',
-    sub: 'Tu suscripción está activa. Tu perfil se publicará automáticamente el 28 de agosto de 2026 a las 12:00 pm CDMX.',
-    planActive: 'Activo',
+    title: '¡Registro confirmado! Bienvenido a Global Nexus',
+    sub: 'Tu tarjeta está conectada. Sin cobros hasta el 29 de septiembre de 2026 — arma tu perfil con calma y estarás listo para el lanzamiento.',
+    planActive: 'Activo · Sin cobro hasta 29 Sep',
     nextTitle: '¿Qué sigue ahora?',
     steps_pro: [
       'Completa tu perfil de productor: foto, descripción de empresa, ubicación y WhatsApp.',
@@ -40,9 +40,9 @@ const COPY: Record<Lang, {
     supportNote: 'Soporte: soporte@nexusstrategy.online',
   },
   en: {
-    title: 'Payment confirmed! Welcome to Global Nexus',
-    sub: 'Your subscription is active. Your profile will be published automatically on August 28, 2026 at 12:00 pm CDMX.',
-    planActive: 'Active',
+    title: 'Registration confirmed! Welcome to Global Nexus',
+    sub: 'Your card is connected. No charges until September 29, 2026 — build your profile at your own pace and be ready for launch.',
+    planActive: 'Active · No charge until Sep 29',
     nextTitle: 'What\'s next?',
     steps_pro: [
       'Complete your producer profile: photo, company description, location and WhatsApp.',
@@ -64,9 +64,9 @@ const COPY: Record<Lang, {
     supportNote: 'Support: soporte@nexusstrategy.online',
   },
   nl: {
-    title: 'Betaling bevestigd! Welkom bij Global Nexus',
-    sub: 'Uw abonnement is actief. Uw profiel wordt automatisch gepubliceerd op 28 augustus 2026 om 12:00 uur CDMX.',
-    planActive: 'Actief',
+    title: 'Registratie bevestigd! Welkom bij Global Nexus',
+    sub: 'Uw kaart is gekoppeld. Geen kosten tot 29 september 2026 — bouw uw profiel op uw eigen tempo en wees klaar voor de lancering.',
+    planActive: 'Actief · Geen kosten tot 29 sep',
     nextTitle: 'Wat nu?',
     steps_pro: [
       'Vul uw producentenprofiel in: foto, bedrijfsbeschrijving, locatie en WhatsApp.',
@@ -88,9 +88,9 @@ const COPY: Record<Lang, {
     supportNote: 'Ondersteuning: soporte@nexusstrategy.online',
   },
   de: {
-    title: 'Zahlung bestätigt! Willkommen bei Global Nexus',
-    sub: 'Ihr Abonnement ist aktiv. Ihr Profil wird automatisch am 28. August 2026 um 12:00 Uhr CDMX veröffentlicht.',
-    planActive: 'Aktiv',
+    title: 'Registrierung bestätigt! Willkommen bei Global Nexus',
+    sub: 'Ihre Karte ist hinterlegt. Keine Kosten bis 29. September 2026 — erstellen Sie Ihr Profil in Ruhe und seien Sie bereit für den Launch.',
+    planActive: 'Aktiv · Keine Kosten bis 29. Sep',
     nextTitle: 'Was kommt als nächstes?',
     steps_pro: [
       'Vervollständigen Sie Ihr Produzentenprofil: Foto, Unternehmensbeschreibung, Standort und WhatsApp.',
@@ -160,7 +160,7 @@ export default function ThankYouPage() {
             <div style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>{info.price} · <span style={{ color: '#16A34A', fontWeight: 700 }}>✓ {C.planActive}</span></div>
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 100, background: '#DCFCE7', color: '#16A34A', border: '1px solid #86EFAC' }}>
-            PAGADO
+            🎉 GRATIS HASTA 29 SEP
           </div>
         </div>
 
