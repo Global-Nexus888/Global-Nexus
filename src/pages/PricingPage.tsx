@@ -214,7 +214,24 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', margin: '2.5rem 0', flexWrap: 'wrap' }}>
+        {/* Coupon banner */}
+        <div style={{ background: 'linear-gradient(135deg, #FFF7ED, #FFFBEB)', border: '2px dashed #F59E0B', borderRadius: 14, padding: '1rem 1.5rem', margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ fontSize: '1.5rem' }}>🎟️</span>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>
+              {lang === 'es' ? '¡Cupón de descuento disponible!' : lang === 'nl' ? 'Kortingscode beschikbaar!' : lang === 'de' ? 'Rabattcode verfügbar!' : 'Discount coupon available!'}
+            </div>
+            <div style={{ fontSize: 12, color: '#78350F', marginTop: 2 }}>
+              {lang === 'es' ? 'Ingresa el código al momento del pago y obtén' : lang === 'nl' ? 'Voer de code in bij betaling en ontvang' : lang === 'de' ? 'Geben Sie den Code beim Bezahlen ein und erhalten Sie' : 'Enter the code at checkout and get'}{' '}
+              <strong style={{ color: '#D97706' }}>20% de descuento</strong>
+            </div>
+          </div>
+          <div style={{ background: '#FEF3C7', border: '2px solid #F59E0B', borderRadius: 10, padding: '8px 20px', fontFamily: 'monospace', fontSize: '1.2rem', fontWeight: 900, color: '#92400E', letterSpacing: 3 }}>
+            URZ34
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', margin: '1.5rem 0', flexWrap: 'wrap' }}>
           {trustBadges.map((b, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', color: 'var(--text-muted)' }}>
               <span>{b.icon}</span>{b.text}
