@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom'
 
 const FEATURES = [
   { icon: '🤖', title: 'Documentos verificados por IA', desc: 'Certificados y permisos validados automáticamente' },
-  { icon: '⚓', title: 'Envíos desde Puerto Veracruz', desc: 'Logística marítima directa a puertos europeos' },
-  { icon: '🚛', title: 'Logística hasta destino EU', desc: 'Last mile delivery en 27 países europeos' },
+  { icon: '⚓', title: 'Conexión con Puerto Veracruz', desc: 'Coordina tu logística marítima directa a puertos europeos' },
+  { icon: '🚛', title: 'Gestión de destino EU', desc: 'Planifica el last mile delivery en 27 países europeos con total libertad' },
   { icon: '🔴', title: 'Actualización en tiempo real', desc: 'Stock y precios sincronizados 24/7' },
   { icon: '💬', title: 'Mensajería multilingüe', desc: 'ES / EN / NL / DE con traducción automática' },
   { icon: '0%', title: 'Libre de aranceles', desc: 'Acuerdo TLCUEM para exportación certificada' },

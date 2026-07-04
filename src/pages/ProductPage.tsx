@@ -207,6 +207,9 @@ export default function ProductPage() {
               <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--teal)', lineHeight: 1 }}>
                 ${product.price.toFixed(2)} <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>USD/{product.unit}</span>
               </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, fontWeight: 600, letterSpacing: '.03em' }}>
+                Precio base FOB Veracruz
+              </div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 6 }}>
                 MOQ: <strong style={{ color: 'var(--text)' }}>{product.moq} {product.moqUnit}</strong>
               </div>
@@ -244,8 +247,8 @@ export default function ProductPage() {
             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {[
                 '🔒 Pagos 100% seguros vía Stripe',
-                '📦 Logística con Puerto Veracruz',
-                '📄 Documentación aduanal incluida',
+                '📦 Conexión con socios logísticos · Puerto Veracruz',
+                '📄 Herramientas de documentación aduanal TLCUEM',
                 '💬 Mensajería bilingüe ES/EN',
               ].map(item => (
                 <div key={item} style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>{item}</div>

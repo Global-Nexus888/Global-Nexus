@@ -76,6 +76,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
               MOQ: {product.moq} {product.moqUnit}
             </div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: 2, fontWeight: 600, letterSpacing: '.03em' }}>
+              FOB Veracruz
+            </div>
           </div>
           <div style={{
             background: 'var(--teal)', color: '#fff',
