@@ -197,6 +197,7 @@ export default function DashboardPage() {
   const editPhotosRef = useRef<HTMLInputElement>(null)
   const [newProduct, setNewProduct] = useState<Partial<Product>>({ photos: [] })
   const [newCert, setNewCert] = useState<Partial<Cert>>({})
+  const certFileRef = useRef<HTMLInputElement>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [editProduct, setEditProduct] = useState<Partial<Product>>({})
@@ -248,10 +249,18 @@ export default function DashboardPage() {
     setProducts(updated); saveProducts(email, updated); setDeleteConfirmId(null)
   }
 
+  const handleCertFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setNewCert(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
+    reader.readAsDataURL(file)
+  }
+
   const addCert = () => {
     if (!newCert.name) return
     const updated = [...certs, { ...newCert, id: Date.now().toString() } as Cert]
     setCerts(updated); saveCerts(email, updated); setNewCert({}); setShowAddCert(false)
+    if (certFileRef.current) certFileRef.current.value = ''
   }
 
   const logout = () => { localStorage.removeItem('gn_current_user'); navigate('/login') }
@@ -859,6 +868,18 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
+                {/* File upload */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>
+                    {t('Subir documento (PDF, JPG, PNG)', 'Upload document (PDF, JPG, PNG)', 'Document uploaden (PDF, JPG, PNG)', 'Dokument hochladen (PDF, JPG, PNG)')}
+                  </label>
+                  <input ref={certFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleCertFile}
+                    style={{ display: 'none' }} />
+                  <button type="button" onClick={() => certFileRef.current?.click()}
+                    style={{ padding: '9px 18px', borderRadius: 9, border: `1.5px dashed ${newCert.fileName ? C.teal : C.border}`, background: newCert.fileName ? C.tealLight : C.bg, color: newCert.fileName ? C.teal : C.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+                    {newCert.fileName ? `✓ ${newCert.fileName}` : `📎 ${t('Seleccionar archivo...','Select file...','Bestand selecteren...','Datei auswählen...')}`}
+                  </button>
+                </div>
                 <button onClick={addCert} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   + {L.addCertBtn}
                 </button>
@@ -876,6 +897,12 @@ export default function DashboardPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
                         <div style={{ fontSize: 12, color: C.muted }}>{[c.issuer, c.year].filter(Boolean).join(' · ')}</div>
+                        {(c as Cert & { fileName?: string; fileData?: string }).fileName && (
+                          <a href={(c as Cert & { fileData?: string }).fileData} download={(c as Cert & { fileName?: string }).fileName}
+                            style={{ fontSize: 11, color: C.teal, fontWeight: 600, textDecoration: 'none', marginTop: 3, display: 'inline-block' }}>
+                            📎 {(c as Cert & { fileName?: string }).fileName}
+                          </a>
+                        )}
                       </div>
                       <button onClick={() => { const u = certs.filter(x => x.id !== c.id); setCerts(u); saveCerts(email, u) }}
                         style={{ padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.red, fontSize: 12, cursor: 'pointer' }}>{L.deleteBtn}</button>

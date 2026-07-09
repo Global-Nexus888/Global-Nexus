@@ -9,6 +9,12 @@ export default function Navbar() {
   const { lang } = useLang()
   const T = useT(lang)
 
+  // Session detection
+  const currentUser = (() => { try { return JSON.parse(localStorage.getItem('gn_current_user') || 'null') } catch { return null } })()
+  const isLoggedIn = !!currentUser
+  const dashUrl = currentUser?.role === 'comprador' ? '/dashboard-comprador' : '/dashboard'
+  const dashLabel = lang === 'en' ? 'My Panel' : lang === 'nl' ? 'Mijn Panel' : lang === 'de' ? 'Mein Panel' : 'Mi Panel'
+
   const asesoriaLabel = lang === 'en' ? 'Advisory' : lang === 'nl' ? 'Advies' : lang === 'de' ? 'Beratung' : 'Asesoría'
 
   const links = [
@@ -60,19 +66,34 @@ export default function Navbar() {
 
         {/* Desktop auth */}
         <div className="nav-desktop" style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-          <Link to="/login" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>
-            {T('nav_login')}
-          </Link>
-          <Link to="/registro" className="btn btn-primary" style={{ fontSize: '13px', padding: '7px 14px' }}>
-            {T('nav_register')}
-          </Link>
+          {isLoggedIn ? (
+            <Link to={dashUrl} className="btn btn-primary" style={{ fontSize: '13px', padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: '1rem' }}>{currentUser?.role === 'comprador' ? '🇪🇺' : '🏭'}</span>
+              {dashLabel}
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-ghost" style={{ fontSize: '13px', padding: '7px 14px' }}>
+                {T('nav_login')}
+              </Link>
+              <Link to="/registro" className="btn btn-primary" style={{ fontSize: '13px', padding: '7px 14px' }}>
+                {T('nav_register')}
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile: auth + hamburger */}
         <div className="nav-mobile" style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-          <Link to="/registro" className="btn btn-primary" style={{ fontSize: '12px', padding: '7px 13px' }}>
-            {T('nav_register')}
-          </Link>
+          {isLoggedIn ? (
+            <Link to={dashUrl} className="btn btn-primary" style={{ fontSize: '12px', padding: '7px 13px' }}>
+              {dashLabel}
+            </Link>
+          ) : (
+            <Link to="/registro" className="btn btn-primary" style={{ fontSize: '12px', padding: '7px 13px' }}>
+              {T('nav_register')}
+            </Link>
+          )}
           <button
             onClick={() => setMenuOpen(o => !o)}
             aria-label="Menú"
@@ -100,9 +121,15 @@ export default function Navbar() {
               </Link>
             ))}
             <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
-            <Link to="/login" onClick={() => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none', display: 'block' }}>
-              {T('nav_login')}
-            </Link>
+            {isLoggedIn ? (
+              <Link to={dashUrl} onClick={() => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: '14px', fontWeight: 700, color: 'var(--teal)', textDecoration: 'none', display: 'block', background: 'var(--teal-light)' }}>
+                {currentUser?.role === 'comprador' ? '🇪🇺' : '🏭'} {dashLabel}
+              </Link>
+            ) : (
+              <Link to="/login" onClick={() => setMenuOpen(false)} style={{ padding: '12px 14px', borderRadius: 10, fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none', display: 'block' }}>
+                {T('nav_login')}
+              </Link>
+            )}
             <div style={{ marginTop: 4, padding: '10px 14px', background: 'var(--teal-light)', borderRadius: 10 }}>
               <span className="badge badge-green">{T('nav_badge')} aranceles EU</span>
             </div>

@@ -37,6 +37,13 @@ export default function RegisterPage() {
     const userPayload = { ...form, role, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     localStorage.setItem('gn_current_user', JSON.stringify(userPayload))
 
+    // Append to gn_users array so admin panel sees registrations in real-time
+    try {
+      const existing = JSON.parse(localStorage.getItem('gn_users') || '[]')
+      existing.push(userPayload)
+      localStorage.setItem('gn_users', JSON.stringify(existing))
+    } catch { /* non-blocking */ }
+
     // Attempt Supabase in background — never blocks the user
     supabase.auth.signUp({
       email: form.email,
