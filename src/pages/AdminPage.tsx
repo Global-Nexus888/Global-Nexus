@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 
 /* ─── Credentials ─── */
 const ADMIN_EMAIL = 'brandmkrs.ads@gmail.com'
 const ADMIN_PASS  = 'nexus2026'
 
-/* ─── REAL DATA: pulled from localStorage (written by RegisterPage) ─── */
-function getUsers() {
+/* ─── LOCAL fallback ─── */
+function getLocalUsers() {
   try { return JSON.parse(localStorage.getItem('gn_users') || '[]') } catch { return [] }
 }
 
@@ -126,11 +127,30 @@ export default function AdminPage() {
   const [auth, setAuth] = useState(false)
   const [tab,  setTab]  = useState<AdminTab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [users, setUsers] = useState<Record<string,unknown>[]>([])
+  const [lastRefresh, setLastRefresh] = useState(new Date())
+
+  const loadUsers = async () => {
+    // Try Supabase first (cross-device)
+    const { data } = await supabase.from('usuarios').select('*').order('created_at', { ascending: false }).catch(() => ({ data: null }))
+    if (data && data.length > 0) {
+      setUsers(data)
+    } else {
+      // Fallback to localStorage (same-browser registrations)
+      setUsers(getLocalUsers())
+    }
+    setLastRefresh(new Date())
+  }
+
+  useEffect(() => {
+    if (!auth) return
+    loadUsers()
+    const interval = setInterval(loadUsers, 30000) // auto-refresh every 30s
+    return () => clearInterval(interval)
+  }, [auth])
 
   if (!auth) return <AdminLogin onLogin={() => setAuth(true)} />
 
-  // Real data from localStorage registrations
-  const users = getUsers()
   const totalUsers    = users.length
   const totalProd     = users.filter((u: { role: string }) => u.role === 'productor').length
   const totalBuyers   = users.filter((u: { role: string }) => u.role === 'comprador').length
@@ -233,8 +253,11 @@ export default function AdminPage() {
               {new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
-          <div style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, background: `${C.teal}12`, color: C.teal, fontWeight: 700, border: `1px solid ${C.teal}30` }}>
-            nexusstrategy.online
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, color: C.muted }}>Actualizado: {lastRefresh.toLocaleTimeString('es-MX')}</span>
+            <button onClick={loadUsers} style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, background: `${C.teal}12`, color: C.teal, fontWeight: 700, border: `1px solid ${C.teal}30`, cursor: 'pointer' }}>
+              ↻ Actualizar
+            </button>
           </div>
         </div>
 

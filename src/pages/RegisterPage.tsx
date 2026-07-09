@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
 import { supabase } from '../lib/supabase'
+import { setSessionExpiry } from '../hooks/useSession'
 
 type Role = 'productor' | 'comprador'
 
@@ -36,6 +37,7 @@ export default function RegisterPage() {
     // Always save to localStorage first — registration works regardless of Supabase status
     const userPayload = { ...form, role, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
     localStorage.setItem('gn_current_user', JSON.stringify(userPayload))
+    setSessionExpiry()
 
     // Append to gn_users array so admin panel sees registrations in real-time
     try {

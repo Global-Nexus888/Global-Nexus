@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
 import { supabase } from '../lib/supabase'
+import { setSessionExpiry } from '../hooks/useSession'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -56,6 +57,7 @@ export default function LoginPage() {
           }
           // Fallback: trust the role selector
           localStorage.setItem('gn_current_user', JSON.stringify({ email, role }))
+          setSessionExpiry()
           navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
           return
         }
@@ -71,6 +73,7 @@ export default function LoginPage() {
 
       const user = profile || { email, role: role as string, id: authData.user.id }
       localStorage.setItem('gn_current_user', JSON.stringify(user))
+      setSessionExpiry()
 
       if (user.role === 'comprador') navigate('/dashboard-comprador')
       else navigate('/dashboard')

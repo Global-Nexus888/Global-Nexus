@@ -1,5 +1,6 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useCallback } from 'react'
+import { isSessionValid, refreshSession, clearSession } from './hooks/useSession'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CountdownBanner from './components/CountdownBanner'
@@ -33,8 +34,30 @@ const FULL_SCREEN_ROUTES = ['/admin', '/mensajes', '/dashboard', '/dashboard-com
 
 declare global { interface Window { gtag?: (...args: unknown[]) => void } }
 
+const PROTECTED = ['/dashboard', '/dashboard-comprador']
+
 export default function App() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+
+  // Session expiry check on every route change
+  useEffect(() => {
+    const isProtected = PROTECTED.some(r => pathname.startsWith(r))
+    if (isProtected && !isSessionValid()) {
+      clearSession()
+      navigate('/login')
+      return
+    }
+    if (isSessionValid()) refreshSession()
+  }, [pathname, navigate])
+
+  // Reset session timer on any user activity
+  const onActivity = useCallback(() => { refreshSession() }, [])
+  useEffect(() => {
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }))
+    return () => events.forEach(e => window.removeEventListener(e, onActivity))
+  }, [onActivity])
 
   useEffect(() => {
     if (typeof window.gtag === 'function') {

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 
@@ -179,7 +179,7 @@ export default function BuyerDashboardPage() {
     setSavedList(updated); saveSavedFn(email, updated); setNewItem({}); setShowAdd(false)
   }
 
-  const logout = () => { localStorage.removeItem('gn_current_user'); navigate('/login') }
+  const logout = () => { localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const EU_COUNTRIES = ['Alemania / Germany', 'Países Bajos / Netherlands', 'España / Spain', 'Francia / France', 'Italia / Italy', 'Bélgica / Belgium', 'Austria', 'Polonia / Poland', 'Suecia / Sweden', 'Otro / Other']
   const industries = es
@@ -249,7 +249,15 @@ export default function BuyerDashboardPage() {
           ))}
         </nav>
 
-        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        {/* Explore platform */}
+        <div style={{ padding: '0 1.25rem .75rem' }}>
+          <Link to="/catalogo" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 9, background: 'linear-gradient(135deg,#0D9488,#0b6b63)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 12 }}>
+            <span>🔍</span>
+            <span>{t('Explorar Plataforma B2B','B2B Platform verkennen','B2B-Plattform erkunden','Explore B2B Platform')}</span>
+          </Link>
+        </div>
+
+        <div style={{ padding: '.5rem 1.25rem 1rem', borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: '1rem' }}>
           <button onClick={logout} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.6)', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
             {t('Cerrar sesión', 'Uitloggen', 'Abmelden', 'Sign out')}
           </button>

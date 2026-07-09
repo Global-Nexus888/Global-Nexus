@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 
@@ -263,7 +263,7 @@ export default function DashboardPage() {
     if (certFileRef.current) certFileRef.current.value = ''
   }
 
-  const logout = () => { localStorage.removeItem('gn_current_user'); navigate('/login') }
+  const logout = () => { localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const es = lang === 'es'; const nl = lang === 'nl'; const de = lang === 'de'
   const t = (a: string, b: string, c: string, d: string) => es ? a : nl ? b : de ? c : d
@@ -375,8 +375,16 @@ export default function DashboardPage() {
           ))}
         </nav>
 
+        {/* Explore platform */}
+        <div style={{ padding: '0 1.25rem .75rem' }}>
+          <Link to="/catalogo" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 9, background: 'linear-gradient(135deg,#0D9488,#0b6b63)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: 12 }}>
+            <span>🔍</span>
+            <span>{t('Explorar Plataforma B2B','B2B Platform verkennen','B2B-Plattform erkunden','Explore B2B Platform')}</span>
+          </Link>
+        </div>
+
         {/* Logout */}
-        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <div style={{ padding: '.5rem 1.25rem 1rem', borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: '1rem' }}>
           <button onClick={logout} style={{ width: '100%', padding: '9px', borderRadius: 8, border: '1px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.6)', fontSize: 12, cursor: 'pointer', fontWeight: 500 }}>
             {L.logoutBtn}
           </button>
