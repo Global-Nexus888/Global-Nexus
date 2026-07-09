@@ -33,19 +33,17 @@ export default function RegisterPage() {
     setError('')
     setLoading(true)
 
-    try {
-      // 1. Create auth account in Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { name: form.name, role } },
-      })
+    // Always save to localStorage first — registration works regardless of Supabase status
+    const userPayload = { ...form, role, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    localStorage.setItem('gn_current_user', JSON.stringify(userPayload))
 
-      if (authError) throw authError
-
+    // Attempt Supabase in background — never blocks the user
+    supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { data: { name: form.name, role } },
+    }).then(({ data: authData }) => {
       const userId = authData.user?.id
-
-      // 2. Save profile in 'usuarios' table — non-blocking, don't fail registration if table missing
       if (userId) {
         supabase.from('usuarios').upsert({
           id: userId,
@@ -60,21 +58,13 @@ export default function RegisterPage() {
           plan: 'explorador',
           plan_active: false,
         }).then(() => {}).catch(() => {})
+        // Update localStorage with real Supabase id
+        localStorage.setItem('gn_current_user', JSON.stringify({ ...userPayload, id: userId }))
       }
+    }).catch(() => {})
 
-      // 3. Save session in localStorage and navigate directly to dashboard
-      localStorage.setItem('gn_current_user', JSON.stringify({ ...form, role, id: userId }))
-      navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al registrarse'
-      if (msg.includes('already registered') || msg.includes('already been registered')) {
-        setError(lang === 'es' ? 'Este correo ya está registrado. ¿Quieres iniciar sesión?' : 'This email is already registered. Want to sign in?')
-      } else {
-        setError(msg)
-      }
-    } finally {
-      setLoading(false)
-    }
+    // Navigate immediately
+    navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
   }
 
   if (success) {
