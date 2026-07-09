@@ -42,6 +42,37 @@ interface Cert {
 
 const C = { navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706', green: '#16A34A', border: '#E2E8F0', bg: '#F8FAFC', white: '#FFFFFF', text: '#0F172A', muted: '#64748B', red: '#DC2626' }
 
+/* ─── Units per category ─── */
+const UNITS_BY_CAT: Record<string, string[]> = {
+  'Bebidas espirituosas':       ['Botella 750ml','Botella 1L','Caja 6 botellas','Caja 12 botellas','Barril','Litro'],
+  'Agricultura y alimentos':    ['kg','Tonelada métrica','Caja','Bulto','Saco 25kg','Saco 50kg','Gramo','Paquete'],
+  'Artesanías y textiles':      ['Pieza','Docena','Metro','Rollo','Juego / Set','Caja'],
+  'Cosméticos naturales':       ['Unidad','Frasco 50ml','Frasco 100ml','Caja 12 unidades','Litro','kg'],
+  'Farmacéutico / Herbolaria':  ['Pieza','Frasco','Caja 12 unidades','Gramo','kg','Sobre'],
+  'Spirits & Beverages':        ['Bottle 750ml','Bottle 1L','Box 6 bottles','Box 12 bottles','Barrel','Liter'],
+  'Agriculture & Food':         ['kg','Metric ton','Box','Bundle','25kg Bag','50kg Bag','Gram','Package'],
+  'Crafts & Textiles':          ['Piece','Dozen','Meter','Roll','Set','Box'],
+  'Natural Cosmetics':          ['Unit','Bottle 50ml','Bottle 100ml','Box 12 units','Liter','kg'],
+  'Pharmaceutical':             ['Piece','Bottle','Box 12 units','Gram','kg','Sachet'],
+  'Dranken & Spiritualiën':     ['Fles 750ml','Fles 1L','Doos 6 flessen','Doos 12 flessen','Vat','Liter'],
+  'Landbouw & Voeding':         ['kg','Ton','Doos','Bundel','Zak 25kg','Zak 50kg','Gram','Pakket'],
+  'Ambachten & Textiel':        ['Stuk','Dozijn','Meter','Rol','Set','Doos'],
+  'Natuurlijke Cosmetica':      ['Stuk','Fles 50ml','Fles 100ml','Doos 12 stuks','Liter','kg'],
+  'Farmaceutisch':              ['Stuk','Fles','Doos 12 stuks','Gram','kg','Sachet'],
+  'Spirituosen & Getränke':     ['Flasche 750ml','Flasche 1L','Karton 6 Flaschen','Karton 12 Flaschen','Fass','Liter'],
+  'Landwirtschaft & Lebensmittel': ['kg','Tonne','Karton','Bündel','Sack 25kg','Sack 50kg','Gramm','Paket'],
+  'Kunsthandwerk & Textilien':  ['Stück','Dutzend','Meter','Rolle','Set','Karton'],
+  'Naturkosmetik':              ['Stück','Flasche 50ml','Flasche 100ml','Karton 12 Stück','Liter','kg'],
+  'Pharmazeutisch':             ['Stück','Flasche','Karton 12 Stück','Gramm','kg','Beutel'],
+  'Otro': ['Pieza','Caja','kg','Tonelada','Litro','Metro','Unidad'],
+  'Overig': ['Stuk','Doos','kg','Ton','Liter','Meter','Eenheid'],
+  'Sonstige': ['Stück','Karton','kg','Tonne','Liter','Meter','Einheit'],
+  'Other': ['Piece','Box','kg','Ton','Liter','Meter','Unit'],
+}
+function getUnits(category: string): string[] {
+  return UNITS_BY_CAT[category] || ['Pieza','Caja','kg','Tonelada','Litro','Unidad','Otro']
+}
+
 /* ─── Demo data ─── */
 const DEMO_CONTACTS = [
   { name: 'Mueller Import GmbH', flag: '🇩🇪', city: 'Frankfurt', time: '22:14', status: 'Nuevo', statusColor: '#16A34A', statusBg: '#DCFCE7' },
@@ -323,13 +354,13 @@ export default function DashboardPage() {
       <div style={{ width: 220, background: C.navy, display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #0D9488, #5EEAD4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0 }}>GN</div>
             <div>
               <div style={{ fontWeight: 800, fontSize: 13, color: '#fff' }}>Global Nexus</div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,.45)' }}>Producer Panel</div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* User mini */}
@@ -657,7 +688,6 @@ export default function DashboardPage() {
                   {[
                     { key: 'name', label: L.productName, placeholder: 'Tequila Añejo Reserva', required: true },
                     { key: 'price', label: L.productPrice, placeholder: '$45.00' },
-                    { key: 'unit', label: L.productUnit, placeholder: t('Caja 12 botellas','Doos 12 flessen','Kiste 12 Flaschen','Box 12 bottles') },
                     { key: 'minOrder', label: L.productMOQ, placeholder: t('100 cajas','100 dozen','100 Kisten','100 boxes') },
                     { key: 'origin', label: L.productOrigin, placeholder: 'Jalisco, México' },
                   ].map(f => (
@@ -668,9 +698,16 @@ export default function DashboardPage() {
                   ))}
                   <div>
                     <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.productCat} *</label>
-                    <select value={newProduct.category || ''} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} style={{ ...inp(), cursor: 'pointer' }}>
+                    <select value={newProduct.category || ''} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value, unit: '' }))} style={{ ...inp(), cursor: 'pointer' }}>
                       <option value="">—</option>
                       {L.categories.map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.productUnit}</label>
+                    <select value={newProduct.unit || ''} onChange={e => setNewProduct(p => ({ ...p, unit: e.target.value }))} style={{ ...inp(), cursor: 'pointer' }}>
+                      <option value="">— {t('Selecciona unidad','Eenheid','Einheit','Select unit')} —</option>
+                      {getUnits(newProduct.category || '').map(u => <option key={u}>{u}</option>)}
                     </select>
                   </div>
                 </div>
@@ -739,7 +776,6 @@ export default function DashboardPage() {
                               {[
                                 { key: 'name', label: L.productName },
                                 { key: 'price', label: L.productPrice },
-                                { key: 'unit', label: L.productUnit },
                                 { key: 'minOrder', label: L.productMOQ },
                                 { key: 'origin', label: L.productOrigin },
                               ].map(f => (
@@ -750,8 +786,15 @@ export default function DashboardPage() {
                               ))}
                               <div>
                                 <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 3 }}>{L.productCat}</label>
-                                <select value={editProduct.category || ''} onChange={e => setEditProduct(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp({ fontSize: 12, padding: '8px 10px' }), cursor: 'pointer' }}>
+                                <select value={editProduct.category || ''} onChange={e => setEditProduct(prev => ({ ...prev, category: e.target.value, unit: '' }))} style={{ ...inp({ fontSize: 12, padding: '8px 10px' }), cursor: 'pointer' }}>
                                   {L.categories.map(c => <option key={c}>{c}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 3 }}>{L.productUnit}</label>
+                                <select value={editProduct.unit || ''} onChange={e => setEditProduct(prev => ({ ...prev, unit: e.target.value }))} style={{ ...inp({ fontSize: 12, padding: '8px 10px' }), cursor: 'pointer' }}>
+                                  <option value="">— {t('Selecciona','Selecteer','Auswählen','Select')} —</option>
+                                  {getUnits(editProduct.category || '').map(u => <option key={u}>{u}</option>)}
                                 </select>
                               </div>
                               <div>

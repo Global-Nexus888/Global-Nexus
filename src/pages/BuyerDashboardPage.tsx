@@ -199,13 +199,13 @@ export default function BuyerDashboardPage() {
       <div style={{ width: 220, background: C.navy, display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #3B82F6, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0 }}>GN</div>
             <div>
               <div style={{ fontWeight: 800, fontSize: 13, color: '#fff' }}>Global Nexus</div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,.45)' }}>EU Buyer Panel</div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* User mini */}
