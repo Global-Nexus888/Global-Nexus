@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const ADMIN_EMAIL = 'brandmkrs.ads@gmail.com'
@@ -97,6 +98,7 @@ function StatCard({ icon, label, value, sub, color }: { icon: string; label: str
 }
 
 export default function AdminPage() {
+  const navigate = useNavigate()
   const [auth, setAuth]               = useState(false)
   const [tab,  setTab]                = useState<AdminTab>('overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -208,6 +210,7 @@ export default function AdminPage() {
               <div style={{ color: C.muted, fontSize: 10 }}>brandmkrs.ads@gmail.com</div>
             </div>
           </div>
+          <button onClick={() => navigate('/')} style={{ width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: C.white, fontSize: 12, fontWeight: 700, cursor: 'pointer', marginBottom: 6 }}>🌐 Ir a la plataforma</button>
           <button onClick={() => setAuth(false)} style={{ width: '100%', padding: '7px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 12, cursor: 'pointer' }}>Cerrar sesión</button>
         </div>
       </div>

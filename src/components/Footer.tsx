@@ -89,7 +89,7 @@ export default function Footer() {
               >{l}</Link>
             ))}
             <div style={{ marginTop: '1rem', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              📧 hola@nexusstrategy.online
+              📧 hola@global-nexus.business
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-          © {new Date().getFullYear()} Global Nexus · nexusstrategy.online · Plataforma B2B México–Europa
+          © {new Date().getFullYear()} Global Nexus · global-nexus.business · Plataforma B2B México–Europa
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>🔒 SSL Secure</span>
