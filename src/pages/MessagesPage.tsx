@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { loadAdminMessages, markAllAdminMessagesRead, type AdminMessage } from '../lib/adminMessages'
 
 /* ─── Deal stages ─── */
 const DEAL_STAGES = [
@@ -159,7 +160,7 @@ const QUICK_PHRASES: Record<string, string[]> = {
 
 /* ─── Component ─── */
 export default function MessagesPage() {
-  const [activeId, setActiveId] = useState('c1')
+  const [activeId, setActiveId] = useState<string>('admin')
   const [convos, setConvos] = useState<Conversation[]>(CONVERSATIONS)
   const [input, setInput] = useState('')
   const [translatedIds, setTranslatedIds] = useState<Set<string>>(new Set())
@@ -173,11 +174,38 @@ export default function MessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // Admin messages
+  const [adminMsgs, setAdminMsgs] = useState<AdminMessage[]>([])
+  const [adminUnread, setAdminUnread] = useState(0)
+
+  useEffect(() => {
+    const email = (() => {
+      try { return JSON.parse(localStorage.getItem('gn_current_user') || '{}').email || '' } catch { return '' }
+    })()
+    if (!email) return
+    loadAdminMessages(email).then(msgs => {
+      setAdminMsgs(msgs)
+      setAdminUnread(msgs.filter(m => !m.read).length)
+    })
+  }, [])
+
+  const openAdmin = () => {
+    setActiveId('admin')
+    const email = (() => {
+      try { return JSON.parse(localStorage.getItem('gn_current_user') || '{}').email || '' } catch { return '' }
+    })()
+    if (email && adminUnread > 0) {
+      markAllAdminMessagesRead(email)
+      setAdminUnread(0)
+      setAdminMsgs(prev => prev.map(m => ({ ...m, read: true })))
+    }
+  }
+
   const setStage = (stageId: string) => {
     setConvos(cs => cs.map(c => c.id === activeId ? { ...c, stage: stageId } : c))
   }
 
-  const convo = convos.find(c => c.id === activeId)!
+  const convo = convos.find(c => c.id === activeId) ?? convos[0]
   const filtered = convos.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.company.toLowerCase().includes(search.toLowerCase())
@@ -277,6 +305,34 @@ export default function MessagesPage() {
 
         {/* Conversation list */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
+
+          {/* ── Admin pinned conversation ── */}
+          <div onClick={openAdmin} style={{ padding: '12px 1.25rem', cursor: 'pointer', borderBottom: '2px solid var(--border)', background: activeId === 'admin' ? 'var(--teal-light)' : '#FFFBEB', transition: 'background .15s' }}
+            onMouseEnter={e => { if (activeId !== 'admin') e.currentTarget.style.background = '#FEF9C3' }}
+            onMouseLeave={e => { if (activeId !== 'admin') e.currentTarget.style.background = '#FFFBEB' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: activeId === 'admin' ? 'rgba(13,148,136,.15)' : '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', border: activeId === 'admin' ? '2px solid var(--teal)' : '2px solid #FCD34D' }}>🌐</div>
+                <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: '50%', background: '#22C55E', border: '2px solid var(--white)' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>Global Nexus</span>
+                  {adminMsgs[0] && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDate(new Date(adminMsgs[0].sent_at))}</span>}
+                </div>
+                <div style={{ fontSize: 11, color: '#D97706', fontWeight: 700 }}>🛡️ Administración oficial</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: activeId === 'admin' ? 'var(--teal-dark)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                    {adminMsgs[0]?.subject || 'Mensajes del equipo Global Nexus'}
+                  </span>
+                  {adminUnread > 0 && (
+                    <span style={{ background: '#EF4444', color: '#fff', borderRadius: 100, fontSize: 10, fontWeight: 700, padding: '1px 7px', flexShrink: 0, marginLeft: 4 }}>{adminUnread}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {filtered.map(c => {
             const last = c.messages[c.messages.length - 1]
             const isActive = c.id === activeId
@@ -335,7 +391,66 @@ export default function MessagesPage() {
       {/* ── Chat window ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Chat header */}
+        {/* ── ADMIN MESSAGES PANEL ── */}
+        {activeId === 'admin' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', border: '2px solid #FCD34D', flexShrink: 0 }}>🌐</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>Global Nexus — Administración</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10, marginTop: 2 }}>
+                  <span style={{ color: '#16A34A' }}>● En línea</span>
+                  <span>🛡️ Canal oficial de la plataforma</span>
+                </div>
+              </div>
+            </div>
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {adminMsgs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌐</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>Sin mensajes de administración</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.6 }}>Aquí recibirás comunicados, bienvenidas y seguimiento del equipo Global Nexus.</div>
+                </div>
+              ) : adminMsgs.map((m, i) => (
+                <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {/* Date separator */}
+                  {(i === 0 || formatDate(new Date(adminMsgs[i - 1].sent_at)) !== formatDate(new Date(m.sent_at))) && (
+                    <div style={{ textAlign: 'center', margin: '8px 0' }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface2)', padding: '3px 12px', borderRadius: 100 }}>{formatDate(new Date(m.sent_at))}</span>
+                    </div>
+                  )}
+                  {/* Sender label */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <span style={{ fontSize: '1rem' }}>🌐</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#D97706' }}>Global Nexus Admin</span>
+                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', fontWeight: 700 }}>🛡️ Oficial</span>
+                  </div>
+                  {/* Message bubble */}
+                  <div style={{ maxWidth: '80%', background: 'var(--white)', border: '1px solid var(--border)', borderRadius: '16px 16px 16px 4px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', borderLeft: '3px solid #F59E0B' }}>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{m.subject}</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{m.body}</div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatTime(new Date(m.sent_at))}</span>
+                      {!m.read && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 100, background: '#EF444420', color: '#EF4444' }}>● No leído</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+            {/* Read-only input area */}
+            <div style={{ borderTop: '1px solid var(--border)', background: 'var(--white)', padding: '12px 1.5rem' }}>
+              <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                Este es un canal de <strong style={{ color: 'var(--text)' }}>comunicación oficial de Global Nexus</strong>. Para responder, escribe a <a href="mailto:hola@global-nexus.business" style={{ color: 'var(--teal)', fontWeight: 700 }}>hola@global-nexus.business</a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Regular chat (buyer/producer conversations) ── */}
+        {activeId !== 'admin' && <>
         <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ position: 'relative' }}>
@@ -715,6 +830,7 @@ export default function MessagesPage() {
             <span>🔒 Cifrado extremo a extremo</span>
           </div>
         </div>
+        </>}
       </div>
 
       <style>{`

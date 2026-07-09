@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
+import { countUnreadAdminMessages } from '../lib/adminMessages'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -230,6 +231,12 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState(() => getProfile(email))
   const [products, setProducts] = useState<Product[]>(() => getProducts(email))
   const [tab, setTab] = useState(0)
+  const [adminUnread, setAdminUnread] = useState(0)
+
+  useEffect(() => {
+    if (!email) return
+    countUnreadAdminMessages(email).then(n => setAdminUnread(n))
+  }, [email])
   const [saveMsg, setSaveMsg] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [demoMode, setDemoMode] = useState(false)
@@ -265,7 +272,7 @@ export default function DashboardPage() {
 
   const pChecks = [!!profile.photo, !!profile.bio, !!profile.location, !!profile.whatsapp, products.length > 0, !!(story as Record<string,string>).history, !!profile.website]
   const pPct = Math.round((pChecks.filter(Boolean).length / pChecks.length) * 100)
-  const navItems = getSidebarNav(lang as Lang, 3)
+  const navItems = getSidebarNav(lang as Lang, adminUnread)
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { sendAdminMessage } from '../lib/adminMessages'
 
 const ADMIN_EMAIL = 'brandmkrs.ads@gmail.com'
 const ADMIN_PASS  = 'nexus2026'
@@ -236,27 +237,24 @@ export default function AdminPage() {
     setMsgBody(tpl.body(name))
   }
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!composeFor || !msgSubject || !msgBody) return
     setMsgSending(true)
-    setTimeout(() => {
-      const msg: AdminMsg = {
-        id: Date.now().toString(),
-        to_email: String(composeFor.email || ''),
-        to_name: String(composeFor.name || composeFor.company || ''),
-        subject: msgSubject,
-        body: msgBody,
-        sent_at: new Date().toISOString(),
-        type: msgTemplate,
-      }
-      const updated = [msg, ...messages]
-      setMessages(updated)
-      saveAdminMessages(updated)
-      // Try to save to Supabase (non-blocking)
-      supabase.from('mensajes_admin' as never).insert([{ ...msg }]).then(() => {}).catch(() => {})
-      setMsgSending(false)
-      setMsgSent(true)
-    }, 900)
+    const sent = await sendAdminMessage({
+      from_email: ADMIN_EMAIL,
+      from_name: 'Global Nexus Admin',
+      to_email: String(composeFor.email || ''),
+      to_name: String(composeFor.name || composeFor.company || ''),
+      subject: msgSubject,
+      body: msgBody,
+      sent_at: new Date().toISOString(),
+      type: msgTemplate,
+    })
+    const updated = [sent as AdminMsg, ...messages]
+    setMessages(updated)
+    saveAdminMessages(updated)
+    setMsgSending(false)
+    setMsgSent(true)
   }
 
   if (!auth) return <AdminLogin onLogin={() => setAuth(true)} />
@@ -578,29 +576,15 @@ export default function AdminPage() {
                   </div>
 
                   {msgSent
-                    ? <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '12px 16px', fontSize: 13, color: C.green, fontWeight: 700, textAlign: 'center' }}>
-                        ✅ Mensaje registrado y guardado correctamente.
-                        <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, color: C.muted }}>Usa el botón de email o WhatsApp para enviarlo directamente al usuario.</div>
+                    ? <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '14px 16px', fontSize: 13, color: C.green, fontWeight: 700, textAlign: 'center' }}>
+                        ✅ Mensaje enviado en plataforma
+                        <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, color: C.muted }}>El usuario verá una notificación 🔔 en su panel de Mensajes al iniciar sesión.</div>
+                        <button onClick={() => { setMsgSent(false); setMsgSubject(''); setMsgBody('') }} style={{ marginTop: 10, fontSize: 11, padding: '5px 14px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer' }}>Redactar otro</button>
                       </div>
-                    : <div style={{ display: 'flex', gap: 8 }}>
-                        <a href={`mailto:${String(composeFor.email || '')}?subject=${encodeURIComponent(msgSubject)}&body=${encodeURIComponent(msgBody)}`}
-                          target="_blank" rel="noreferrer"
-                          style={{ flex: 1, padding: '10px', borderRadius: 9, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: C.white, fontWeight: 700, fontSize: 13, cursor: 'pointer', textAlign: 'center', textDecoration: 'none', display: 'block' }}
-                          onClick={sendMessage}>
-                          ✉️ Enviar por Email
-                        </a>
-                        {composeFor.phone && (
-                          <a href={`https://wa.me/${String(composeFor.phone).replace(/\D/g,'')}?text=${encodeURIComponent(msgSubject + '\n\n' + msgBody)}`}
-                            target="_blank" rel="noreferrer" onClick={sendMessage}
-                            style={{ padding: '10px 16px', borderRadius: 9, background: '#25D366', color: C.white, fontWeight: 700, fontSize: 13, cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}>
-                            💬 WhatsApp
-                          </a>
-                        )}
-                        <button onClick={sendMessage} disabled={msgSending || !msgSubject || !msgBody}
-                          style={{ padding: '10px 14px', borderRadius: 9, border: `1px solid ${C.border}`, background: C.bg, color: C.muted, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-                          {msgSending ? '⏳' : '💾 Guardar'}
-                        </button>
-                      </div>
+                    : <button onClick={sendMessage} disabled={msgSending || !msgSubject || !msgBody}
+                        style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: C.white, fontWeight: 700, fontSize: 14, cursor: msgSending || !msgSubject || !msgBody ? 'not-allowed' : 'pointer', opacity: msgSending || !msgSubject || !msgBody ? .6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        {msgSending ? '⏳ Enviando...' : '🌐 Enviar mensaje en plataforma'}
+                      </button>
                   }
                 </div>
               )}
