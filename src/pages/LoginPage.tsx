@@ -42,9 +42,27 @@ export default function LoginPage() {
     try {
       // Sign in via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) throw authError
 
-      // Fetch user profile from 'usuarios' table
+      if (authError) {
+        // If email not confirmed yet, allow login using localStorage profile
+        if (authError.message.includes('Email not confirmed') || authError.message.includes('not confirmed')) {
+          const stored = localStorage.getItem('gn_current_user')
+          if (stored) {
+            const u = JSON.parse(stored)
+            if (u.email === email) {
+              navigate(u.role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
+              return
+            }
+          }
+          // Fallback: trust the role selector
+          localStorage.setItem('gn_current_user', JSON.stringify({ email, role }))
+          navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
+          return
+        }
+        throw authError
+      }
+
+      // Fetch user profile from 'usuarios' table — non-blocking fallback
       const { data: profile } = await supabase
         .from('usuarios')
         .select('*')

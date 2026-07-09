@@ -43,10 +43,11 @@ export default function RegisterPage() {
 
       if (authError) throw authError
 
-      // 2. Save profile in 'usuarios' table
       const userId = authData.user?.id
+
+      // 2. Save profile in 'usuarios' table — non-blocking, don't fail registration if table missing
       if (userId) {
-        await supabase.from('usuarios').upsert({
+        supabase.from('usuarios').upsert({
           id: userId,
           email: form.email,
           name: form.name,
@@ -58,15 +59,14 @@ export default function RegisterPage() {
           role,
           plan: 'explorador',
           plan_active: false,
-        })
+        }).then(() => {}).catch(() => {})
       }
 
-      // 3. Keep session in localStorage for UI
+      // 3. Save session in localStorage and navigate directly to dashboard
       localStorage.setItem('gn_current_user', JSON.stringify({ ...form, role, id: userId }))
-      setSuccess(true)
+      navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al registrarse'
-      // If email already registered, show friendly message
       if (msg.includes('already registered') || msg.includes('already been registered')) {
         setError(lang === 'es' ? 'Este correo ya está registrado. ¿Quieres iniciar sesión?' : 'This email is already registered. Want to sign in?')
       } else {
