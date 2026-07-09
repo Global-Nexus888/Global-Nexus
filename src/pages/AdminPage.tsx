@@ -131,12 +131,27 @@ export default function AdminPage() {
   const [lastRefresh, setLastRefresh] = useState(new Date())
 
   const loadUsers = async () => {
-    // Try Supabase first (cross-device)
-    const { data } = await supabase.from('usuarios').select('*').order('created_at', { ascending: false }).catch(() => ({ data: null }))
-    if (data && data.length > 0) {
-      setUsers(data)
-    } else {
-      // Fallback to localStorage (same-browser registrations)
+    try {
+      // Load users from Supabase
+      const { data: sbUsers } = await supabase
+        .from('usuarios')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (sbUsers && sbUsers.length > 0) {
+        // Also load product counts
+        const { data: prods } = await supabase.from('productos').select('user_email')
+        const countMap: Record<string, number> = {}
+        ;(prods || []).forEach((p: { user_email: string }) => {
+          countMap[p.user_email] = (countMap[p.user_email] || 0) + 1
+        })
+        setUsers(sbUsers.map(u => ({ ...u, productCount: countMap[u.email] || 0 })))
+      } else {
+        // Fallback: merge localStorage gn_users with current browser session
+        const local = getLocalUsers()
+        setUsers(local.length > 0 ? local : [])
+      }
+    } catch {
       setUsers(getLocalUsers())
     }
     setLastRefresh(new Date())
@@ -299,20 +314,20 @@ export default function AdminPage() {
                   ? <Empty icon="📋" title="Sin registros todavía" sub="Los primeros usuarios aparecerán aquí en tiempo real cuando se registren en la plataforma." />
                   : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {[...users].reverse().slice(0, 8).map((u: { id: number; name: string; company: string; email: string; role: string; plan?: string; createdAt: string }, i: number) => (
+                      {users.slice(0, 8).map((u: Record<string, unknown>, i: number) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px', background: C.bg, borderRadius: 10 }}>
                           <div style={{ width: 36, height: 36, borderRadius: 10, background: `${C.teal}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
                             {u.role === 'productor' ? '🏭' : u.role === 'asesor' ? '🎓' : '🇪🇺'}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{u.name || u.company}</div>
-                            <div style={{ fontSize: 11, color: C.muted }}>{u.email}</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{String(u.name || u.company || '')}</div>
+                            <div style={{ fontSize: 11, color: C.muted }}>{String(u.email || '')}</div>
                           </div>
-                          <div style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 100, background: PLAN_CHIP[u.plan || u.role]?.bg || C.bg, color: PLAN_CHIP[u.plan || u.role]?.color || C.muted }}>
-                            {u.role}
+                          <div style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 100, background: PLAN_CHIP[String(u.plan || u.role)]?.bg || C.bg, color: PLAN_CHIP[String(u.plan || u.role)]?.color || C.muted }}>
+                            {String(u.role || '')}
                           </div>
                           <div style={{ fontSize: 11, color: C.muted, flexShrink: 0 }}>
-                            {new Date(u.createdAt).toLocaleDateString('es-MX')}
+                            {u.created_at ? new Date(String(u.created_at)).toLocaleDateString('es-MX') : u.createdAt ? new Date(String(u.createdAt)).toLocaleDateString('es-MX') : '—'}
                           </div>
                         </div>
                       ))}
@@ -374,30 +389,42 @@ export default function AdminPage() {
                 {users.length === 0
                   ? <Empty icon="👥" title="Sin usuarios todavía" sub="Los usuarios que se registren en nexusstrategy.online aparecerán aquí automáticamente." />
                   : (
+                    <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: C.bg }}>
-                          {['Nombre', 'Email', 'Rol', 'Empresa', 'Fecha'].map(h => (
-                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: C.muted, fontSize: 12, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                          {['Nombre / Empresa', 'Email', 'Rol', 'Estado', 'Productos', 'Registro'].map(h => (
+                            <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: C.muted, fontSize: 12, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {[...users].reverse().map((u: { id: number; name: string; company: string; email: string; role: string; createdAt: string }, i: number) => (
+                        {users.map((u: Record<string, unknown>, i: number) => (
                           <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
-                            <td style={{ padding: '12px 14px', fontWeight: 600, color: C.text }}>{u.name}</td>
-                            <td style={{ padding: '12px 14px', color: C.muted }}>{u.email}</td>
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontWeight: 600, color: C.text }}>{String(u.name || '')}</div>
+                              {u.company && <div style={{ fontSize: 11, color: C.muted }}>{String(u.company)}</div>}
+                            </td>
+                            <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12 }}>{String(u.email || '')}</td>
                             <td style={{ padding: '12px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 100, background: u.role === 'productor' ? C.tealLight : u.role === 'asesor' ? '#F3E8FF' : '#EFF6FF', color: u.role === 'productor' ? '#0F766E' : u.role === 'asesor' ? '#7C3AED' : C.navy }}>
                                 {u.role === 'productor' ? '🏭 Productor' : u.role === 'asesor' ? '🎓 Asesor' : '🇪🇺 Comprador'}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 14px', color: C.muted }}>{u.company || '—'}</td>
-                            <td style={{ padding: '12px 14px', color: C.muted }}>{new Date(u.createdAt).toLocaleDateString('es-MX')}</td>
+                            <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12 }}>{String(u.state || '—')}</td>
+                            <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                              <span style={{ fontWeight: 700, fontSize: 14, color: Number(u.productCount) > 0 ? C.teal : C.muted }}>
+                                {Number(u.productCount) || 0}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12, whiteSpace: 'nowrap' }}>
+                              {u.created_at ? new Date(String(u.created_at)).toLocaleDateString('es-MX') : u.createdAt ? new Date(String(u.createdAt)).toLocaleDateString('es-MX') : '—'}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   )
                 }
               </div>

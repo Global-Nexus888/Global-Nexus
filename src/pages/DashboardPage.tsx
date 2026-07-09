@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
+import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -287,43 +288,53 @@ export default function DashboardPage() {
     e.target.value = ''
   }
 
-  const saveProfileData = () => { saveProfile(email, profile); setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500) }
+  const saveProfileData = () => {
+    saveProfile(email, profile)
+    syncProfile(email, profile as Record<string, unknown>)
+    setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500)
+  }
 
   const addProduct = () => {
     if (!newProduct.name || !newProduct.category) return
     const updated = [...products, { ...newProduct, photos: newProduct.photos || [], id: Date.now().toString() } as Product]
-    setProducts(updated); saveProducts(email, updated); setNewProduct({ photos: [] }); setShowAddProduct(false); setAddFormCertDoc({}); setAddFormCertOpen(false)
+    setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
+    setNewProduct({ photos: [] }); setShowAddProduct(false); setAddFormCertDoc({}); setAddFormCertOpen(false)
   }
 
   const saveEditProductFn = () => {
     if (!editProduct.name || !editProduct.category) return
     const updated = products.map(p => p.id === editingProductId ? { ...p, ...editProduct } as Product : p)
-    setProducts(updated); saveProducts(email, updated); setEditingProductId(null); setEditProduct({})
+    setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
+    setEditingProductId(null); setEditProduct({})
   }
 
   const deleteProductFn = (id: string) => {
     const updated = products.filter(p => p.id !== id)
-    setProducts(updated); saveProducts(email, updated); setDeleteConfirmId(null)
+    setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
+    setDeleteConfirmId(null)
   }
 
   const addCertDocToProduct = (productId: string) => {
     if (!newCertDoc.name) return
     const cd: CertDoc = { ...newCertDoc as CertDoc, id: Date.now().toString() }
     const updated = products.map(p => p.id === productId ? { ...p, certDocs: [...(p.certDocs || []), cd] } : p)
-    setProducts(updated); saveProducts(email, updated)
+    setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
     setNewCertDoc({}); if (certDocFileRef.current) certDocFileRef.current.value = ''
   }
   const deleteCertDocFromProduct = (productId: string, certId: string) => {
     const updated = products.map(p => p.id === productId ? { ...p, certDocs: (p.certDocs || []).filter(c => c.id !== certId) } : p)
-    setProducts(updated); saveProducts(email, updated)
+    setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
   }
   const saveStoryData = () => {
-    saveStory(email, story); setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
+    saveStory(email, story)
+    syncStory(email, story as Record<string, unknown>)
+    setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
   }
   const addAward = () => {
     if (!newAward.name) return
     const updated = [...awards, { ...newAward, id: Date.now().toString() } as Award]
-    setAwards(updated); saveAwards(email, updated); setNewAward({}); setShowAddAward(false)
+    setAwards(updated); saveAwards(email, updated); syncAwards(email, updated as unknown as Record<string, unknown>[])
+    setNewAward({}); setShowAddAward(false)
     if (awardPhotoRef.current) awardPhotoRef.current.value = ''
   }
   const handleStoryPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1341,7 +1352,7 @@ export default function DashboardPage() {
                         {a.org && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: C.bg, color: C.muted, border: `1px solid ${C.border}` }}>{a.org}</span>}
                       </div>
                       {a.desc && <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>{a.desc}</div>}
-                      <button onClick={() => { const u = awards.filter(x => x.id !== a.id); setAwards(u); saveAwards(email, u) }}
+                      <button onClick={() => { const u = awards.filter(x => x.id !== a.id); setAwards(u); saveAwards(email, u); syncAwards(email, u as unknown as Record<string, unknown>[]) }}
                         style={{ marginTop: 10, padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.red, fontSize: 12, cursor: 'pointer' }}>
                         {L.deleteBtn}
                       </button>
