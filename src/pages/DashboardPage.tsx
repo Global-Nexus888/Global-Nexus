@@ -25,19 +25,28 @@ function getProducts(email: string): Product[] {
 function saveProducts(email: string, data: Product[]) {
   localStorage.setItem(`gn_products_${email}`, JSON.stringify(data))
 }
-function getCerts(email: string): Cert[] {
-  try { return JSON.parse(localStorage.getItem(`gn_certs_${email}`) || '[]') } catch { return [] }
+function getAwards(email: string): Award[] {
+  try { return JSON.parse(localStorage.getItem(`gn_awards_${email}`) || '[]') } catch { return [] }
 }
-function saveCerts(email: string, data: Cert[]) {
-  localStorage.setItem(`gn_certs_${email}`, JSON.stringify(data))
+function saveAwards(email: string, data: Award[]) {
+  localStorage.setItem(`gn_awards_${email}`, JSON.stringify(data))
+}
+function getStory(email: string) {
+  try { return JSON.parse(localStorage.getItem(`gn_story_${email}`) || '{}') } catch { return {} }
+}
+function saveStory(email: string, data: object) {
+  localStorage.setItem(`gn_story_${email}`, JSON.stringify(data))
 }
 
+interface CertDoc {
+  id: string; name: string; issuer: string; year: string; fileData?: string; fileName?: string; fileType?: string
+}
+interface Award {
+  id: string; name: string; year: string; org: string; desc: string; photo?: string
+}
 interface Product {
   id: string; name: string; category: string; price: string; unit: string
-  minOrder: string; desc: string; photos: string[]; origin?: string; certTags?: string[]
-}
-interface Cert {
-  id: string; name: string; issuer: string; year: string
+  minOrder: string; desc: string; photos: string[]; origin?: string; certTags?: string[]; certDocs?: CertDoc[]
 }
 
 const C = { navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706', green: '#16A34A', border: '#E2E8F0', bg: '#F8FAFC', white: '#FFFFFF', text: '#0F172A', muted: '#64748B', red: '#DC2626' }
@@ -100,10 +109,12 @@ function getSidebarNav(lang: Lang, msgCount: number): NavItem[] {
     { icon: '📊', label: es ? 'Dashboard' : nl ? 'Dashboard' : de ? 'Dashboard' : 'Dashboard', id: 0 },
     { icon: '🏭', label: es ? 'Mi perfil' : nl ? 'Mijn profiel' : de ? 'Mein Profil' : 'My profile', id: 1 },
     { icon: '📦', label: es ? 'Mi catálogo' : nl ? 'Mijn catalogus' : de ? 'Mein Katalog' : 'My catalog', id: 2 },
-    { icon: '🛡️', label: es ? 'Certificaciones' : nl ? 'Certificeringen' : de ? 'Zertifizierungen' : 'Certifications', id: 3 },
+    { icon: '📖', label: es ? 'Historia & Fotos' : nl ? "Verhaal & Foto's" : de ? 'Geschichte & Fotos' : 'Story & Photos', id: 3 },
+    { icon: '🏆', label: es ? 'Premios' : nl ? 'Prijzen' : de ? 'Auszeichnungen' : 'Awards', id: 7 },
     { icon: '💬', label: es ? 'Mensajes' : nl ? 'Berichten' : de ? 'Nachrichten' : 'Messages', id: 4, badge: msgCount },
     { icon: '📋', label: es ? 'Solicitudes' : nl ? 'Verzoeken' : de ? 'Anfragen' : 'Requests', id: 5, badge: 5 },
     { icon: '📜', label: es ? 'Órdenes' : nl ? 'Bestellingen' : de ? 'Bestellungen' : 'Orders', id: 6 },
+    { icon: '⚙️', label: es ? 'Ajustes' : nl ? 'Instellingen' : de ? 'Einstellungen' : 'Settings', id: 8 },
   ]
 }
 
@@ -217,26 +228,36 @@ export default function DashboardPage() {
   const email = user?.email || ''
   const [profile, setProfile] = useState(() => getProfile(email))
   const [products, setProducts] = useState<Product[]>(() => getProducts(email))
-  const [certs, setCerts] = useState<Cert[]>(() => getCerts(email))
   const [tab, setTab] = useState(0)
   const [saveMsg, setSaveMsg] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
-  const [showAddCert, setShowAddCert] = useState(false)
   const [demoMode, setDemoMode] = useState(false)
   const photoRef = useRef<HTMLInputElement>(null)
   const productPhotosRef = useRef<HTMLInputElement>(null)
   const editPhotosRef = useRef<HTMLInputElement>(null)
   const [newProduct, setNewProduct] = useState<Partial<Product>>({ photos: [] })
-  const [newCert, setNewCert] = useState<Partial<Cert>>({})
   const certFileRef = useRef<HTMLInputElement>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [editProduct, setEditProduct] = useState<Partial<Product>>({})
   const [activePhotoIdx, setActivePhotoIdx] = useState<Record<string, number>>({})
+  // New state
+  const [awards, setAwards] = useState<Award[]>(() => getAwards(email))
+  const [story, setStory] = useState(() => getStory(email))
+  const [newAward, setNewAward] = useState<Partial<Award>>({})
+  const [showAddAward, setShowAddAward] = useState(false)
+  const [expandedCertId, setExpandedCertId] = useState<string | null>(null)
+  const [newCertDoc, setNewCertDoc] = useState<Partial<CertDoc>>({})
+  const certDocFileRef = useRef<HTMLInputElement>(null)
+  const awardPhotoRef = useRef<HTMLInputElement>(null)
+  const storyPhotosRef = useRef<HTMLInputElement>(null)
+  const [storySaved, setStorySaved] = useState(false)
+  const [deleteAccountStep, setDeleteAccountStep] = useState(0)
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState('')
 
   if (!user) return null
 
-  const pChecks = [!!profile.photo, !!profile.bio, !!profile.location, !!profile.whatsapp, products.length > 0, certs.length > 0, !!profile.website]
+  const pChecks = [!!profile.photo, !!profile.bio, !!profile.location, !!profile.whatsapp, products.length > 0, !!(story as Record<string,string>).history, !!profile.website]
   const pPct = Math.round((pChecks.filter(Boolean).length / pChecks.length) * 100)
   const navItems = getSidebarNav(lang as Lang, 3)
 
@@ -280,20 +301,46 @@ export default function DashboardPage() {
     setProducts(updated); saveProducts(email, updated); setDeleteConfirmId(null)
   }
 
-  const handleCertFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addCertDocToProduct = (productId: string) => {
+    if (!newCertDoc.name) return
+    const cd: CertDoc = { ...newCertDoc as CertDoc, id: Date.now().toString() }
+    const updated = products.map(p => p.id === productId ? { ...p, certDocs: [...(p.certDocs || []), cd] } : p)
+    setProducts(updated); saveProducts(email, updated)
+    setNewCertDoc({}); if (certDocFileRef.current) certDocFileRef.current.value = ''
+  }
+  const deleteCertDocFromProduct = (productId: string, certId: string) => {
+    const updated = products.map(p => p.id === productId ? { ...p, certDocs: (p.certDocs || []).filter(c => c.id !== certId) } : p)
+    setProducts(updated); saveProducts(email, updated)
+  }
+  const saveStoryData = () => {
+    saveStory(email, story); setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
+  }
+  const addAward = () => {
+    if (!newAward.name) return
+    const updated = [...awards, { ...newAward, id: Date.now().toString() } as Award]
+    setAwards(updated); saveAwards(email, updated); setNewAward({}); setShowAddAward(false)
+    if (awardPhotoRef.current) awardPhotoRef.current.value = ''
+  }
+  const handleStoryPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = ev => setStory((s: typeof story) => ({ ...s, photos: [...(s.photos || []), ev.target?.result as string].slice(0, 20) }))
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+  const handleAwardPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => setNewCert(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
+    reader.onload = ev => setNewAward(a => ({ ...a, photo: ev.target?.result as string }))
     reader.readAsDataURL(file)
   }
-
-  const addCert = () => {
-    if (!newCert.name) return
-    const updated = [...certs, { ...newCert, id: Date.now().toString() } as Cert]
-    setCerts(updated); saveCerts(email, updated); setNewCert({}); setShowAddCert(false)
-    if (certFileRef.current) certFileRef.current.value = ''
+  const deleteAccount = () => {
+    const keys = Object.keys(localStorage).filter(k => k.includes(email) || k === 'gn_current_user' || k === 'gn_session_expires')
+    keys.forEach(k => localStorage.removeItem(k))
+    navigate('/registro')
   }
-
   const logout = () => { localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const es = lang === 'es'; const nl = lang === 'nl'; const de = lang === 'de'
@@ -343,8 +390,22 @@ export default function DashboardPage() {
       ? ['Spirituosen & Getränke', 'Landwirtschaft & Lebensmittel', 'Kunsthandwerk & Textilien', 'Naturkosmetik', 'Pharmazeutisch', 'Sonstige']
       : ['Spirits & Beverages', 'Agriculture & Food', 'Crafts & Textiles', 'Natural Cosmetics', 'Pharmaceutical', 'Other'],
     checklistItems: es
-      ? ['Foto de perfil', 'Descripción de empresa', 'Ubicación', 'WhatsApp', 'Al menos 1 producto', 'Al menos 1 certificación', 'Sitio web (opcional)']
-      : ['Profile photo', 'Company description', 'Location', 'WhatsApp', 'At least 1 product', 'At least 1 certification', 'Website (optional)'],
+      ? ['Foto de perfil', 'Descripción de empresa', 'Ubicación', 'WhatsApp', 'Al menos 1 producto', 'Historia & Fotos', 'Sitio web (opcional)']
+      : ['Profile photo', 'Company description', 'Location', 'WhatsApp', 'At least 1 product', 'Story & Photos', 'Website (optional)'],
+    storyVision: t('Visión de la empresa', 'Bedrijfsvisie', 'Unternehmensvisio', 'Company vision'),
+    storyTradition: t('Tradición & Valores', 'Traditie & Waarden', 'Tradition & Werte', 'Tradition & Values'),
+    storyHistory: t('Historia de la empresa', 'Bedrijfsgeschiedenis', 'Unternehmensgeschichte', 'Company history'),
+    storyPhotos: t('Galería de imágenes', 'Fotogalerij', 'Bildergalerie', 'Photo gallery'),
+    storySave: t('Guardar historia', 'Verhaal opslaan', 'Geschichte speichern', 'Save story'),
+    awardName: t('Nombre del premio', 'Naam prijs', 'Name der Auszeichnung', 'Award name'),
+    awardYear: t('Año', 'Jaar', 'Jahr', 'Year'),
+    awardOrg: t('Organismo / Institución', 'Organisatie', 'Organisation', 'Organization'),
+    awardDesc: t('Descripción breve', 'Korte beschrijving', 'Kurze Beschreibung', 'Brief description'),
+    addAward: t('Agregar premio', 'Prijs toevoegen', 'Auszeichnung hinzufügen', 'Add award'),
+    noAwards: t('Aún no tienes premios registrados. ¡Agrega tu primer reconocimiento!', 'Nog geen prijzen.', 'Noch keine Auszeichnungen.', 'No awards yet. Add your first recognition!'),
+    deleteAccount: t('Eliminar cuenta', 'Account verwijderen', 'Konto löschen', 'Delete account'),
+    deleteWarning: t('Esta acción eliminará permanentemente tu cuenta y todos tus datos. No se puede deshacer.', 'Deze actie verwijdert uw account permanent.', 'Diese Aktion löscht Ihr Konto dauerhaft.', 'This will permanently delete your account and all data. Cannot be undone.'),
+    deleteConfirmLabel: t('Escribe tu email para confirmar:', 'Voer uw e-mail in ter bevestiging:', 'Geben Sie Ihre E-Mail zur Bestätigung ein:', 'Type your email to confirm:'),
   }
 
   return (
@@ -396,7 +457,6 @@ export default function DashboardPage() {
           {[
             { icon: '🌐', label: t('Red global', 'Globaal netwerk', 'Globales Netzwerk', 'Global network') },
             { icon: '🚢', label: t('Logística', 'Logistiek', 'Logistik', 'Logistics') },
-            { icon: '⚙️', label: t('Ajustes', 'Instellingen', 'Einstellungen', 'Settings') },
           ].map((item, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 9, color: 'rgba(255,255,255,.3)', fontSize: 13, marginBottom: 2 }}>
               <span style={{ fontSize: '1rem' }}>{item.icon}</span>
@@ -468,7 +528,7 @@ export default function DashboardPage() {
                 { icon: '📦', value: demoMode ? '$48K' : `${products.length}`, label: demoMode ? t('Órdenes mes','Bestellingen','Bestellungen','Orders/month') : t('Productos','Producten','Produkte','Products'), delta: demoMode ? '+23%' : null, color: C.teal },
                 { icon: '🇪🇺', value: demoMode ? '23' : '—', label: t('Contactos EU','EU-contacten','EU-Kontakte','EU contacts'), delta: demoMode ? '+8' : null, color: C.navy },
                 { icon: '📋', value: demoMode ? '98%' : `${pPct}%`, label: demoMode ? t('Docs válidos','Geldige docs','Gültige Docs','Valid docs') : t('Perfil','Profiel','Profil','Profile'), delta: null, color: '#7C3AED' },
-                { icon: '⭐', value: demoMode ? '4.9★' : `${certs.length}`, label: demoMode ? t('Rating EU','EU-rating','EU-Bewertung','EU rating') : t('Certificaciones','Certificeringen','Zertifizierungen','Certifications'), delta: demoMode ? '+0.2' : null, color: C.gold },
+                { icon: '🏆', value: demoMode ? '4.9★' : `${awards.length}`, label: demoMode ? t('Rating EU','EU-rating','EU-Bewertung','EU rating') : t('Premios','Prijzen','Auszeichnungen','Awards'), delta: demoMode ? '+0.2' : null, color: C.gold },
               ].map((s, i) => (
                 <div key={i} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.25rem', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
                   <div style={{ fontSize: '1.3rem', marginBottom: 8 }}>{s.icon}</div>
@@ -556,7 +616,7 @@ export default function DashboardPage() {
                   <div style={{ width: `${pPct}%`, height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${C.teal}, ${C.navy})`, transition: 'width .6s' }} />
                 </div>
                 {L.checklistItems.map((item, i) => (
-                  <div key={i} onClick={() => !pChecks[i] && setTab([1,1,1,1,2,3,1][i])}
+                  <div key={i} onClick={() => !pChecks[i] && setTab([1,1,1,1,2,3,1][i] ?? 1)}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < 6 ? `1px solid ${C.border}` : 'none', cursor: pChecks[i] ? 'default' : 'pointer' }}>
                     <div style={{ width: 20, height: 20, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0, background: pChecks[i] ? '#DCFCE7' : '#F8FAFC', border: `1.5px solid ${pChecks[i] ? C.green : C.border}`, color: C.green, fontWeight: 800 }}>
                       {pChecks[i] ? '✓' : ''}
@@ -577,8 +637,8 @@ export default function DashboardPage() {
                   {[
                     { icon: '🏭', label: t('Editar mi perfil','Profiel bewerken','Profil bearbeiten','Edit my profile'), tab: 1, color: C.navy },
                     { icon: '📦', label: t('Agregar producto','Product toevoegen','Produkt hinzufügen','Add product'), tab: 2, color: C.teal },
-                    { icon: '🛡️', label: t('Agregar certificación','Certificering toevoegen','Zertifizierung hinzufügen','Add certification'), tab: 3, color: '#7C3AED' },
-                    { icon: '💬', label: t('Ir a mensajes','Naar berichten','Zu Nachrichten','Go to messages'), tab: 4, color: C.gold },
+                    { icon: '📖', label: t('Historia & Fotos','Verhaal & Foto\'s','Geschichte & Fotos','Story & Photos'), tab: 3, color: '#7C3AED' },
+                    { icon: '🏆', label: t('Premios','Prijzen','Auszeichnungen','Awards'), tab: 7, color: C.gold },
                   ].map((a, i) => (
                     <button key={i} onClick={() => setTab(a.tab)}
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, border: `1px solid ${C.border}`, background: C.bg, cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: 600, color: C.text, transition: 'all .15s' }}
@@ -869,6 +929,51 @@ export default function DashboardPage() {
                                   {p.certTags.map(tag => <span key={tag} style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: C.tealLight, color: C.teal, border: `1px solid ${C.teal}40` }}>✓ {tag}</span>)}
                                 </div>
                               )}
+                              {/* Per-product certifications */}
+                              <div style={{ marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
+                                <button onClick={() => { setExpandedCertId(expandedCertId === p.id ? null : p.id); setNewCertDoc({}) }}
+                                  style={{ fontSize: 11, color: C.teal, background: 'none', border: `1px solid ${C.teal}40`, borderRadius: 6, cursor: 'pointer', fontWeight: 700, padding: '3px 9px' }}>
+                                  🛡️ {t('Certificaciones','Certificeringen','Zertifizierungen','Certifications')} ({(p.certDocs || []).length}) {expandedCertId === p.id ? '▲' : '▼'}
+                                </button>
+                                {expandedCertId === p.id && (
+                                  <div style={{ marginTop: 8 }}>
+                                    {(p.certDocs || []).map(cd => (
+                                      <div key={cd.id} style={{ fontSize: 11, padding: '5px 8px', marginBottom: 4, borderRadius: 6, background: C.bg, border: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                          <span style={{ fontWeight: 700, color: C.navy }}>{cd.name}</span>
+                                          {cd.issuer && <span style={{ color: C.muted }}> · {cd.issuer}</span>}
+                                          {cd.year && <span style={{ color: C.muted }}> · {cd.year}</span>}
+                                          {cd.fileName && <a href={cd.fileData} download={cd.fileName} style={{ color: C.teal, marginLeft: 6, textDecoration: 'none' }}>📎</a>}
+                                        </div>
+                                        <button onClick={() => deleteCertDocFromProduct(p.id, cd.id)}
+                                          style={{ color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✕</button>
+                                      </div>
+                                    ))}
+                                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                      <input placeholder={t('NOM-006, SENASICA, Orgánico...','NOM, SENASICA...','NOM, SENASICA...','NOM, SENASICA...')} value={newCertDoc.name || ''} onChange={e => setNewCertDoc(c => ({ ...c, name: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px' })} />
+                                      <div style={{ display: 'flex', gap: 5 }}>
+                                        <input placeholder={t('Organismo emisor','Instantie','Stelle','Issuing body')} value={newCertDoc.issuer || ''} onChange={e => setNewCertDoc(c => ({ ...c, issuer: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px' })} />
+                                        <input placeholder={t('Año','Jaar','Jahr','Year')} value={newCertDoc.year || ''} onChange={e => setNewCertDoc(c => ({ ...c, year: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px', maxWidth: 64 })} />
+                                      </div>
+                                      <button onClick={() => certDocFileRef.current?.click()}
+                                        style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px dashed ${newCertDoc.fileName ? C.teal : C.border}`, background: newCertDoc.fileName ? C.tealLight : C.bg, cursor: 'pointer', fontSize: 10, color: newCertDoc.fileName ? C.teal : C.muted, textAlign: 'left', fontWeight: 600 }}>
+                                        {newCertDoc.fileName ? `✓ ${newCertDoc.fileName}` : '📎 PDF / JPG / PNG'}
+                                      </button>
+                                      <input ref={certDocFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
+                                        onChange={e => {
+                                          const file = e.target.files?.[0]; if (!file) return
+                                          const reader = new FileReader()
+                                          reader.onload = ev => setNewCertDoc(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
+                                          reader.readAsDataURL(file)
+                                        }} />
+                                      <button onClick={() => addCertDocToProduct(p.id)}
+                                        style={{ padding: '6px', borderRadius: 7, border: 'none', background: C.teal, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                                        + {t('Agregar certificación','Cert. toevoegen','Zert. hinzufügen','Add certification')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                               {isConfirmDelete ? (
                                 <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA' }}>
                                   <div style={{ fontSize: 12, fontWeight: 700, color: C.red, marginBottom: 8 }}>⚠️ {L.deleteConfirm}</div>
@@ -896,71 +1001,73 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── TAB 3: CERTIFICACIONES ── */}
+        {/* ── TAB 3: HISTORIA & FOTOS ── */}
         {tab === 3 && (
           <div style={{ padding: '1.75rem 2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, margin: 0 }}>🛡️ {t('Certificaciones','Certificeringen','Zertifizierungen','Certifications')} ({certs.length})</h2>
-              <button onClick={() => setShowAddCert(o => !o)} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddCert ? C.border : C.teal, color: showAddCert ? C.text : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                {showAddCert ? `✕ ${t('Cancelar','Annuleren','Abbrechen','Cancel')}` : `+ ${L.addCertBtn}`}
+              <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, margin: 0 }}>📖 {t('Historia & Fotos de la Empresa','Bedrijfsverhaal & Foto\'s','Geschichte & Fotos des Unternehmens','Company Story & Photos')}</h2>
+              <button onClick={saveStoryData} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: storySaved ? C.green : `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                {storySaved ? `✓ ${t('Guardado','Opgeslagen','Gespeichert','Saved')}` : L.storySave}
               </button>
             </div>
-            {showAddCert && (
-              <div style={{ background: C.white, border: `1.5px solid ${C.teal}30`, borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                  {[
-                    { key: 'name', label: L.certTitle, placeholder: 'NOM, SENASICA, Orgánico...', required: true },
-                    { key: 'issuer', label: L.certIssuer, placeholder: 'COFEPRIS, SENASICA...' },
-                    { key: 'year', label: L.certYear, placeholder: '2024', type: 'number' },
-                  ].map(f => (
-                    <div key={f.key}>
-                      <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{f.label}{f.required ? ' *' : ''}</label>
-                      <input type={f.type || 'text'} value={(newCert as Record<string,string>)[f.key] || ''} onChange={e => setNewCert(c => ({ ...c, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inp()} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Vision */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: C.navy, display: 'block', marginBottom: 6 }}>🔭 {L.storyVision}</label>
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{t('¿Cuál es el propósito y visión a futuro de tu empresa?','Wat is de visie van uw bedrijf?','Was ist die Vision Ihres Unternehmens?','What is your company\'s vision for the future?')}</p>
+                <textarea value={(story as Record<string,string>).vision || ''} onChange={e => setStory((s: typeof story) => ({ ...s, vision: e.target.value }))}
+                  rows={4} placeholder={t('Nuestra visión es convertirnos en el puente de exportación más confiable entre México y Europa...','Onze visie is...','Unsere Vision ist...','Our vision is to become the most reliable export bridge between Mexico and Europe...')}
+                  style={{ ...inp(), resize: 'vertical', lineHeight: 1.65 }} />
+              </div>
+
+              {/* Tradition */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: C.navy, display: 'block', marginBottom: 6 }}>🌿 {L.storyTradition}</label>
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{t('¿Qué tradiciones y valores definen a tu empresa?','Welke tradities en waarden definieren uw bedrijf?','Welche Traditionen prägen Ihr Unternehmen?','What traditions and values define your company?')}</p>
+                <textarea value={(story as Record<string,string>).tradition || ''} onChange={e => setStory((s: typeof story) => ({ ...s, tradition: e.target.value }))}
+                  rows={4} placeholder={t('Desde 1987 nuestra familia ha cultivado agave siguiendo métodos ancestrales...','Sinds 1987...','Seit 1987...','Since 1987 our family has cultivated agave following ancestral methods...')}
+                  style={{ ...inp(), resize: 'vertical', lineHeight: 1.65 }} />
+              </div>
+
+              {/* History */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: C.navy, display: 'block', marginBottom: 6 }}>📜 {L.storyHistory}</label>
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{t('Cuéntanos la historia completa de tu empresa.','Vertel ons de volledige geschiedenis van uw bedrijf.','Erzählen Sie uns die vollständige Geschichte Ihres Unternehmens.','Tell us the full history of your company.')}</p>
+                <textarea value={(story as Record<string,string>).history || ''} onChange={e => setStory((s: typeof story) => ({ ...s, history: e.target.value }))}
+                  rows={6} placeholder={t('Fundada en... Comenzamos como... A lo largo de los años...','Opgericht in...','Gegründet in...','Founded in... We started as... Over the years...')}
+                  style={{ ...inp(), resize: 'vertical', lineHeight: 1.65 }} />
+              </div>
+
+              {/* Photo gallery */}
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>🖼️ {L.storyPhotos}</label>
+                  <span style={{ fontSize: 11, color: C.muted }}>{((story as Record<string,string[]>).photos || []).length}/20 {t('fotos','foto\'s','Fotos','photos')}</span>
+                </div>
+                <p style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>{t('Sube fotos de tus instalaciones, proceso de producción, equipo humano, gamas de productos, eventos, etc.','Upload foto\'s van uw faciliteiten, productieproces, team, productgamma\'s...','Laden Sie Fotos Ihrer Einrichtungen, des Produktionsprozesses, des Teams, Produktgammas hoch...','Upload photos of your facilities, production process, human team, product ranges, events, etc.')}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+                  {((story as Record<string,string[]>).photos || []).map((src, i) => (
+                    <div key={i} style={{ position: 'relative', width: 120, height: 90 }}>
+                      <img src={src} alt="" style={{ width: 120, height: 90, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.border}` }} />
+                      <button type="button" onClick={() => setStory((s: typeof story) => ({ ...s, photos: ((s as Record<string,string[]>).photos || []).filter((_: string, idx: number) => idx !== i) }))}
+                        style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: C.red, border: 'none', color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>✕</button>
                     </div>
                   ))}
+                  {((story as Record<string,string[]>).photos || []).length < 20 && (
+                    <button type="button" onClick={() => storyPhotosRef.current?.click()}
+                      style={{ width: 120, height: 90, borderRadius: 8, border: `2px dashed ${C.border}`, background: C.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 4, color: C.muted, fontSize: 12 }}>
+                      <span style={{ fontSize: '1.5rem' }}>📷</span>
+                      {t('Agregar foto','Foto toevoegen','Foto hinzufügen','Add photo')}
+                    </button>
+                  )}
+                  <input ref={storyPhotosRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleStoryPhotos} />
                 </div>
-                {/* File upload */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>
-                    {t('Subir documento (PDF, JPG, PNG)', 'Upload document (PDF, JPG, PNG)', 'Document uploaden (PDF, JPG, PNG)', 'Dokument hochladen (PDF, JPG, PNG)')}
-                  </label>
-                  <input ref={certFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleCertFile}
-                    style={{ display: 'none' }} />
-                  <button type="button" onClick={() => certFileRef.current?.click()}
-                    style={{ padding: '9px 18px', borderRadius: 9, border: `1.5px dashed ${newCert.fileName ? C.teal : C.border}`, background: newCert.fileName ? C.tealLight : C.bg, color: newCert.fileName ? C.teal : C.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-                    {newCert.fileName ? `✓ ${newCert.fileName}` : `📎 ${t('Seleccionar archivo...','Select file...','Bestand selecteren...','Datei auswählen...')}`}
-                  </button>
-                </div>
-                <button onClick={addCert} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                  + {L.addCertBtn}
+                <button onClick={saveStoryData} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: storySaved ? C.green : `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  {storySaved ? `✓ ${t('Guardado','Opgeslagen','Gespeichert','Saved')}` : L.storySave}
                 </button>
               </div>
-            )}
-            {certs.length === 0
-              ? <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: 12 }}>🛡️</div>
-                  <div style={{ fontSize: 14, color: C.muted, maxWidth: 320, margin: '0 auto' }}>{L.noCerts}</div>
-                </div>
-              : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {certs.map(c => (
-                    <div key={c.id} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 10, padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: 10, background: C.tealLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', flexShrink: 0 }}>🛡️</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
-                        <div style={{ fontSize: 12, color: C.muted }}>{[c.issuer, c.year].filter(Boolean).join(' · ')}</div>
-                        {(c as Cert & { fileName?: string; fileData?: string }).fileName && (
-                          <a href={(c as Cert & { fileData?: string }).fileData} download={(c as Cert & { fileName?: string }).fileName}
-                            style={{ fontSize: 11, color: C.teal, fontWeight: 600, textDecoration: 'none', marginTop: 3, display: 'inline-block' }}>
-                            📎 {(c as Cert & { fileName?: string }).fileName}
-                          </a>
-                        )}
-                      </div>
-                      <button onClick={() => { const u = certs.filter(x => x.id !== c.id); setCerts(u); saveCerts(email, u) }}
-                        style={{ padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.red, fontSize: 12, cursor: 'pointer' }}>{L.deleteBtn}</button>
-                    </div>
-                  ))}
-                </div>
-            }
+            </div>
           </div>
         )}
 
@@ -1052,6 +1159,141 @@ export default function DashboardPage() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── TAB 7: PREMIOS / RECONOCIMIENTOS ── */}
+        {tab === 7 && (
+          <div style={{ padding: '1.75rem 2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, margin: 0 }}>🏆 {t('Premios & Reconocimientos','Prijzen & Erkenningen','Auszeichnungen & Anerkennungen','Awards & Recognitions')} ({awards.length})</h2>
+              <button onClick={() => { setShowAddAward(o => !o); setNewAward({}) }}
+                style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: showAddAward ? C.border : `linear-gradient(135deg, ${C.gold}, #b45309)`, color: showAddAward ? C.text : '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                {showAddAward ? `✕ ${t('Cancelar','Annuleren','Abbrechen','Cancel')}` : `+ ${L.addAward}`}
+              </button>
+            </div>
+
+            {showAddAward && (
+              <div style={{ background: C.white, border: `1.5px solid ${C.gold}40`, borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem', marginBottom: '1rem' }}>
+                  {[
+                    { key: 'name', label: L.awardName, placeholder: t('Premio Nacional de Exportación','Nationale Exportprijs','Nationaler Exportpreis','National Export Award'), required: true },
+                    { key: 'year', label: L.awardYear, placeholder: '2023', type: 'number' },
+                    { key: 'org', label: L.awardOrg, placeholder: 'BANCOMEXT, PROMEXICO, CRT...' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{f.label}{f.required ? ' *' : ''}</label>
+                      <input type={f.type || 'text'} value={(newAward as Record<string,string>)[f.key] || ''} onChange={e => setNewAward(a => ({ ...a, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inp()} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{L.awardDesc}</label>
+                  <textarea value={newAward.desc || ''} onChange={e => setNewAward(a => ({ ...a, desc: e.target.value }))} rows={2}
+                    placeholder={t('Descripción del mérito y por qué fue otorgado...','Beschrijving van de verdienste...','Beschreibung der Leistung...','Description of the merit and why it was awarded...')}
+                    style={{ ...inp(), resize: 'vertical' }} />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5 }}>{t('Foto / imagen del reconocimiento (opcional)','Foto van de erkenning (optioneel)','Foto der Auszeichnung (optional)','Award photo (optional)')}</label>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    {newAward.photo && <img src={newAward.photo} alt="" style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.border}` }} />}
+                    <button type="button" onClick={() => awardPhotoRef.current?.click()}
+                      style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px dashed ${newAward.photo ? C.gold : C.border}`, background: C.bg, cursor: 'pointer', fontSize: 12, color: C.muted, fontWeight: 600 }}>
+                      📷 {t('Subir imagen','Afbeelding uploaden','Bild hochladen','Upload image')}
+                    </button>
+                    <input ref={awardPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAwardPhoto} />
+                  </div>
+                </div>
+                <button onClick={addAward} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.gold}, #b45309)`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  🏆 + {L.addAward}
+                </button>
+              </div>
+            )}
+
+            {awards.length === 0 ? (
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 12 }}>🏆</div>
+                <div style={{ fontSize: 14, color: C.muted, maxWidth: 360, margin: '0 auto 1.25rem' }}>{L.noAwards}</div>
+                <button onClick={() => setShowAddAward(true)} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.gold}, #b45309)`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  + {L.addAward}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1rem' }}>
+                {awards.map(a => (
+                  <div key={a.id} style={{ background: C.white, border: `1.5px solid ${C.gold}40`, borderRadius: 14, overflow: 'hidden' }}>
+                    {a.photo
+                      ? <img src={a.photo} alt={a.name} style={{ width: '100%', height: 140, objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: 72, background: `linear-gradient(135deg, ${C.gold}20, ${C.gold}08)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🏆</div>
+                    }
+                    <div style={{ padding: '1rem' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: C.navy, marginBottom: 4 }}>{a.name}</div>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
+                        {a.year && <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: `${C.gold}20`, color: C.gold }}>📅 {a.year}</span>}
+                        {a.org && <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100, background: C.bg, color: C.muted, border: `1px solid ${C.border}` }}>{a.org}</span>}
+                      </div>
+                      {a.desc && <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>{a.desc}</div>}
+                      <button onClick={() => { const u = awards.filter(x => x.id !== a.id); setAwards(u); saveAwards(email, u) }}
+                        style={{ marginTop: 10, padding: '5px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.red, fontSize: 12, cursor: 'pointer' }}>
+                        {L.deleteBtn}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB 8: AJUSTES ── */}
+        {tab === 8 && (
+          <div style={{ padding: '1.75rem 2rem' }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, marginBottom: '1.5rem' }}>⚙️ {t('Ajustes de cuenta','Accountinstellingen','Kontoeinstellungen','Account settings')}</h2>
+
+            <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: '1rem' }}>👤 {t('Información de cuenta','Accountinformatie','Kontoinformationen','Account information')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { label: t('Email registrado','Geregistreerd e-mail','Registrierte E-Mail','Registered email'), value: email },
+                  { label: t('Tipo de cuenta','Type account','Kontotyp','Account type'), value: t('Productor Mexicano','Mexicaanse Producent','Mexikanischer Produzent','Mexican Producer') },
+                  { label: t('Sesión activa','Sessie actief','Sitzung aktiv','Active session'), value: t('3h de inactividad','3u inactiviteit','3h Inaktivität','3h inactivity') },
+                ].map((row, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 2 ? `1px solid ${C.border}` : 'none', fontSize: 13 }}>
+                    <span style={{ color: C.muted }}>{row.label}</span>
+                    <span style={{ fontWeight: 600, color: C.text }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background: '#FEF2F2', border: `1.5px solid #FECACA`, borderRadius: 14, padding: '1.5rem' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: C.red, marginBottom: 8 }}>⚠️ {L.deleteAccount}</div>
+              <p style={{ fontSize: 13, color: '#7F1D1D', marginBottom: '1rem', lineHeight: 1.7 }}>{L.deleteWarning}</p>
+              {deleteAccountStep === 0 && (
+                <button onClick={() => setDeleteAccountStep(1)}
+                  style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: C.red, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  {L.deleteAccount}
+                </button>
+              )}
+              {deleteAccountStep === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#7F1D1D' }}>{L.deleteConfirmLabel}</label>
+                  <input value={deleteAccountConfirm} onChange={e => setDeleteAccountConfirm(e.target.value)}
+                    placeholder={email} style={inp({ borderColor: '#FECACA' })} />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => { if (deleteAccountConfirm === email) deleteAccount() }}
+                      disabled={deleteAccountConfirm !== email}
+                      style={{ flex: 1, padding: '10px', borderRadius: 9, border: 'none', background: deleteAccountConfirm === email ? C.red : '#FCA5A5', color: '#fff', fontWeight: 700, fontSize: 13, cursor: deleteAccountConfirm === email ? 'pointer' : 'not-allowed' }}>
+                      {t('Confirmar eliminación','Verwijdering bevestigen','Löschung bestätigen','Confirm deletion')}
+                    </button>
+                    <button onClick={() => { setDeleteAccountStep(0); setDeleteAccountConfirm('') }}
+                      style={{ padding: '10px 16px', borderRadius: 9, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 13, cursor: 'pointer' }}>
+                      {t('Cancelar','Annuleren','Abbrechen','Cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
