@@ -248,6 +248,9 @@ export default function DashboardPage() {
   const [showAddAward, setShowAddAward] = useState(false)
   const [expandedCertId, setExpandedCertId] = useState<string | null>(null)
   const [newCertDoc, setNewCertDoc] = useState<Partial<CertDoc>>({})
+  const [addFormCertDoc, setAddFormCertDoc] = useState<Partial<CertDoc>>({})
+  const [addFormCertOpen, setAddFormCertOpen] = useState(false)
+  const addFormCertFileRef = useRef<HTMLInputElement>(null)
   const certDocFileRef = useRef<HTMLInputElement>(null)
   const awardPhotoRef = useRef<HTMLInputElement>(null)
   const storyPhotosRef = useRef<HTMLInputElement>(null)
@@ -289,7 +292,7 @@ export default function DashboardPage() {
   const addProduct = () => {
     if (!newProduct.name || !newProduct.category) return
     const updated = [...products, { ...newProduct, photos: newProduct.photos || [], id: Date.now().toString() } as Product]
-    setProducts(updated); saveProducts(email, updated); setNewProduct({ photos: [] }); setShowAddProduct(false)
+    setProducts(updated); saveProducts(email, updated); setNewProduct({ photos: [] }); setShowAddProduct(false); setAddFormCertDoc({}); setAddFormCertOpen(false)
   }
 
   const saveEditProductFn = () => {
@@ -813,6 +816,85 @@ export default function DashboardPage() {
                       </button>
                     )}
                     <input ref={productPhotosRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleProductPhotos(e, 'new')} />
+                  </div>
+                </div>
+                {/* Certifications in add-product form */}
+                <div style={{ marginBottom: '1rem', borderTop: `2px solid ${C.border}`, paddingTop: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>🛡️ {t('Certificaciones del Producto','Productcertificeringen','Produktzertifizierungen','Product Certifications')}</div>
+                    {(newProduct.certDocs || []).length < 3
+                      ? <span style={{ fontSize: 10, fontWeight: 700, color: '#B45309', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 100, padding: '2px 8px' }}>
+                          {(newProduct.certDocs||[]).length}/3 {t('mín.','min.','Min.','min.')}
+                        </span>
+                      : <span style={{ fontSize: 10, fontWeight: 700, color: C.green, background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 100, padding: '2px 8px' }}>✓ {t('Completo','Compleet','Vollständig','Complete')}</span>
+                    }
+                  </div>
+                  {/* Saved certs list */}
+                  {(newProduct.certDocs || []).length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
+                      {(newProduct.certDocs || []).map(cd => (
+                        <div key={cd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 8, background: '#F0FDF4', border: '1px solid #86EFAC' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            <span style={{ color: C.green, fontWeight: 900, fontSize: 14, flexShrink: 0 }}>✓</span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: 12, color: C.navy }}>{cd.name}</div>
+                              {(cd.issuer || cd.year) && <div style={{ fontSize: 11, color: C.muted }}>{cd.issuer}{cd.issuer && cd.year ? ' · ' : ''}{cd.year}</div>}
+                            </div>
+                            {cd.fileName && <a href={cd.fileData} download={cd.fileName} title={cd.fileName} style={{ color: C.teal, fontSize: 14, textDecoration: 'none', flexShrink: 0 }}>📎</a>}
+                          </div>
+                          <button type="button" onClick={() => setNewProduct(p => ({ ...p, certDocs: (p.certDocs || []).filter(c => c.id !== cd.id) }))}
+                            style={{ color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, flexShrink: 0, marginLeft: 4 }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Add cert inline form */}
+                  <div style={{ background: C.bg, border: `1.5px dashed ${C.border}`, borderRadius: 9, padding: '10px' }}>
+                    {!addFormCertOpen
+                      ? <button type="button" onClick={() => setAddFormCertOpen(true)}
+                          style={{ width: '100%', padding: '8px', borderRadius: 7, border: `1px solid ${C.teal}40`, background: C.tealLight, color: C.teal, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                          + {t('Agregar certificación','Certificering toevoegen','Zertifizierung hinzufügen','Add certification')}
+                        </button>
+                      : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('Nueva certificación','Nieuwe certificering','Neue Zertifizierung','New certification')}</div>
+                          <input placeholder={t('Nombre: NOM-006, SENASICA, Orgánico, HACCP...','Naam: NOM, SENASICA, Organic...','Name: NOM, SENASICA, Bio...','Name: NOM-006, SENASICA, Organic...')}
+                            value={addFormCertDoc.name || ''} onChange={e => setAddFormCertDoc(c => ({ ...c, name: e.target.value }))} style={inp({ fontSize: 12, padding: '7px 9px' })} />
+                          <div style={{ display: 'flex', gap: 7 }}>
+                            <input placeholder={t('Organismo emisor (ej. SAGARPA)','Instantie','Stelle','Issuing body')}
+                              value={addFormCertDoc.issuer || ''} onChange={e => setAddFormCertDoc(c => ({ ...c, issuer: e.target.value }))}
+                              style={inp({ fontSize: 12, padding: '7px 9px', flex: 1 })} />
+                            <input placeholder={t('Año','Jaar','Jahr','Year')} value={addFormCertDoc.year || ''} onChange={e => setAddFormCertDoc(c => ({ ...c, year: e.target.value }))}
+                              style={inp({ fontSize: 12, padding: '7px 9px', maxWidth: 72 })} />
+                          </div>
+                          <button type="button" onClick={() => addFormCertFileRef.current?.click()}
+                            style={{ padding: '7px 9px', borderRadius: 7, border: `1.5px dashed ${addFormCertDoc.fileName ? C.teal : C.border}`, background: addFormCertDoc.fileName ? C.tealLight : C.white, cursor: 'pointer', fontSize: 11, color: addFormCertDoc.fileName ? C.teal : C.muted, textAlign: 'left', fontWeight: 600 }}>
+                            {addFormCertDoc.fileName ? `✓ ${addFormCertDoc.fileName}` : `📎 ${t('Adjuntar PDF, JPG o PNG','PDF, JPG of PNG bijvoegen','PDF, JPG oder PNG anhängen','Attach PDF, JPG or PNG')}`}
+                          </button>
+                          <input ref={addFormCertFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
+                            onChange={e => {
+                              const file = e.target.files?.[0]; if (!file) return
+                              const reader = new FileReader()
+                              reader.onload = ev => setAddFormCertDoc(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
+                              reader.readAsDataURL(file)
+                            }} />
+                          <div style={{ display: 'flex', gap: 7 }}>
+                            <button type="button" onClick={() => {
+                              if (!addFormCertDoc.name?.trim()) return
+                              const cert: CertDoc = { id: Date.now().toString(), name: addFormCertDoc.name.trim(), issuer: addFormCertDoc.issuer || '', year: addFormCertDoc.year || '', fileData: addFormCertDoc.fileData, fileName: addFormCertDoc.fileName, fileType: addFormCertDoc.fileType }
+                              setNewProduct(p => ({ ...p, certDocs: [...(p.certDocs || []), cert] }))
+                              setAddFormCertDoc({})
+                              if (addFormCertFileRef.current) addFormCertFileRef.current.value = ''
+                              setAddFormCertOpen(false)
+                            }} style={{ flex: 1, padding: '8px', borderRadius: 7, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                              ✓ {t('Guardar certificación','Certificering opslaan','Zertifizierung speichern','Save certification')}
+                            </button>
+                            <button type="button" onClick={() => { setAddFormCertDoc({}); setAddFormCertOpen(false) }}
+                              style={{ padding: '8px 12px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 12, cursor: 'pointer' }}>✕</button>
+                          </div>
+                        </div>
+                      )
+                    }
                   </div>
                 </div>
                 <button onClick={addProduct} style={{ padding: '10px 22px', borderRadius: 9, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
