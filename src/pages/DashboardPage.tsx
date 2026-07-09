@@ -254,6 +254,8 @@ export default function DashboardPage() {
   const [storySaved, setStorySaved] = useState(false)
   const [deleteAccountStep, setDeleteAccountStep] = useState(0)
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState('')
+  const [editingName, setEditingName] = useState(false)
+  const [nameValue, setNameValue] = useState(user?.name || user?.company || '')
 
   if (!user) return null
 
@@ -666,7 +668,26 @@ export default function DashboardPage() {
                 </div>
                 <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 900, fontSize: '1.2rem' }}>{user.name || t('Tu empresa','Uw bedrijf','Ihr Unternehmen','Your company')}</div>
+                  {editingName ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input value={nameValue} onChange={e => setNameValue(e.target.value)}
+                        style={{ fontWeight: 900, fontSize: '1.1rem', background: 'rgba(255,255,255,.15)', border: '1.5px solid rgba(255,255,255,.4)', borderRadius: 8, padding: '4px 10px', color: '#fff', fontFamily: 'inherit', outline: 'none', flex: 1, minWidth: 0 }} />
+                      <button onClick={() => {
+                        const updated = { ...user, name: nameValue }
+                        localStorage.setItem('gn_current_user', JSON.stringify(updated))
+                        setEditingName(false)
+                        window.location.reload()
+                      }} style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#16A34A', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>✓</button>
+                      <button onClick={() => { setNameValue(user?.name || user?.company || ''); setEditingName(false) }}
+                        style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,.3)', background: 'transparent', color: 'rgba(255,255,255,.7)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 900, fontSize: '1.2rem' }}>{user.name || t('Tu empresa','Uw bedrijf','Ihr Unternehmen','Your company')}</div>
+                      <button onClick={() => setEditingName(true)} title={t('Editar nombre','Naam bewerken','Name bearbeiten','Edit name')}
+                        style={{ width: 26, height: 26, borderRadius: 7, border: '1.5px solid rgba(255,255,255,.3)', background: 'rgba(255,255,255,.1)', color: 'rgba(255,255,255,.8)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✏️</button>
+                    </div>
+                  )}
                   {profile.location && <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 3 }}>📍 {profile.location} · {t('Productor Certificado','Gecertificeerde Producent','Zertifizierter Produzent','Certified Producer')}</div>}
                   <div style={{ marginTop: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#16A34A', color: '#fff' }}>✓ {t('Productor Verificado IA','IA-geverifieerde Producent','KI-verifizierter Produzent','AI Verified Producer')}</span>
@@ -776,20 +797,6 @@ export default function DashboardPage() {
                   <textarea value={newProduct.desc || ''} onChange={e => setNewProduct(p => ({ ...p, desc: e.target.value }))} rows={2} style={{ ...inp(), resize: 'vertical' }} />
                 </div>
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 6 }}>{L.certTagsLabel}</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {['NOM', 'SENASICA', 'Orgánico', 'COFEPRIS', 'HACCP', 'ISO 22000', 'Kosher', 'Halal'].map(tag => {
-                      const active = (newProduct.certTags || []).includes(tag)
-                      return (
-                        <button key={tag} type="button" onClick={() => setNewProduct(p => ({ ...p, certTags: active ? (p.certTags || []).filter(t2 => t2 !== tag) : [...(p.certTags || []), tag] }))}
-                          style={{ padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, border: `1.5px solid ${active ? C.teal : C.border}`, background: active ? C.tealLight : C.white, color: active ? C.teal : C.muted, cursor: 'pointer' }}>
-                          {active ? '✓ ' : ''}{tag}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div style={{ marginBottom: '1rem' }}>
                   <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 6 }}>{L.productPhoto} ({(newProduct.photos || []).length}/5)</label>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     {(newProduct.photos || []).map((src, i) => (
@@ -862,20 +869,6 @@ export default function DashboardPage() {
                                 <textarea value={editProduct.desc || ''} onChange={e => setEditProduct(prev => ({ ...prev, desc: e.target.value }))} rows={2} style={{ ...inp({ fontSize: 12, padding: '8px 10px' }), resize: 'vertical' }} />
                               </div>
                               <div>
-                                <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 4 }}>{L.certTagsLabel}</label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                                  {['NOM', 'SENASICA', 'Orgánico', 'COFEPRIS', 'HACCP', 'ISO 22000', 'Kosher', 'Halal'].map(tag => {
-                                    const active = (editProduct.certTags || []).includes(tag)
-                                    return (
-                                      <button key={tag} type="button" onClick={() => setEditProduct(prev => ({ ...prev, certTags: active ? (prev.certTags || []).filter(t2 => t2 !== tag) : [...(prev.certTags || []), tag] }))}
-                                        style={{ padding: '3px 8px', borderRadius: 100, fontSize: 10, fontWeight: 700, border: `1.5px solid ${active ? C.teal : C.border}`, background: active ? C.tealLight : C.white, color: active ? C.teal : C.muted, cursor: 'pointer' }}>
-                                        {active ? '✓ ' : ''}{tag}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </div>
-                              <div>
                                 <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 4 }}>{L.productPhoto} ({(editProduct.photos || []).length}/5)</label>
                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                                   {(editProduct.photos || []).map((src, i) => (
@@ -924,55 +917,88 @@ export default function DashboardPage() {
                               {p.price && <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>${p.price} / {p.unit}</div>}
                               {p.minOrder && <div style={{ fontSize: 11, color: C.muted }}>MOQ: {p.minOrder}</div>}
                               {p.desc && <div style={{ fontSize: 12, color: C.muted, marginTop: 4, lineHeight: 1.5 }}>{p.desc}</div>}
-                              {p.certTags && p.certTags.length > 0 && (
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                                  {p.certTags.map(tag => <span key={tag} style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: C.tealLight, color: C.teal, border: `1px solid ${C.teal}40` }}>✓ {tag}</span>)}
+                              {/* Per-product certifications — always visible */}
+                              <div style={{ marginTop: 12, borderTop: `2px solid ${C.border}`, paddingTop: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 12, color: C.navy }}>🛡️ {t('Certificaciones del Producto','Productcertificeringen','Produktzertifizierungen','Product Certifications')}</div>
+                                  {(p.certDocs || []).length < 3
+                                    ? <span style={{ fontSize: 10, fontWeight: 700, color: '#B45309', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 100, padding: '2px 8px' }}>
+                                        {t(`${(p.certDocs||[]).length}/3 mín.`,`${(p.certDocs||[]).length}/3 min.`,`${(p.certDocs||[]).length}/3 Min.`,`${(p.certDocs||[]).length}/3 min.`)}
+                                      </span>
+                                    : <span style={{ fontSize: 10, fontWeight: 700, color: C.green, background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 100, padding: '2px 8px' }}>✓ {t('Completo','Compleet','Vollständig','Complete')}</span>
+                                  }
                                 </div>
-                              )}
-                              {/* Per-product certifications */}
-                              <div style={{ marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
-                                <button onClick={() => { setExpandedCertId(expandedCertId === p.id ? null : p.id); setNewCertDoc({}) }}
-                                  style={{ fontSize: 11, color: C.teal, background: 'none', border: `1px solid ${C.teal}40`, borderRadius: 6, cursor: 'pointer', fontWeight: 700, padding: '3px 9px' }}>
-                                  🛡️ {t('Certificaciones','Certificeringen','Zertifizierungen','Certifications')} ({(p.certDocs || []).length}) {expandedCertId === p.id ? '▲' : '▼'}
-                                </button>
-                                {expandedCertId === p.id && (
-                                  <div style={{ marginTop: 8 }}>
+                                {/* Saved certs as checkmarks */}
+                                {(p.certDocs || []).length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
                                     {(p.certDocs || []).map(cd => (
-                                      <div key={cd.id} style={{ fontSize: 11, padding: '5px 8px', marginBottom: 4, borderRadius: 6, background: C.bg, border: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                          <span style={{ fontWeight: 700, color: C.navy }}>{cd.name}</span>
-                                          {cd.issuer && <span style={{ color: C.muted }}> · {cd.issuer}</span>}
-                                          {cd.year && <span style={{ color: C.muted }}> · {cd.year}</span>}
-                                          {cd.fileName && <a href={cd.fileData} download={cd.fileName} style={{ color: C.teal, marginLeft: 6, textDecoration: 'none' }}>📎</a>}
+                                      <div key={cd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 8, background: '#F0FDF4', border: '1px solid #86EFAC' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                          <span style={{ color: C.green, fontWeight: 900, fontSize: 13, flexShrink: 0 }}>✓</span>
+                                          <div style={{ minWidth: 0 }}>
+                                            <div style={{ fontWeight: 700, fontSize: 11, color: C.navy, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cd.name}</div>
+                                            {(cd.issuer || cd.year) && (
+                                              <div style={{ fontSize: 10, color: C.muted }}>{cd.issuer}{cd.issuer && cd.year ? ' · ' : ''}{cd.year}</div>
+                                            )}
+                                          </div>
+                                          {cd.fileName && (
+                                            <a href={cd.fileData} download={cd.fileName} title={cd.fileName}
+                                              style={{ color: C.teal, fontSize: 14, textDecoration: 'none', flexShrink: 0 }}>📎</a>
+                                          )}
                                         </div>
                                         <button onClick={() => deleteCertDocFromProduct(p.id, cd.id)}
-                                          style={{ color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✕</button>
+                                          style={{ color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, flexShrink: 0, marginLeft: 4 }}>✕</button>
                                       </div>
                                     ))}
-                                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                      <input placeholder={t('NOM-006, SENASICA, Orgánico...','NOM, SENASICA...','NOM, SENASICA...','NOM, SENASICA...')} value={newCertDoc.name || ''} onChange={e => setNewCertDoc(c => ({ ...c, name: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px' })} />
-                                      <div style={{ display: 'flex', gap: 5 }}>
-                                        <input placeholder={t('Organismo emisor','Instantie','Stelle','Issuing body')} value={newCertDoc.issuer || ''} onChange={e => setNewCertDoc(c => ({ ...c, issuer: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px' })} />
-                                        <input placeholder={t('Año','Jaar','Jahr','Year')} value={newCertDoc.year || ''} onChange={e => setNewCertDoc(c => ({ ...c, year: e.target.value }))} style={inp({ fontSize: 11, padding: '6px 8px', maxWidth: 64 })} />
-                                      </div>
-                                      <button onClick={() => certDocFileRef.current?.click()}
-                                        style={{ padding: '5px 8px', borderRadius: 6, border: `1.5px dashed ${newCertDoc.fileName ? C.teal : C.border}`, background: newCertDoc.fileName ? C.tealLight : C.bg, cursor: 'pointer', fontSize: 10, color: newCertDoc.fileName ? C.teal : C.muted, textAlign: 'left', fontWeight: 600 }}>
-                                        {newCertDoc.fileName ? `✓ ${newCertDoc.fileName}` : '📎 PDF / JPG / PNG'}
-                                      </button>
-                                      <input ref={certDocFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
-                                        onChange={e => {
-                                          const file = e.target.files?.[0]; if (!file) return
-                                          const reader = new FileReader()
-                                          reader.onload = ev => setNewCertDoc(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
-                                          reader.readAsDataURL(file)
-                                        }} />
-                                      <button onClick={() => addCertDocToProduct(p.id)}
-                                        style={{ padding: '6px', borderRadius: 7, border: 'none', background: C.teal, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                                        + {t('Agregar certificación','Cert. toevoegen','Zert. hinzufügen','Add certification')}
-                                      </button>
-                                    </div>
                                   </div>
                                 )}
+                                {/* Add certification form — always shown inline */}
+                                <div style={{ background: C.bg, border: `1.5px dashed ${C.border}`, borderRadius: 9, padding: '10px' }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {expandedCertId === p.id
+                                      ? t('Nueva certificación','Nieuwe certificering','Neue Zertifizierung','New certification')
+                                      : `+ ${t('Agregar certificación','Certificering toevoegen','Zertifizierung hinzufügen','Add certification')}`}
+                                  </div>
+                                  {expandedCertId !== p.id
+                                    ? <button onClick={() => { setExpandedCertId(p.id); setNewCertDoc({}) }}
+                                        style={{ width: '100%', padding: '7px', borderRadius: 7, border: `1px solid ${C.teal}40`, background: C.tealLight, color: C.teal, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                                        + {t('Agregar certificación','Certificering toevoegen','Zertifizierung hinzufügen','Add certification')}
+                                      </button>
+                                    : (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <input placeholder={t('Nombre: NOM-006, SENASICA, Orgánico, HACCP...','Naam: NOM, SENASICA, Organic...','Name: NOM, SENASICA, Bio...','Name: NOM-006, SENASICA, Organic...')}
+                                          value={newCertDoc.name || ''} onChange={e => setNewCertDoc(c => ({ ...c, name: e.target.value }))}
+                                          style={inp({ fontSize: 11, padding: '7px 9px' })} />
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <input placeholder={t('Organismo emisor (ej. SAGARPA)','Instantie (bv. SAGARPA)','Stelle (z.B. SAGARPA)','Issuing body (e.g. SAGARPA)')}
+                                            value={newCertDoc.issuer || ''} onChange={e => setNewCertDoc(c => ({ ...c, issuer: e.target.value }))}
+                                            style={inp({ fontSize: 11, padding: '7px 9px', flex: 1 })} />
+                                          <input placeholder={t('Año','Jaar','Jahr','Year')} value={newCertDoc.year || ''} onChange={e => setNewCertDoc(c => ({ ...c, year: e.target.value }))}
+                                            style={inp({ fontSize: 11, padding: '7px 9px', maxWidth: 68 })} />
+                                        </div>
+                                        <button onClick={() => certDocFileRef.current?.click()}
+                                          style={{ padding: '7px 9px', borderRadius: 7, border: `1.5px dashed ${newCertDoc.fileName ? C.teal : C.border}`, background: newCertDoc.fileName ? C.tealLight : C.white, cursor: 'pointer', fontSize: 10, color: newCertDoc.fileName ? C.teal : C.muted, textAlign: 'left', fontWeight: 600 }}>
+                                          {newCertDoc.fileName ? `✓ ${newCertDoc.fileName}` : `📎 ${t('Adjuntar PDF, JPG o PNG','PDF, JPG of PNG bijvoegen','PDF, JPG oder PNG anhängen','Attach PDF, JPG or PNG')}`}
+                                        </button>
+                                        <input ref={certDocFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display: 'none' }}
+                                          onChange={e => {
+                                            const file = e.target.files?.[0]; if (!file) return
+                                            const reader = new FileReader()
+                                            reader.onload = ev => setNewCertDoc(c => ({ ...c, fileData: ev.target?.result as string, fileName: file.name, fileType: file.type }))
+                                            reader.readAsDataURL(file)
+                                          }} />
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                          <button onClick={() => addCertDocToProduct(p.id)}
+                                            style={{ flex: 1, padding: '7px', borderRadius: 7, border: 'none', background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                                            ✓ {t('Guardar certificación','Certificering opslaan','Zertifizierung speichern','Save certification')}
+                                          </button>
+                                          <button onClick={() => { setExpandedCertId(null); setNewCertDoc({}) }}
+                                            style={{ padding: '7px 10px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, cursor: 'pointer' }}>✕</button>
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                </div>
                               </div>
                               {isConfirmDelete ? (
                                 <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA' }}>
