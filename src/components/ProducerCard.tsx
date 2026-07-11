@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useLang } from '../context/LangContext'
 import type { Producer } from '../types'
+
+const VERIFIED: Record<string, string> = {
+  es: '✓ Verificado',
+  en: '✓ Verified',
+  nl: '✓ Geverifieerd',
+  de: '✓ Verifiziert',
+}
 
 interface ProducerCardProps {
   producer: Producer
@@ -23,6 +31,7 @@ const CERT_LABELS: Record<string, string> = {
 }
 
 export default function ProducerCard({ producer }: ProducerCardProps) {
+  const { lang } = useLang()
   return (
     <Link to={`/productor/${producer.id}`} style={{ textDecoration: 'none', display: 'block' }}>
       <div className="card" style={{ padding: '1.5rem', cursor: 'pointer' }}>
@@ -37,7 +46,7 @@ export default function ProducerCard({ producer }: ProducerCardProps) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text)' }}>{producer.name}</h3>
-              {producer.verified && <span className="badge badge-teal">✓ Verificado</span>}
+              {producer.verified && <span className="badge badge-teal">{VERIFIED[lang] ?? VERIFIED.es}</span>}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 3 }}>
               📍 {producer.state} &nbsp;·&nbsp; {CAT_LABELS[producer.category]}

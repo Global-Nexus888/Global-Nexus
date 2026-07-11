@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { PRODUCTS, PRODUCERS } from '../lib/data'
+import { useLang } from '../context/LangContext'
+
+const VERIFIED_SUPPLIER: Record<string, string> = {
+  es: '✓ Proveedor Verificado',
+  en: '✓ Verified Supplier',
+  nl: '✓ Geverifieerde leverancier',
+  de: '✓ Verifizierter Lieferant',
+}
+const VERIFIED: Record<string, string> = {
+  es: '✓ Verificado', en: '✓ Verified', nl: '✓ Geverifieerd', de: '✓ Verifiziert',
+}
 
 const CERT_INFO: Record<string, { label: string; color: string; desc: string }> = {
   'denominacion-origen': { label: 'Denominación de Origen', color: '#7C3AED', desc: 'Producto protegido por denominación geográfica oficial de México.' },
@@ -24,6 +35,7 @@ const FLAG: Record<string, string> = {
 export default function ProductPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { lang } = useLang()
   const [contacted, setContacted] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ nombre: '', empresa: '', email: '', pais: '', mensaje: '' })
@@ -81,7 +93,7 @@ export default function ProductPage() {
               <div style={{ flex: 1, minWidth: 200 }}>
                 {/* Badges */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                  {product.verified && <span className="badge badge-teal">✓ Proveedor Verificado</span>}
+                  {product.verified && <span className="badge badge-teal">{VERIFIED_SUPPLIER[lang] ?? VERIFIED_SUPPLIER.es}</span>}
                   {product.trending && <span className="badge badge-gold">🔥 Trending</span>}
                   {product.newProduct && <span className="badge badge-navy">✦ Nuevo</span>}
                   {!product.inStock && <span className="badge badge-gray">Sin stock</span>}
@@ -268,7 +280,7 @@ export default function ProductPage() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', lineHeight: 1.3 }}>{producer.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>📍 {producer.state} · Desde {producer.founded}</div>
-                {producer.verified && <span className="badge badge-teal" style={{ marginTop: 4 }}>✓ Verificado</span>}
+                {producer.verified && <span className="badge badge-teal" style={{ marginTop: 4 }}>{VERIFIED[lang] ?? VERIFIED.es}</span>}
               </div>
             </div>
 

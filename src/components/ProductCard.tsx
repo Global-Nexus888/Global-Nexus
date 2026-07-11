@@ -1,5 +1,13 @@
 import { Link } from 'react-router-dom'
+import { useLang } from '../context/LangContext'
 import type { Product } from '../types'
+
+const T: Record<string, Record<string, string>> = {
+  verified:  { es: '✓ Verificado',    en: '✓ Verified',      nl: '✓ Geverifieerd',   de: '✓ Verifiziert'    },
+  newBadge:  { es: '✦ Nuevo',         en: '✦ New',           nl: '✦ Nieuw',          de: '✦ Neu'            },
+  noStock:   { es: 'Sin stock',        en: 'Out of stock',    nl: 'Niet op voorraad', de: 'Nicht vorrätig'   },
+  details:   { es: 'Ver detalles',     en: 'View details',    nl: 'Bekijk details',   de: 'Details ansehen'  },
+}
 
 interface ProductCardProps {
   product: Product
@@ -23,6 +31,8 @@ const CAT_COLORS: Record<string, string> = {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { lang } = useLang()
+  const t = (key: string) => T[key][lang] ?? T[key].es
   const catColor = CAT_COLORS[product.category] || 'var(--teal)'
 
   return (
@@ -37,10 +47,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             background: `${catColor}12`, border: `1px solid ${catColor}30`,
           }}>{product.icon}</div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-            {product.verified && <span className="badge badge-teal">✓ Verificado</span>}
+            {product.verified && <span className="badge badge-teal">{t('verified')}</span>}
             {product.trending && <span className="badge badge-gold">🔥 Trending</span>}
-            {product.newProduct && <span className="badge badge-navy">✦ Nuevo</span>}
-            {!product.inStock && <span className="badge badge-gray">Sin stock</span>}
+            {product.newProduct && <span className="badge badge-navy">{t('newBadge')}</span>}
+            {!product.inStock && <span className="badge badge-gray">{t('noStock')}</span>}
           </div>
         </div>
 
@@ -83,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div style={{
             background: 'var(--teal)', color: '#fff',
             padding: '6px 12px', borderRadius: 8, fontSize: '12px', fontWeight: 600,
-          }}>Ver detalles</div>
+          }}>{t('details')}</div>
         </div>
       </div>
     </Link>

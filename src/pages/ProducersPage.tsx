@@ -2,7 +2,15 @@ import { useState, useMemo, useEffect } from 'react'
 import { PRODUCERS } from '../lib/data'
 import ProducerCard from '../components/ProducerCard'
 import { supabase } from '../lib/supabase'
+import { useLang } from '../context/LangContext'
 import type { Producer } from '../types'
+
+const FILTER_VERIFIED: Record<string, string> = {
+  es: 'Solo verificados',
+  en: 'Verified only',
+  nl: 'Alleen geverifieerd',
+  de: 'Nur verifizierte',
+}
 
 const CATS = [
   { value: '', label: 'Todos' },
@@ -32,6 +40,7 @@ function toProducer(u: Record<string, unknown>, productCount: number): Producer 
 }
 
 export default function ProducersPage() {
+  const { lang } = useLang()
   const [search, setSearch]   = useState('')
   const [cat, setCat]         = useState('')
   const [verified, setVerified] = useState(false)
@@ -146,7 +155,7 @@ export default function ProducersPage() {
         ))}
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '13px', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>
           <input type="checkbox" checked={verified} onChange={e => setVerified(e.target.checked)} style={{ accentColor: 'var(--teal)', width: 15, height: 15 }} />
-          Solo verificados
+          {FILTER_VERIFIED[lang] ?? FILTER_VERIFIED.es}
         </label>
       </div>
 

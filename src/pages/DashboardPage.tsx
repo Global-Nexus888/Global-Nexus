@@ -711,7 +711,7 @@ export default function DashboardPage() {
                   )}
                   {profile.location && <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 3 }}>📍 {profile.location} · {t('Productor Certificado','Gecertificeerde Producent','Zertifizierter Produzent','Certified Producer')}</div>}
                   <div style={{ marginTop: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#16A34A', color: '#fff' }}>✓ {t('Productor Verificado IA','IA-geverifieerde Producent','KI-verifizierter Produzent','AI Verified Producer')}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#16A34A', color: '#fff' }}>✓ {t('Productor Verificado IA','AI-geverifieerde producent','KI-verifizierter Produzent','AI Verified Producer')}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1.5rem', textAlign: 'center' }}>
