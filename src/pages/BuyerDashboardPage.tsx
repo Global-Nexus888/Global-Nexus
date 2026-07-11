@@ -52,7 +52,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🔍 Completa tu **Perfil de Comprador**: industria, productos de interés y VAT. Los productores te encontrarán más fácil.', delay: 3800 },
     { msg: '📋 Guarda en **Mis Búsquedas** los productos y proveedores que te interesan para cuando se active el catálogo.', delay: 6000 },
     { msg: '🚀 La conexión directa con productores se activa el **28 de agosto de 2026**. ¡Estás en la lista de prioridad!', delay: 8200 },
-    { msg: '💬 Soporte: soporte@nexusstrategy.online — respondemos en menos de 24 horas.', delay: 10500 },
+    { msg: '💬 Soporte: brandmkrs.ads@gmail.com — respondemos en menos de 24 horas.', delay: 10500 },
   ],
   en: [
     { msg: '👋 Welcome to Global Nexus! I\'m your onboarding assistant for European buyers.', delay: 0 },
@@ -60,7 +60,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🔍 Complete your **Buyer Profile**: industry, products of interest and VAT number.', delay: 3800 },
     { msg: '📋 Save in **My Searches** the products and suppliers you\'re interested in.', delay: 6000 },
     { msg: '🚀 Direct connection with producers activates on **August 28, 2026**. You\'re on the priority list!', delay: 8200 },
-    { msg: '💬 Support: soporte@nexusstrategy.online', delay: 10500 },
+    { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
   nl: [
     { msg: '👋 Welkom bij Global Nexus! Ik ben uw assistent voor Europese kopers.', delay: 0 },
@@ -68,7 +68,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🔍 Vul uw **Kopersprofiel** in: industrie, interesseproducten en BTW-nummer.', delay: 3800 },
     { msg: '📋 Sla in **Mijn Zoekopdrachten** producten en leveranciers op.', delay: 6000 },
     { msg: '🚀 Directe verbinding wordt actief op **28 augustus 2026**.', delay: 8200 },
-    { msg: '💬 Ondersteuning: soporte@nexusstrategy.online', delay: 10500 },
+    { msg: '💬 Ondersteuning: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
   de: [
     { msg: '👋 Willkommen bei Global Nexus! Ich bin Ihr Assistent für europäische Käufer.', delay: 0 },
@@ -76,7 +76,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🔍 Vervollständigen Sie Ihr **Käuferprofil**: Branche, Interessensprodukte und USt-IdNr.', delay: 3800 },
     { msg: '📋 Speichern Sie in **Meine Suchen** Produkte und Lieferanten.', delay: 6000 },
     { msg: '🚀 Direkte Verbindung wird am **28. August 2026** aktiv.', delay: 8200 },
-    { msg: '💬 Support: soporte@nexusstrategy.online', delay: 10500 },
+    { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
 }
 
@@ -97,7 +97,7 @@ function BuyerChat({ lang }: { lang: Lang }) {
     const msg = input.trim(); setInput('')
     setUserMsgs(s => [...s, msg])
     setTimeout(() => setShown(prev => [...prev, {
-      msg: lang === 'es' ? '📩 Gracias por tu pregunta. Escríbenos a soporte@nexusstrategy.online — respondemos en menos de 24 horas.' : '📩 Thanks! Write to soporte@nexusstrategy.online for personalized support.',
+      msg: lang === 'es' ? '📩 Gracias por tu pregunta. Escríbenos a brandmkrs.ads@gmail.com — respondemos en menos de 24 horas.' : '📩 Thanks! Write to brandmkrs.ads@gmail.com for personalized support.',
       delay: 0,
     }]), 1000)
   }

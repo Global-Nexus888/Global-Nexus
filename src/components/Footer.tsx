@@ -89,7 +89,7 @@ export default function Footer() {
               >{l}</Link>
             ))}
             <div style={{ marginTop: '1rem', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              📧 hola@global-nexus.business
+              📧 brandmkrs.ads@gmail.com
             </div>
           </div>
         </div>

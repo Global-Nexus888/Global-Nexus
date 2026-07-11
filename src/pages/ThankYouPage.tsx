@@ -35,9 +35,9 @@ const COPY: Record<Lang, {
     dashBtn: '→ Ir a mi panel ahora',
     catalogBtn: 'Ver catálogo de productos',
     receipt: '📧 Recibirás un recibo de Stripe en tu correo. Para dudas sobre tu suscripción:',
-    email: 'pagos@nexusstrategy.online',
+    email: 'brandmkrs.ads@gmail.com',
     launchNote: '🚀 Lanzamiento: 28 Ago 2026 · 12:00 pm CDMX',
-    supportNote: 'Soporte: soporte@nexusstrategy.online',
+    supportNote: 'Soporte: brandmkrs.ads@gmail.com',
   },
   en: {
     title: 'Registration confirmed! Welcome to Global Nexus',
@@ -59,9 +59,9 @@ const COPY: Record<Lang, {
     dashBtn: '→ Go to my panel now',
     catalogBtn: 'Browse product catalog',
     receipt: '📧 You\'ll receive a Stripe receipt by email. For subscription questions:',
-    email: 'pagos@nexusstrategy.online',
+    email: 'brandmkrs.ads@gmail.com',
     launchNote: '🚀 Launch: Aug 28, 2026 · 12:00 pm CDMX',
-    supportNote: 'Support: soporte@nexusstrategy.online',
+    supportNote: 'Support: brandmkrs.ads@gmail.com',
   },
   nl: {
     title: 'Registratie bevestigd! Welkom bij Global Nexus',
@@ -83,9 +83,9 @@ const COPY: Record<Lang, {
     dashBtn: '→ Naar mijn dashboard',
     catalogBtn: 'Productencatalogus bekijken',
     receipt: '📧 U ontvangt een Stripe-ontvangstbewijs per e-mail. Voor vragen over uw abonnement:',
-    email: 'pagos@nexusstrategy.online',
+    email: 'brandmkrs.ads@gmail.com',
     launchNote: '🚀 Lancering: 28 aug 2026 · 12:00 uur CDMX',
-    supportNote: 'Ondersteuning: soporte@nexusstrategy.online',
+    supportNote: 'Ondersteuning: brandmkrs.ads@gmail.com',
   },
   de: {
     title: 'Registrierung bestätigt! Willkommen bei Global Nexus',
@@ -107,9 +107,9 @@ const COPY: Record<Lang, {
     dashBtn: '→ Zu meinem Dashboard',
     catalogBtn: 'Produktkatalog ansehen',
     receipt: '📧 Sie erhalten eine Stripe-Quittung per E-Mail. Bei Fragen zu Ihrem Abonnement:',
-    email: 'pagos@nexusstrategy.online',
+    email: 'brandmkrs.ads@gmail.com',
     launchNote: '🚀 Launch: 28. Aug 2026 · 12:00 Uhr CDMX',
-    supportNote: 'Support: soporte@nexusstrategy.online',
+    supportNote: 'Support: brandmkrs.ads@gmail.com',
   },
 }
 

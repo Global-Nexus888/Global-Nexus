@@ -34,10 +34,10 @@ export default function ContactPage() {
         {/* Info cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {[
-            { icon: '📧', title: 'Email general', value: 'hola@nexusstrategy.online', sub: 'Respuesta en menos de 24h' },
-            { icon: '🛡️', title: 'Soporte técnico', value: 'soporte@nexusstrategy.online', sub: 'Lunes–Viernes 9:00–18:00 CDMX' },
-            { icon: '💳', title: 'Facturación y pagos', value: 'pagos@nexusstrategy.online', sub: 'Para cambios de plan o reembolsos' },
-            { icon: '🏛️', title: 'Legal / RGPD', value: 'legal@nexusstrategy.online', sub: 'Privacidad y términos' },
+            { icon: '📧', title: 'Email general', value: 'brandmkrs.ads@gmail.com', sub: 'Respuesta en menos de 24h' },
+            { icon: '🛡️', title: 'Soporte técnico', value: 'brandmkrs.ads@gmail.com', sub: 'Lunes–Viernes 9:00–18:00 CDMX' },
+            { icon: '💳', title: 'Facturación y pagos', value: 'brandmkrs.ads@gmail.com', sub: 'Para cambios de plan o reembolsos' },
+            { icon: '🏛️', title: 'Legal / RGPD', value: 'brandmkrs.ads@gmail.com', sub: 'Privacidad y términos' },
           ].map(c => (
             <div key={c.title} className="card" style={{ padding: '1.25rem', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>{c.icon}</div>

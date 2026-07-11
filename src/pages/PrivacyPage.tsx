@@ -10,7 +10,7 @@ export default function PrivacyPage() {
       {[
         {
           title: '1. Responsable del tratamiento',
-          body: 'Global Nexus (nexusstrategy.online) es responsable del tratamiento de sus datos personales. Para consultas de privacidad, puede contactarnos en: privacidad@nexusstrategy.online',
+          body: 'Global Nexus (nexusstrategy.online) es responsable del tratamiento de sus datos personales. Para consultas de privacidad, puede contactarnos en: brandmkrs.ads@gmail.com',
         },
         {
           title: '2. Datos que recopilamos',
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         },
         {
           title: '7. Sus derechos (RGPD)',
-          body: 'Como usuario de la UE, tiene derecho a: acceso, rectificación, supresión ("derecho al olvido"), portabilidad, limitación del tratamiento y oposición. Para ejercer sus derechos, envíe un correo a privacidad@nexusstrategy.online con su identificación.',
+          body: 'Como usuario de la UE, tiene derecho a: acceso, rectificación, supresión ("derecho al olvido"), portabilidad, limitación del tratamiento y oposición. Para ejercer sus derechos, envíe un correo a brandmkrs.ads@gmail.com con su identificación.',
         },
         {
           title: '8. Cookies',
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
         },
         {
           title: '10. Contacto y reclamaciones',
-          body: 'Para cualquier consulta sobre privacidad: privacidad@nexusstrategy.online. Si considera que sus derechos no han sido respetados, puede presentar una reclamación ante la Autoridad de Control de su país de residencia en la UE (AEPD en España, AP en Países Bajos, BfDI en Alemania, CNIL en Francia).',
+          body: 'Para cualquier consulta sobre privacidad: brandmkrs.ads@gmail.com. Si considera que sus derechos no han sido respetados, puede presentar una reclamación ante la Autoridad de Control de su país de residencia en la UE (AEPD en España, AP en Países Bajos, BfDI en Alemania, CNIL en Francia).',
         },
       ].map(section => (
         <div key={section.title} style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
 
       <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal)', borderRadius: 'var(--radius)', padding: '1.25rem', marginTop: '2rem' }}>
         <div style={{ fontSize: 13, color: 'var(--teal-dark)', fontWeight: 600, marginBottom: 4 }}>📧 Contacto de privacidad</div>
-        <div style={{ fontSize: 13, color: 'var(--teal-dark)' }}>privacidad@nexusstrategy.online · nexusstrategy.online</div>
+        <div style={{ fontSize: 13, color: 'var(--teal-dark)' }}>brandmkrs.ads@gmail.com · nexusstrategy.online</div>
       </div>
     </div>
   )

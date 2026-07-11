@@ -38,7 +38,7 @@ export default function CTAFinal({ lang, onOpenModal }: CTAFinalProps) {
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >{c.btnWa}</a>
           <a
-            href="mailto:nexusstrategy.online"
+            href="mailto:brandmkrs.ads@gmail.com"
             style={{
               border: '1px solid var(--gold)', color: 'var(--gold)',
               padding: '.9rem 2rem', borderRadius: 8, fontWeight: 600,

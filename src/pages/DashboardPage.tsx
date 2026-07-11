@@ -128,7 +128,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '📦 Luego sube tus **Productos** en la pestaña correspondiente. Añade foto, precio base, unidad de venta y cantidad mínima de pedido (MOQ).', delay: 3800 },
     { msg: '🛡️ Si tienes certificaciones (NOM, SENASICA, Orgánico, COFEPRIS...), agrégalas en **Certificaciones**. Aumentan mucho tu visibilidad con compradores exigentes.', delay: 6200 },
     { msg: '🚀 Tu perfil y productos serán **visibles públicamente el 28 de agosto de 2026**. ¡Mientras tanto, construye todo con calma!', delay: 8500 },
-    { msg: '💬 A partir del lanzamiento, los compradores europeos podrán enviarte mensajes aquí. Para soporte directo escribe a soporte@nexusstrategy.online', delay: 11000 },
+    { msg: '💬 A partir del lanzamiento, los compradores europeos podrán enviarte mensajes aquí. Para soporte directo escribe a brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   en: [
     { msg: '👋 Welcome to Global Nexus! I\'m your onboarding assistant. I\'ll guide you through your first steps.', delay: 0 },
@@ -136,7 +136,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '📦 Then upload your **Products**. Add a photo, base price, sales unit and minimum order quantity (MOQ).', delay: 3800 },
     { msg: '🛡️ If you have certifications (NOM, SENASICA, Organic, COFEPRIS...), add them in **Certifications**. They greatly increase your visibility.', delay: 6200 },
     { msg: '🚀 Your profile and products will be **publicly visible on August 28, 2026**.', delay: 8500 },
-    { msg: '💬 From launch, European buyers can message you directly here. Support: soporte@nexusstrategy.online', delay: 11000 },
+    { msg: '💬 From launch, European buyers can message you directly here. Support: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   nl: [
     { msg: '👋 Welkom bij Global Nexus! Ik begeleid u door de eerste stappen.', delay: 0 },
@@ -144,7 +144,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '📦 Upload daarna uw **Producten** met foto, basisprijs en MOQ.', delay: 3800 },
     { msg: '🛡️ Voeg **Certificeringen** toe om uw zichtbaarheid te vergroten.', delay: 6200 },
     { msg: '🚀 Uw profiel wordt **publiek op 28 augustus 2026**.', delay: 8500 },
-    { msg: '💬 Ondersteuning: soporte@nexusstrategy.online', delay: 11000 },
+    { msg: '💬 Ondersteuning: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   de: [
     { msg: '👋 Willkommen bei Global Nexus! Ich begleite Sie durch Ihre ersten Schritte.', delay: 0 },
@@ -152,7 +152,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '📦 Laden Sie dann Ihre **Produkte** hoch.', delay: 3800 },
     { msg: '🛡️ Fügen Sie **Zertifizierungen** hinzu.', delay: 6200 },
     { msg: '🚀 Ihr Profil wird am **28. August 2026** öffentlich.', delay: 8500 },
-    { msg: '💬 Support: soporte@nexusstrategy.online', delay: 11000 },
+    { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
 }
 
@@ -175,8 +175,8 @@ function TutorialChat({ lang }: { lang: Lang }) {
     const msg = input.trim(); setInput('')
     setUserMsgs(s => [...s, msg])
     setTimeout(() => setShown(prev => [...prev, {
-      msg: lang === 'es' ? '📩 Gracias por tu pregunta. Para soporte directo escribe a soporte@nexusstrategy.online — respondemos en menos de 24 horas.'
-         : '📩 Thanks for your question. Write to soporte@nexusstrategy.online for direct support.',
+      msg: lang === 'es' ? '📩 Gracias por tu pregunta. Para soporte directo escribe a brandmkrs.ads@gmail.com — respondemos en menos de 24 horas.'
+         : '📩 Thanks for your question. Write to brandmkrs.ads@gmail.com for direct support.',
       delay: 0,
     }]), 1000)
   }

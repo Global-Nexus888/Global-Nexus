@@ -57,7 +57,7 @@ export default function TermsPage() {
 
       <div style={{ background: 'var(--navy-light)', border: '1px solid #BFDBFE', borderRadius: 'var(--radius)', padding: '1.25rem', marginTop: '2rem' }}>
         <div style={{ fontSize: 13, color: 'var(--navy)', fontWeight: 600, marginBottom: 4 }}>📧 Contacto legal</div>
-        <div style={{ fontSize: 13, color: 'var(--navy)' }}>legal@nexusstrategy.online · nexusstrategy.online</div>
+        <div style={{ fontSize: 13, color: 'var(--navy)' }}>brandmkrs.ads@gmail.com · nexusstrategy.online</div>
       </div>
     </div>
   )

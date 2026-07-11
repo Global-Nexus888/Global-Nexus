@@ -116,7 +116,7 @@ export default function Hero({ lang }: HeroProps) {
           onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.opacity = '1' }}
         >{c.btn1}</a>
         <a
-          href="mailto:nexusstrategy.online"
+          href="mailto:brandmkrs.ads@gmail.com"
           style={{
             border: '1px solid var(--gold)', color: 'var(--gold)',
             padding: '.85rem 2rem', borderRadius: 8, fontWeight: 600,
