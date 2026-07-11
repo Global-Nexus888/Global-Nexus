@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
-import { countUnreadAdminMessages } from '../lib/adminMessages'
+import { countUnread } from '../lib/chat'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -235,7 +235,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!email) return
-    countUnreadAdminMessages(email).then(n => setAdminUnread(n))
+    countUnread(email).then(n => setAdminUnread(n))
   }, [email])
   const [saveMsg, setSaveMsg] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)

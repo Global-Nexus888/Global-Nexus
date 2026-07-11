@@ -1,5 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
-import { loadAdminMessages, markAllAdminMessagesRead, type AdminMessage } from '../lib/adminMessages'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import {
+  loadThread, sendChatMessage, markThreadRead, subscribeThread,
+  ADMIN_EMAIL, ADMIN_NAME, type ChatMessage,
+} from '../lib/chat'
 
 /* ─── Deal stages ─── */
 const DEAL_STAGES = [
@@ -174,31 +177,59 @@ export default function MessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Admin messages
-  const [adminMsgs, setAdminMsgs] = useState<AdminMessage[]>([])
+  // Admin chat
+  const [adminMsgs, setAdminMsgs]     = useState<ChatMessage[]>([])
   const [adminUnread, setAdminUnread] = useState(0)
+  const [adminInput, setAdminInput]   = useState('')
+  const [adminSending, setAdminSending] = useState(false)
+  const adminBottomRef = useRef<HTMLDivElement>(null)
+
+  const getCurrentUser = useCallback(() => {
+    try { return JSON.parse(localStorage.getItem('gn_current_user') || '{}') } catch { return {} }
+  }, [])
 
   useEffect(() => {
-    const email = (() => {
-      try { return JSON.parse(localStorage.getItem('gn_current_user') || '{}').email || '' } catch { return '' }
-    })()
+    const user = getCurrentUser()
+    const email = user.email || ''
     if (!email) return
-    loadAdminMessages(email).then(msgs => {
+    loadThread(email).then(msgs => {
       setAdminMsgs(msgs)
-      setAdminUnread(msgs.filter(m => !m.read).length)
+      setAdminUnread(msgs.filter(m => m.to_email === email && !m.read).length)
     })
-  }, [])
+    const unsub = subscribeThread(email, (msg) => {
+      setAdminMsgs(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+      if (activeId !== 'admin') setAdminUnread(n => n + 1)
+      setTimeout(() => adminBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 60)
+    })
+    return unsub
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getCurrentUser])
 
   const openAdmin = () => {
     setActiveId('admin')
-    const email = (() => {
-      try { return JSON.parse(localStorage.getItem('gn_current_user') || '{}').email || '' } catch { return '' }
-    })()
-    if (email && adminUnread > 0) {
-      markAllAdminMessagesRead(email)
+    const user = getCurrentUser()
+    const email = user.email || ''
+    if (email) {
+      markThreadRead(email)
       setAdminUnread(0)
-      setAdminMsgs(prev => prev.map(m => ({ ...m, read: true })))
+      setAdminMsgs(prev => prev.map(m => m.to_email === email ? { ...m, read: true } : m))
     }
+    setTimeout(() => adminBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+  }
+
+  const sendAdminReply = async () => {
+    const text = adminInput.trim()
+    if (!text || adminSending) return
+    const user = getCurrentUser()
+    const email = user.email || ''
+    const name = user.name || user.company || email
+    if (!email) return
+    setAdminSending(true)
+    setAdminInput('')
+    const msg = await sendChatMessage(email, name, ADMIN_EMAIL, text)
+    setAdminMsgs(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+    setAdminSending(false)
+    setTimeout(() => adminBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 60)
   }
 
   const setStage = (stageId: string) => {
@@ -391,63 +422,101 @@ export default function MessagesPage() {
       {/* ── Chat window ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* ── ADMIN MESSAGES PANEL ── */}
-        {activeId === 'admin' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', border: '2px solid #FCD34D', flexShrink: 0 }}>🌐</div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>Global Nexus — Administración</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10, marginTop: 2 }}>
-                  <span style={{ color: '#16A34A' }}>● En línea</span>
-                  <span>🛡️ Canal oficial de la plataforma</span>
+        {/* ── ADMIN CHAT PANEL ── */}
+        {activeId === 'admin' && (() => {
+          const user = getCurrentUser()
+          const myEmail = user.email || ''
+          return (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Header */}
+              <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', border: '2px solid #FCD34D', flexShrink: 0 }}>🌐</div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>Global Nexus — Administración</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10, marginTop: 2 }}>
+                    <span style={{ color: '#16A34A' }}>● En línea</span>
+                    <span>🛡️ Canal oficial de la plataforma</span>
+                  </div>
+                </div>
+              </div>
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 6, background: '#F1F5F9' }}>
+                {adminMsgs.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌐</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>Sin mensajes aún</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.6 }}>Aquí recibirás comunicados y seguimiento del equipo Global Nexus. También puedes escribirnos directamente.</div>
+                  </div>
+                ) : adminMsgs.map((m, i) => {
+                  const isMe = m.from_email !== ADMIN_EMAIL
+                  const showDate = i === 0 || formatDate(new Date(adminMsgs[i - 1].sent_at)) !== formatDate(new Date(m.sent_at))
+                  return (
+                    <div key={m.id}>
+                      {showDate && (
+                        <div style={{ textAlign: 'center', margin: '10px 0 6px' }}>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', background: '#E2E8F0', padding: '3px 12px', borderRadius: 100 }}>{formatDate(new Date(m.sent_at))}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', marginBottom: 2 }}>
+                        {!isMe && (
+                          <div style={{ width: 32, height: 32, borderRadius: 9, background: '#FEF3C7', border: '2px solid #FCD34D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', marginRight: 7, flexShrink: 0, alignSelf: 'flex-end' }}>🌐</div>
+                        )}
+                        <div style={{ maxWidth: '75%' }}>
+                          {!isMe && (
+                            <div style={{ fontSize: 10, color: '#D97706', fontWeight: 700, marginBottom: 2 }}>Global Nexus Admin · <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: '#FEF3C7', color: '#92400E' }}>🛡️ Oficial</span></div>
+                          )}
+                          <div style={{
+                            background: isMe ? 'linear-gradient(135deg, #0D9488, #1E3A5F)' : 'var(--white)',
+                            color: isMe ? '#fff' : 'var(--text)',
+                            borderRadius: isMe ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                            padding: '10px 14px',
+                            fontSize: 13, lineHeight: 1.6,
+                            border: isMe ? 'none' : '1px solid var(--border)',
+                            borderLeft: isMe ? 'none' : '3px solid #F59E0B',
+                            boxShadow: '0 1px 4px rgba(0,0,0,.07)',
+                            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                          }}>{m.body}</div>
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, textAlign: isMe ? 'right' : 'left', display: 'flex', alignItems: 'center', gap: 4, justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                            {formatTime(new Date(m.sent_at))}
+                            {isMe && <span style={{ color: m.read ? '#0D9488' : 'var(--text-muted)' }}>{m.read ? '✓✓' : '✓'}</span>}
+                          </div>
+                        </div>
+                        {isMe && (
+                          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #0D9488, #1E3A5F)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.85rem', marginLeft: 7, flexShrink: 0, alignSelf: 'flex-end' }}>😊</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                <div ref={adminBottomRef} />
+              </div>
+              {/* Compose */}
+              <div style={{ borderTop: '1px solid var(--border)', background: 'var(--white)', padding: '12px 1.25rem' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span>🛡️ Canal oficial Global Nexus</span>
+                  <span>·</span>
+                  <span>📩 El equipo responde normalmente en 24 hrs</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                  <textarea
+                    value={adminInput}
+                    onChange={e => setAdminInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminReply() } }}
+                    placeholder={myEmail ? 'Escribe tu mensaje al equipo Global Nexus… (Enter envía)' : 'Inicia sesión para enviar mensajes'}
+                    disabled={!myEmail || adminSending}
+                    rows={1}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: 12, border: '1.5px solid var(--border)', fontSize: 13, resize: 'none', fontFamily: 'inherit', background: myEmail ? 'var(--surface)' : 'var(--surface2)', color: 'var(--text)', lineHeight: 1.5, maxHeight: 90, overflowY: 'auto', outline: 'none' }}
+                  />
+                  <button
+                    onClick={sendAdminReply}
+                    disabled={!adminInput.trim() || adminSending || !myEmail}
+                    style={{ width: 44, height: 44, borderRadius: 12, border: 'none', cursor: adminInput.trim() && myEmail ? 'pointer' : 'not-allowed', background: adminInput.trim() && myEmail ? 'linear-gradient(135deg, #0D9488, #1E3A5F)' : 'var(--surface2)', color: adminInput.trim() && myEmail ? '#fff' : 'var(--text-muted)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s' }}
+                  >{adminSending ? '⏳' : '➤'}</button>
                 </div>
               </div>
             </div>
-            {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {adminMsgs.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: 12 }}>🌐</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>Sin mensajes de administración</div>
-                  <div style={{ fontSize: 13, lineHeight: 1.6 }}>Aquí recibirás comunicados, bienvenidas y seguimiento del equipo Global Nexus.</div>
-                </div>
-              ) : adminMsgs.map((m, i) => (
-                <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {/* Date separator */}
-                  {(i === 0 || formatDate(new Date(adminMsgs[i - 1].sent_at)) !== formatDate(new Date(m.sent_at))) && (
-                    <div style={{ textAlign: 'center', margin: '8px 0' }}>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--surface2)', padding: '3px 12px', borderRadius: 100 }}>{formatDate(new Date(m.sent_at))}</span>
-                    </div>
-                  )}
-                  {/* Sender label */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontSize: '1rem' }}>🌐</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#D97706' }}>Global Nexus Admin</span>
-                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', fontWeight: 700 }}>🛡️ Oficial</span>
-                  </div>
-                  {/* Message bubble */}
-                  <div style={{ maxWidth: '80%', background: 'var(--white)', border: '1px solid var(--border)', borderRadius: '16px 16px 16px 4px', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', borderLeft: '3px solid #F59E0B' }}>
-                    <div style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)', marginBottom: 8 }}>{m.subject}</div>
-                    <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, marginTop: 10 }}>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatTime(new Date(m.sent_at))}</span>
-                      {!m.read && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 100, background: '#EF444420', color: '#EF4444' }}>● No leído</span>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div ref={bottomRef} />
-            </div>
-            {/* Read-only input area */}
-            <div style={{ borderTop: '1px solid var(--border)', background: 'var(--white)', padding: '12px 1.5rem' }}>
-              <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                Este es un canal de <strong style={{ color: 'var(--text)' }}>comunicación oficial de Global Nexus</strong>. Para responder, escribe a <a href="mailto:hola@global-nexus.business" style={{ color: 'var(--teal)', fontWeight: 700 }}>hola@global-nexus.business</a>
-              </div>
-            </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* ── Regular chat (buyer/producer conversations) ── */}
         {activeId !== 'admin' && <>

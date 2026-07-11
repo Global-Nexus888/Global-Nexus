@@ -24,7 +24,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'Aranceles TLCUEM' },
       { value: '450M', label: 'Consumidores EU' },
-      { value: '+800', label: 'Productores activos' },
+      { value: '28 Ago', label: 'Lanzamiento oficial' },
       { value: '27', label: 'Países compradores' },
     ],
     cat_title: 'Explorar por categoría',
@@ -41,7 +41,7 @@ export const homeI18n: Record<Lang, {
     how_sub: 'De productor a comprador europeo en 4 pasos',
     steps: [
       { title: 'Regístrate gratis', desc: 'Crea tu perfil como productor mexicano o comprador europeo en menos de 5 minutos.' },
-      { title: 'Explora el catálogo', desc: 'Navega 800+ productos verificados. Filtra por categoría, certificación y región.' },
+      { title: 'Explora el catálogo', desc: 'Navega el catálogo de los primeros productores verificados. Filtra por categoría, certificación y región.' },
       { title: 'Conecta directamente', desc: 'Mensajería multilingüe integrada. Sin intermediarios, sin comisiones ocultas.' },
       { title: 'Exporta sin fricción', desc: 'Prepara tu documentación TLCUEM con nuestras herramientas y conecta con el transporte ideal.' },
     ],
@@ -62,7 +62,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'TLCUEM Tariffs' },
       { value: '450M', label: 'EU Consumers' },
-      { value: '+800', label: 'Active producers' },
+      { value: 'Aug 28', label: 'Official launch' },
       { value: '27', label: 'Buyer countries' },
     ],
     cat_title: 'Explore by category',
@@ -79,7 +79,7 @@ export const homeI18n: Record<Lang, {
     how_sub: 'From Mexican producer to European buyer in 4 steps',
     steps: [
       { title: 'Sign up for free', desc: 'Create your profile as a Mexican producer or European buyer in less than 5 minutes.' },
-      { title: 'Explore the catalog', desc: 'Browse 800+ verified products. Filter by category, certification and region.' },
+      { title: 'Explore the catalog', desc: 'Browse founding verified producers. Filter by category, certification and region.' },
       { title: 'Connect directly', desc: 'Integrated multilingual messaging. No intermediaries, no hidden fees.' },
       { title: 'Export without friction', desc: 'Prepare your TLCUEM documentation with our tools and connect with the ideal transport.' },
     ],
@@ -100,7 +100,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'TLCUEM Tarieven' },
       { value: '450M', label: 'EU Consumenten' },
-      { value: '+800', label: 'Actieve producenten' },
+      { value: '28 aug', label: 'Officiële lancering' },
       { value: '27', label: 'Kopende landen' },
     ],
     cat_title: 'Verkennen per categorie',
@@ -117,7 +117,7 @@ export const homeI18n: Record<Lang, {
     how_sub: 'Van Mexicaanse producent naar Europese koper in 4 stappen',
     steps: [
       { title: 'Gratis registreren', desc: 'Maak uw profiel als Mexicaanse producent of Europese koper in minder dan 5 minuten.' },
-      { title: 'Verken de catalogus', desc: 'Blader door 800+ geverifieerde producten. Filter op categorie, certificering en regio.' },
+      { title: 'Verken de catalogus', desc: 'Blader door de eerste geverifieerde producenten. Filter op categorie, certificering en regio.' },
       { title: 'Direct verbinden', desc: 'Geïntegreerde meertalige berichten. Geen tussenpersonen, geen verborgen kosten.' },
       { title: 'Exporteren zonder moeite', desc: 'Bereid uw TLCUEM-documentatie voor met onze tools en verbind met het ideale transport.' },
     ],
@@ -138,7 +138,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'TLCUEM-Zölle' },
       { value: '450M', label: 'EU-Verbraucher' },
-      { value: '+800', label: 'Aktive Produzenten' },
+      { value: '28 Aug', label: 'Offizieller Start' },
       { value: '27', label: 'Käuferländer' },
     ],
     cat_title: 'Nach Kategorie erkunden',
@@ -155,7 +155,7 @@ export const homeI18n: Record<Lang, {
     how_sub: 'Vom mexikanischen Produzenten zum europäischen Käufer in 4 Schritten',
     steps: [
       { title: 'Kostenlos registrieren', desc: 'Erstellen Sie Ihr Profil als mexikanischer Produzent oder europäischer Käufer in weniger als 5 Minuten.' },
-      { title: 'Katalog erkunden', desc: 'Durchsuchen Sie 800+ verifizierte Produkte. Filtern Sie nach Kategorie, Zertifizierung und Region.' },
+      { title: 'Katalog erkunden', desc: 'Entdecken Sie die ersten verifizierten Produzenten. Filtern Sie nach Kategorie, Zertifizierung und Region.' },
       { title: 'Direkt verbinden', desc: 'Integriertes mehrsprachiges Messaging. Keine Zwischenhändler, keine versteckten Gebühren.' },
       { title: 'Ohne Aufwand exportieren', desc: 'Bereiten Sie Ihre TLCUEM-Dokumentation mit unseren Tools vor und verbinden Sie sich mit dem idealen Transport.' },
     ],
