@@ -29,6 +29,7 @@ import AsesoriaPage from './pages/AsesoriaPage'
 import BuyerDashboardPage from './pages/BuyerDashboardPage'
 import NotFound from './pages/NotFound'
 import CookieBanner from './components/CookieBanner'
+import DemoBubble from './components/DemoBubble'
 
 const FULL_SCREEN_ROUTES = ['/admin', '/mensajes', '/dashboard', '/dashboard-comprador']
 
@@ -113,6 +114,7 @@ export default function App() {
       </main>
       <Footer />
       <CookieBanner />
+      <DemoBubble />
     </div>
     </LangProvider>
   )
