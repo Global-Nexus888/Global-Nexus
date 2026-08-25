@@ -349,12 +349,12 @@ export default function MessagesPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>Global Nexus</span>
-                  {adminMsgs[0] && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDate(new Date(adminMsgs[0].sent_at))}</span>}
+                  {adminMsgs.length > 0 && <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDate(new Date(adminMsgs[adminMsgs.length - 1].sent_at))}</span>}
                 </div>
                 <div style={{ fontSize: 11, color: '#D97706', fontWeight: 700 }}>🛡️ Administración oficial</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                   <span style={{ fontSize: 11, color: activeId === 'admin' ? 'var(--teal-dark)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
-                    {adminMsgs[0]?.subject || 'Mensajes del equipo Global Nexus'}
+                    {adminMsgs.length > 0 ? adminMsgs[adminMsgs.length - 1].body.slice(0, 40) + '…' : 'Mensajes del equipo Global Nexus'}
                   </span>
                   {adminUnread > 0 && (
                     <span style={{ background: '#EF4444', color: '#fff', borderRadius: 100, fontSize: 10, fontWeight: 700, padding: '1px 7px', flexShrink: 0, marginLeft: 4 }}>{adminUnread}</span>
@@ -362,6 +362,11 @@ export default function MessagesPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Pre-launch label for buyer conversations */}
+          <div style={{ padding: '6px 1.25rem', background: '#FFFBEB', borderBottom: '1px solid #FEF08A', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#92400E' }}>🚀 DEMO · Compradores europeos activos el 28 Ago</span>
           </div>
 
           {filtered.map(c => {
@@ -520,6 +525,10 @@ export default function MessagesPage() {
 
         {/* ── Regular chat (buyer/producer conversations) ── */}
         {activeId !== 'admin' && <>
+        {/* Demo mode banner */}
+        <div style={{ padding: '6px 1.5rem', background: '#FFFBEB', borderBottom: '1px solid #FEF08A', textAlign: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#92400E' }}>⚠️ MODO DEMO — Esta conversación es de muestra. Compradores reales aparecerán a partir del 28 de agosto de 2026.</span>
+        </div>
         <div style={{ padding: '12px 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ position: 'relative' }}>

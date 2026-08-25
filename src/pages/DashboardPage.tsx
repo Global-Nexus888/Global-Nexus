@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
-import { countUnread } from '../lib/chat'
+import { countUnread, loadThread, sendChatMessage, subscribeThread, markThreadRead, ADMIN_EMAIL, ADMIN_NAME, type ChatMessage } from '../lib/chat'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -118,6 +118,98 @@ function getSidebarNav(lang: Lang, msgCount: number): NavItem[] {
     { icon: '📜', label: es ? 'Órdenes' : nl ? 'Bestellingen' : de ? 'Bestellungen' : 'Orders', id: 6 },
     { icon: '⚙️', label: es ? 'Ajustes' : nl ? 'Instellingen' : de ? 'Einstellungen' : 'Settings', id: 8 },
   ]
+}
+
+/* ─── Real admin chat panel ─── */
+function AdminChatPanel({ email, name, lang }: { email: string; name: string; lang: Lang }) {
+  const [msgs, setMsgs]       = useState<ChatMessage[]>([])
+  const [input, setInput]     = useState('')
+  const [sending, setSending] = useState(false)
+  const [loaded, setLoaded]   = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const scroll = () => setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 60)
+
+  useEffect(() => {
+    loadThread(email).then(m => { setMsgs(m); setLoaded(true); scroll(); markThreadRead(email) })
+    const unsub = subscribeThread(email, msg => {
+      setMsgs(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+      scroll()
+    })
+    return unsub
+  }, [email])
+
+  const send = useCallback(async () => {
+    const text = input.trim()
+    if (!text || sending) return
+    setSending(true); setInput('')
+    const msg = await sendChatMessage(email, name, ADMIN_EMAIL, text)
+    setMsgs(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+    scroll(); setSending(false)
+  }, [input, sending, email, name])
+
+  const ph = lang === 'nl' ? 'Stuur een bericht aan Global Nexus…' : lang === 'de' ? 'Nachricht an Global Nexus…' : lang === 'en' ? 'Message Global Nexus…' : 'Escribe un mensaje a Global Nexus…'
+  const sendLabel = lang === 'nl' ? 'Verzenden' : lang === 'de' ? 'Senden' : lang === 'en' ? 'Send' : 'Enviar'
+  const emptyLabel = lang === 'nl' ? 'Nog geen berichten. Stuur een bericht om te beginnen.' : lang === 'de' ? 'Noch keine Nachrichten.' : lang === 'en' ? 'No messages yet. Send one to start.' : 'Sin mensajes aún. Escríbenos para comenzar.'
+
+  return (
+    <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: 440 }}>
+      {/* Header */}
+      <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10, background: `linear-gradient(135deg, ${C.navy}08, ${C.teal}08)`, flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>🌐</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: C.navy }}>Global Nexus · Soporte</div>
+          <div style={{ fontSize: 11, color: C.green, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, display: 'inline-block' }} /> En línea · respuesta en &lt;24h
+          </div>
+        </div>
+      </div>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: 8, background: '#F1F5F9' }}>
+        {!loaded
+          ? <div style={{ textAlign: 'center', padding: '3rem', color: C.muted, fontSize: 13 }}>⏳ Cargando...</div>
+          : msgs.length === 0
+            ? <div style={{ textAlign: 'center', padding: '3rem 2rem', color: C.muted, fontSize: 13 }}>{emptyLabel}</div>
+            : msgs.map(msg => {
+                const isMe = msg.from_email !== ADMIN_EMAIL
+                return (
+                  <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                    <div style={{
+                      maxWidth: '72%', padding: '10px 14px', borderRadius: isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                      background: isMe ? `linear-gradient(135deg, ${C.teal}, ${C.navy})` : C.white,
+                      color: isMe ? '#fff' : C.text,
+                      border: isMe ? 'none' : `1px solid ${C.border}`,
+                      boxShadow: '0 1px 4px rgba(0,0,0,.06)',
+                    }}>
+                      {!isMe && <div style={{ fontSize: 10, fontWeight: 700, color: C.teal, marginBottom: 3 }}>Global Nexus</div>}
+                      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55 }}>{msg.body}</p>
+                      <div style={{ fontSize: 10, color: isMe ? 'rgba(255,255,255,.6)' : C.muted, marginTop: 4, textAlign: 'right' }}>
+                        {new Date(msg.sent_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                        {isMe && ' ✓✓'}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+        }
+        <div ref={bottomRef} />
+      </div>
+      {/* Input */}
+      <div style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 8, flexShrink: 0 }}>
+        <input
+          value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+          placeholder={ph}
+          style={{ flex: 1, padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: C.bg }}
+          onFocus={e => e.currentTarget.style.borderColor = C.teal}
+          onBlur={e => e.currentTarget.style.borderColor = C.border}
+        />
+        <button onClick={send} disabled={!input.trim() || sending}
+          style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: input.trim() ? `linear-gradient(135deg, ${C.teal}, ${C.navy})` : C.border, color: input.trim() ? '#fff' : C.muted, fontWeight: 700, fontSize: 13, cursor: input.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+          {sendLabel}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /* ─── Tutorial chat (messages tab) ─── */
@@ -1200,13 +1292,13 @@ export default function DashboardPage() {
         {/* ── TAB 4: MENSAJES ── */}
         {tab === 4 && (
           <div style={{ padding: '1.75rem 2rem' }}>
-            <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, marginBottom: '1.25rem' }}>💬 {t('Mensajes B2B','B2B-berichten','B2B-Nachrichten','B2B Messages')}</h2>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <a href="/mensajes" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '12px 24px', borderRadius: 12, background: `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 800, fontSize: 14, textDecoration: 'none', boxShadow: `0 4px 16px ${C.teal}40` }}>
-                💬 {t('Abrir chat en tiempo real →','Realtime chat openen →','Echtzeit-Chat öffnen →','Open real-time chat →')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, margin: 0 }}>💬 {t('Mensajes · Global Nexus','Berichten · Global Nexus','Nachrichten · Global Nexus','Messages · Global Nexus')}</h2>
+              <a href="/mensajes" style={{ fontSize: 12, padding: '7px 14px', borderRadius: 8, background: `${C.teal}12`, color: C.teal, fontWeight: 700, border: `1px solid ${C.teal}30`, textDecoration: 'none' }}>
+                🌐 {t('Chat B2B con compradores →','B2B-chat met kopers →','B2B-Chat mit Käufern →','B2B chat with buyers →')}
               </a>
             </div>
-            <TutorialChat lang={lang as Lang} />
+            <AdminChatPanel email={email} name={user?.name || user?.company || email} lang={lang as Lang} />
           </div>
         )}
 

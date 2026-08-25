@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
 import { supabase } from '../lib/supabase'
+import { sendChatMessage, ADMIN_EMAIL, ADMIN_NAME } from '../lib/chat'
 import { setSessionExpiry } from '../hooks/useSession'
 
 type Role = 'productor' | 'comprador'
@@ -70,6 +71,11 @@ export default function RegisterPage() {
         // Update localStorage with real Supabase id
         localStorage.setItem('gn_current_user', JSON.stringify({ ...userPayload, id: userId }))
       }
+      // Send auto-welcome from admin
+      const welcomeMsg = role === 'comprador'
+        ? `¡Bienvenido/a a Global Nexus! 🌐 Estamos muy contentos de tenerte como comprador. A partir del lanzamiento oficial (28 de agosto de 2026) podrás explorar el catálogo completo de productores mexicanos verificados y contactarlos directamente. Si tienes cualquier duda, estamos aquí. ¡Éxito!`
+        : `¡Bienvenido/a a Global Nexus! 🌐 Tu perfil de productor ha sido registrado. Completa tu perfil, sube tu catálogo y agrega tus certificaciones para estar listo para el lanzamiento oficial el 28 de agosto de 2026. Compradores europeos podrán encontrarte ese día. Cualquier pregunta, escríbenos aquí mismo.`
+      sendChatMessage(ADMIN_EMAIL, ADMIN_NAME, form.email, welcomeMsg).catch(() => {})
     }).catch(() => {})
 
     // Navigate immediately
