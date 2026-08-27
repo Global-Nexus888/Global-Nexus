@@ -24,7 +24,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'Aranceles TLCUEM' },
       { value: '450M', label: 'Consumidores EU' },
-      { value: '28 Ago', label: 'Lanzamiento oficial' },
+      { value: '3 Sep', label: 'Lanzamiento oficial' },
       { value: '27', label: 'Países compradores' },
     ],
     cat_title: 'Explorar por categoría',
@@ -62,7 +62,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'TLCUEM Tariffs' },
       { value: '450M', label: 'EU Consumers' },
-      { value: 'Aug 28', label: 'Official launch' },
+      { value: 'Sep 3', label: 'Official launch' },
       { value: '27', label: 'Buyer countries' },
     ],
     cat_title: 'Explore by category',
@@ -100,7 +100,7 @@ export const homeI18n: Record<Lang, {
     metrics: [
       { value: '0%', label: 'TLCUEM Tarieven' },
       { value: '450M', label: 'EU Consumenten' },
-      { value: '28 aug', label: 'Officiële lancering' },
+      { value: '3 sep', label: 'Officiële lancering' },
       { value: '27', label: 'Kopende landen' },
     ],
     cat_title: 'Verkennen per categorie',

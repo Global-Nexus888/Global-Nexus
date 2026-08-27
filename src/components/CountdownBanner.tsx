@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLang } from '../context/LangContext'
 import { useT } from '../lib/translations'
 
-const LAUNCH = new Date('2026-08-28T00:00:00')
+const LAUNCH = new Date('2026-09-03T18:00:00Z')
 
 function getTimeLeft() {
   const diff = LAUNCH.getTime() - Date.now()

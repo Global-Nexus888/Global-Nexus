@@ -219,7 +219,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🏭 Primero, completa tu **Perfil**. Una foto, descripción de tu empresa y datos de contacto aumentan 3x tus conexiones con compradores europeos.', delay: 1800 },
     { msg: '📦 Luego sube tus **Productos** en la pestaña correspondiente. Añade foto, precio base, unidad de venta y cantidad mínima de pedido (MOQ).', delay: 3800 },
     { msg: '🛡️ Si tienes certificaciones (NOM, SENASICA, Orgánico, COFEPRIS...), agrégalas en **Certificaciones**. Aumentan mucho tu visibilidad con compradores exigentes.', delay: 6200 },
-    { msg: '🚀 Tu perfil y productos serán **visibles públicamente el 28 de agosto de 2026**. ¡Mientras tanto, construye todo con calma!', delay: 8500 },
+    { msg: '🚀 Tu perfil y productos serán **visibles públicamente el 3 de septiembre de 2026**. ¡Mientras tanto, construye todo con calma!', delay: 8500 },
     { msg: '💬 A partir del lanzamiento, los compradores europeos podrán enviarte mensajes aquí. Para soporte directo escribe a brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   en: [
@@ -227,7 +227,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🏭 First, complete your **Profile**. A photo, company description and contact details increase your connections with European buyers by 3x.', delay: 1800 },
     { msg: '📦 Then upload your **Products**. Add a photo, base price, sales unit and minimum order quantity (MOQ).', delay: 3800 },
     { msg: '🛡️ If you have certifications (NOM, SENASICA, Organic, COFEPRIS...), add them in **Certifications**. They greatly increase your visibility.', delay: 6200 },
-    { msg: '🚀 Your profile and products will be **publicly visible on August 28, 2026**.', delay: 8500 },
+    { msg: '🚀 Your profile and products will be **publicly visible on September 3, 2026**.', delay: 8500 },
     { msg: '💬 From launch, European buyers can message you directly here. Support: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   nl: [
@@ -235,7 +235,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🏭 Vul eerst uw **Profiel** in. Een foto en bedrijfsbeschrijving verhogen uw verbindingen met 3x.', delay: 1800 },
     { msg: '📦 Upload daarna uw **Producten** met foto, basisprijs en MOQ.', delay: 3800 },
     { msg: '🛡️ Voeg **Certificeringen** toe om uw zichtbaarheid te vergroten.', delay: 6200 },
-    { msg: '🚀 Uw profiel wordt **publiek op 28 augustus 2026**.', delay: 8500 },
+    { msg: '🚀 Uw profiel wordt **publiek op 3 september 2026**.', delay: 8500 },
     { msg: '💬 Ondersteuning: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
   de: [
@@ -243,7 +243,7 @@ const TUTORIAL: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🏭 Vervollständigen Sie zuerst Ihr **Profil**.', delay: 1800 },
     { msg: '📦 Laden Sie dann Ihre **Produkte** hoch.', delay: 3800 },
     { msg: '🛡️ Fügen Sie **Zertifizierungen** hinzu.', delay: 6200 },
-    { msg: '🚀 Ihr Profil wird am **28. August 2026** öffentlich.', delay: 8500 },
+    { msg: '🚀 Ihr Profil wird am **3. September 2026** öffentlich.', delay: 8500 },
     { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 11000 },
   ],
 }
@@ -355,6 +355,7 @@ export default function DashboardPage() {
   const awardPhotoRef = useRef<HTMLInputElement>(null)
   const storyPhotosRef = useRef<HTMLInputElement>(null)
   const [storySaved, setStorySaved] = useState(false)
+  const [storyError, setStoryError] = useState('')
   const [deleteAccountStep, setDeleteAccountStep] = useState(0)
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState('')
   const [editingName, setEditingName] = useState(false)
@@ -425,9 +426,17 @@ export default function DashboardPage() {
     setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
   }
   const saveStoryData = () => {
-    saveStory(email, story)
-    syncStory(email, story as Record<string, unknown>)
-    setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
+    try {
+      saveStory(email, story)
+      syncStory(email, story as Record<string, unknown>)
+      setStoryError('')
+      setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
+    } catch {
+      setStoryError(t('Error al guardar. Las fotos pueden ser muy grandes — intenta con menos o más pequeñas.',
+        'Save failed. Photos may be too large — try fewer or smaller images.',
+        'Opslaan mislukt. Foto\'s zijn mogelijk te groot.',
+        'Save failed. Photos may be too large.'))
+    }
   }
   const addAward = () => {
     if (!newAward.name) return
@@ -440,7 +449,20 @@ export default function DashboardPage() {
     const files = Array.from(e.target.files || [])
     files.forEach(file => {
       const reader = new FileReader()
-      reader.onload = ev => setStory((s: typeof story) => ({ ...s, photos: [...(s.photos || []), ev.target?.result as string].slice(0, 20) }))
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 900
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * scale)
+          canvas.height = Math.round(img.height * scale)
+          canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height)
+          const compressed = canvas.toDataURL('image/jpeg', 0.72)
+          setStory((s: typeof story) => ({ ...s, photos: [...((s as Record<string,string[]>).photos || []), compressed].slice(0, 20) }))
+        }
+        img.src = ev.target?.result as string
+      }
       reader.readAsDataURL(file)
     })
     e.target.value = ''
@@ -619,7 +641,7 @@ export default function DashboardPage() {
                   {demoMode ? '👁 Demo ON' : '👁 Ver demo'}
                 </button>
                 <div style={{ padding: '7px 14px', borderRadius: 8, background: '#DCFCE7', color: '#16A34A', fontSize: 12, fontWeight: 700, border: '1px solid #86EFAC' }}>
-                  🚀 28 Ago 2026
+                  🚀 3 Sep 2026
                 </div>
               </div>
             </div>
@@ -629,7 +651,7 @@ export default function DashboardPage() {
               <span style={{ fontSize: '1.1rem' }}>⏳</span>
               <div style={{ flex: 1 }}>
                 <span style={{ fontWeight: 800, fontSize: 13, color: '#92400E' }}>
-                  {t('🚀 Modo Pre-Lanzamiento · Lanzamiento: 28 Ago 2026 · 12:00 pm CDMX', '🚀 Pre-Lancering · 28 aug 2026', '🚀 Vor-Launch-Modus · 28. Aug 2026', '🚀 Pre-Launch Mode · Aug 28, 2026')}
+                  {t('🚀 Modo Pre-Lanzamiento · Lanzamiento: 3 Sep 2026 · 12:00 pm CDMX', '🚀 Pre-Lancering · 3 sep 2026', '🚀 Vor-Launch-Modus · 3. Sep 2026', '🚀 Pre-Launch Mode · Sep 3, 2026')}
                 </span>
                 <span style={{ fontSize: 12, color: '#78350F', marginLeft: 8 }}>
                   {t('· Sin cobros hasta el 29 de septiembre', '· Geen kosten tot 29 september', '· Keine Kosten bis 29. September', '· No charges until Sep 29')}
@@ -680,7 +702,7 @@ export default function DashboardPage() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: C.muted }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🇪🇺</div>
-                    <div style={{ fontSize: 13, marginBottom: 12 }}>{t('Los contactos de compradores EU aparecerán aquí desde el 28 de agosto.', 'EU-kopers contacten verschijnen hier.', 'EU-Käufer Kontakte erscheinen hier.', 'EU buyer contacts will appear here from Aug 28.')}</div>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>{t('Los contactos de compradores EU aparecerán aquí desde el 3 de septiembre.', 'EU-kopers contacten verschijnen hier.', 'EU-Käufer Kontakte erscheinen hier.', 'EU buyer contacts will appear here from Sep 3.')}</div>
                     <button onClick={() => setDemoMode(true)} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: C.teal, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                       👁 {t('Ver demo','Demo zien','Demo ansehen','See demo')}
                     </button>
@@ -1222,12 +1244,13 @@ export default function DashboardPage() {
         {/* ── TAB 3: HISTORIA & FOTOS ── */}
         {tab === 3 && (
           <div style={{ padding: '1.75rem 2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, margin: 0 }}>📖 {t('Historia & Fotos de la Empresa','Bedrijfsverhaal & Foto\'s','Geschichte & Fotos des Unternehmens','Company Story & Photos')}</h2>
               <button onClick={saveStoryData} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: storySaved ? C.green : `linear-gradient(135deg, ${C.teal}, ${C.navy})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                 {storySaved ? `✓ ${t('Guardado','Opgeslagen','Gespeichert','Saved')}` : L.storySave}
               </button>
             </div>
+            {storyError && <div style={{ marginBottom: '0.75rem', padding: '8px 12px', borderRadius: 8, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 600 }}>⚠️ {storyError}</div>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Vision */}
@@ -1329,7 +1352,7 @@ export default function DashboardPage() {
               <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: 12 }}>📋</div>
                 <div style={{ fontSize: 14, color: C.muted, maxWidth: 360, margin: '0 auto 1.25rem' }}>
-                  {t('Las solicitudes de compradores europeos aparecerán aquí a partir del 28 de agosto de 2026.','Verzoeken van EU-kopers verschijnen hier.','Anfragen von EU-Käufern erscheinen hier.','EU buyer requests will appear here from August 28, 2026.')}
+                  {t('Las solicitudes de compradores europeos aparecerán aquí a partir del 3 de septiembre de 2026.','Verzoeken van EU-kopers verschijnen hier.','Anfragen von EU-Käufern erscheinen hier.','EU buyer requests will appear here from September 3, 2026.')}
                 </div>
                 <button onClick={() => setDemoMode(true)} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: C.teal, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   👁 {t('Ver demo','Demo zien','Demo ansehen','See demo')}
@@ -1370,7 +1393,7 @@ export default function DashboardPage() {
               <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: 12 }}>📜</div>
                 <div style={{ fontSize: 14, color: C.muted, maxWidth: 360, margin: '0 auto 1.25rem' }}>
-                  {t('Tus órdenes generadas aparecerán aquí a partir del lanzamiento el 28 de agosto.','Bestellingen verschijnen hier.','Bestellungen erscheinen hier.','Your orders will appear here from launch on August 28.')}
+                  {t('Tus órdenes generadas aparecerán aquí a partir del lanzamiento el 3 de septiembre.','Bestellingen verschijnen hier.','Bestellungen erscheinen hier.','Your orders will appear here from launch on September 3.')}
                 </div>
                 <button onClick={() => setDemoMode(true)} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: C.teal, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   👁 {t('Ver demo','Demo zien','Demo ansehen','See demo')}

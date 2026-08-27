@@ -172,7 +172,7 @@ export default function MessagesPage() {
   const [replyLang, setReplyLang] = useState<string>('es')
   const [typing, setTyping] = useState(false)
   const [search, setSearch] = useState('')
-  const [autoTranslate, setAutoTranslate] = useState(false)
+  const [autoTranslate, setAutoTranslate] = useState(true)
   const [showPhrases, setShowPhrases] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -366,7 +366,7 @@ export default function MessagesPage() {
 
           {/* Pre-launch label for buyer conversations */}
           <div style={{ padding: '6px 1.25rem', background: '#FFFBEB', borderBottom: '1px solid #FEF08A', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: '#92400E' }}>🚀 DEMO · Compradores europeos activos el 28 Ago</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#92400E' }}>🚀 DEMO · Compradores europeos activos el 3 Sep</span>
           </div>
 
           {filtered.map(c => {

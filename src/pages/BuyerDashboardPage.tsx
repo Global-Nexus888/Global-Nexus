@@ -51,7 +51,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🇪🇺 Tendrás acceso directo a productores mexicanos certificados con **0% de arancel** gracias al TLCUEM.', delay: 1800 },
     { msg: '🔍 Completa tu **Perfil de Comprador**: industria, productos de interés y VAT. Los productores te encontrarán más fácil.', delay: 3800 },
     { msg: '📋 Guarda en **Mis Búsquedas** los productos y proveedores que te interesan para cuando se active el catálogo.', delay: 6000 },
-    { msg: '🚀 La conexión directa con productores se activa el **28 de agosto de 2026**. ¡Estás en la lista de prioridad!', delay: 8200 },
+    { msg: '🚀 La conexión directa con productores se activa el **3 de septiembre de 2026**. ¡Estás en la lista de prioridad!', delay: 8200 },
     { msg: '💬 Soporte: brandmkrs.ads@gmail.com — respondemos en menos de 24 horas.', delay: 10500 },
   ],
   en: [
@@ -59,7 +59,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🇪🇺 You\'ll have direct access to certified Mexican producers with **0% tariff** thanks to TLCUEM.', delay: 1800 },
     { msg: '🔍 Complete your **Buyer Profile**: industry, products of interest and VAT number.', delay: 3800 },
     { msg: '📋 Save in **My Searches** the products and suppliers you\'re interested in.', delay: 6000 },
-    { msg: '🚀 Direct connection with producers activates on **August 28, 2026**. You\'re on the priority list!', delay: 8200 },
+    { msg: '🚀 Direct connection with producers activates on **September 3, 2026**. You\'re on the priority list!', delay: 8200 },
     { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
   nl: [
@@ -67,7 +67,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🇪🇺 U heeft directe toegang tot gecertificeerde Mexicaanse producenten met **0% tarief** via TLCUEM.', delay: 1800 },
     { msg: '🔍 Vul uw **Kopersprofiel** in: industrie, interesseproducten en BTW-nummer.', delay: 3800 },
     { msg: '📋 Sla in **Mijn Zoekopdrachten** producten en leveranciers op.', delay: 6000 },
-    { msg: '🚀 Directe verbinding wordt actief op **28 augustus 2026**.', delay: 8200 },
+    { msg: '🚀 Directe verbinding wordt actief op **3 september 2026**.', delay: 8200 },
     { msg: '💬 Ondersteuning: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
   de: [
@@ -75,7 +75,7 @@ const TUTORIAL_BUYER: Record<Lang, { msg: string; delay: number }[]> = {
     { msg: '🇪🇺 Sie haben direkten Zugang zu zertifizierten mexikanischen Produzenten mit **0% Zoll** via TLCUEM.', delay: 1800 },
     { msg: '🔍 Vervollständigen Sie Ihr **Käuferprofil**: Branche, Interessensprodukte und USt-IdNr.', delay: 3800 },
     { msg: '📋 Speichern Sie in **Meine Suchen** Produkte und Lieferanten.', delay: 6000 },
-    { msg: '🚀 Direkte Verbindung wird am **28. August 2026** aktiv.', delay: 8200 },
+    { msg: '🚀 Direkte Verbindung wird am **3. September 2026** aktiv.', delay: 8200 },
     { msg: '💬 Support: brandmkrs.ads@gmail.com', delay: 10500 },
   ],
 }
@@ -285,7 +285,7 @@ export default function BuyerDashboardPage() {
                   {demoMode ? '👁 Demo ON' : '👁 Ver demo'}
                 </button>
                 <div style={{ padding: '7px 14px', borderRadius: 8, background: '#DBEAFE', color: C.blue, fontSize: 12, fontWeight: 700, border: `1px solid ${C.blueBorder}` }}>
-                  🚀 28 Ago 2026
+                  🚀 3 Sep 2026
                 </div>
               </div>
             </div>
@@ -295,7 +295,7 @@ export default function BuyerDashboardPage() {
               <span style={{ fontSize: '1.1rem' }}>🇪🇺</span>
               <div style={{ flex: 1 }}>
                 <span style={{ fontWeight: 800, fontSize: 13, color: C.blue }}>
-                  {t('Modo Pre-Lanzamiento · Lanzamiento: 28 Ago 2026 · 12:00 pm CDMX', 'Pre-Lancering · 28 aug 2026', 'Vor-Launch · 28. Aug 2026', 'Pre-Launch Mode · Aug 28, 2026')}
+                  {t('Modo Pre-Lanzamiento · Lanzamiento: 3 Sep 2026 · 12:00 pm CDMX', 'Pre-Lancering · 3 sep 2026', 'Vor-Launch · 3. Sep 2026', 'Pre-Launch Mode · Sep 3, 2026')}
                 </span>
                 <span style={{ fontSize: 12, color: '#1E3A8A', marginLeft: 8 }}>
                   {t('· Sin cobros hasta el 29 de septiembre', '· Geen kosten tot 29 september', '· Keine Kosten bis 29. September', '· No charges until Sep 29')}
@@ -346,7 +346,7 @@ export default function BuyerDashboardPage() {
                 ) : (
                   <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: C.muted }}>
                     <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🏭</div>
-                    <div style={{ fontSize: 13, marginBottom: 12 }}>{t('Los productores mexicanos certificados estarán disponibles el 28 de agosto.', 'Gecertificeerde Mexicaanse producenten zijn beschikbaar op 28 augustus.', 'Zertifizierte mexikanische Produzenten sind ab 28. August verfügbar.', 'Certified Mexican producers will be available from August 28.')}</div>
+                    <div style={{ fontSize: 13, marginBottom: 12 }}>{t('Los productores mexicanos certificados estarán disponibles el 28 de agosto.', 'Gecertificeerde Mexicaanse producenten zijn beschikbaar op 3 september.', 'Zertifizierte mexikanische Produzenten sind ab 3. September verfügbar.', 'Certified Mexican producers will be available from September 3.')}</div>
                     <button onClick={() => setDemoMode(true)} style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: C.navy, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                       👁 {t('Ver demo', 'Demo zien', 'Demo ansehen', 'See demo')}
                     </button>
@@ -429,7 +429,7 @@ export default function BuyerDashboardPage() {
                   </div>
                 ))}
                 <div style={{ marginTop: '1rem', padding: '8px 12px', borderRadius: 8, background: C.blueBg, border: `1px solid ${C.blueBorder}` }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.blue }}>🚀 {t('Activo el 28 Ago 2026', 'Actief op 28 aug 2026', 'Aktiv ab 28. Aug 2026', 'Active Aug 28, 2026')}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.blue }}>🚀 {t('Activo el 3 Sep 2026', 'Actief op 3 sep 2026', 'Aktiv ab 3. Sep 2026', 'Active Sep 3, 2026')}</div>
                 </div>
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function BuyerDashboardPage() {
             <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
               <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🏭</div>
               <h3 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, marginBottom: 8 }}>
-                {t('Catálogo disponible el 28 de agosto de 2026', 'Catalogus beschikbaar op 28 augustus 2026', 'Katalog verfügbar ab 28. August 2026', 'Catalog available August 28, 2026')}
+                {t('Catálogo disponible el 3 de septiembre de 2026', 'Catalogus beschikbaar op 3 september 2026', 'Katalog verfügbar ab 3. September 2026', 'Catalog available September 3, 2026')}
               </h3>
               <p style={{ fontSize: 13, color: C.muted, maxWidth: 440, margin: '0 auto 1.5rem', lineHeight: 1.7 }}>
                 {t(
@@ -591,7 +591,7 @@ export default function BuyerDashboardPage() {
               ? <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
                   <div style={{ fontSize: '3rem', marginBottom: 12 }}>📋</div>
                   <div style={{ fontSize: 14, color: C.muted, maxWidth: 360, margin: '0 auto' }}>
-                    {t('Guarda aquí tus categorías de interés y proveedores potenciales para cuando se active el catálogo el 28 de agosto.', 'Sla hier uw interessecategorieën op.', 'Speichern Sie hier Ihre Interessenskategorien.', 'Save your interest categories and potential suppliers here for when the catalog activates on August 28.')}
+                    {t('Guarda aquí tus categorías de interés y proveedores potenciales para cuando se active el catálogo el 28 de agosto.', 'Sla hier uw interessecategorieën op.', 'Speichern Sie hier Ihre Interessenskategorien.', 'Save your interest categories and potential suppliers here for when the catalog activates on September 3.')}
                   </div>
                 </div>
               : <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -680,7 +680,7 @@ export default function BuyerDashboardPage() {
               <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '3.5rem 2rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '3rem', marginBottom: 12 }}>📜</div>
                 <div style={{ fontSize: 14, color: C.muted, maxWidth: 360, margin: '0 auto 1.25rem' }}>
-                  {t('Tus solicitudes de cotización a productores mexicanos aparecerán aquí desde el 28 de agosto de 2026.', 'Offerteaanvragen verschijnen hier.', 'Angebotsanfragen erscheinen hier.', 'Your RFQs to Mexican producers will appear here from August 28, 2026.')}
+                  {t('Tus solicitudes de cotización a productores mexicanos aparecerán aquí desde el 3 de septiembre de 2026.', 'Offerteaanvragen verschijnen hier.', 'Angebotsanfragen erscheinen hier.', 'Your RFQs to Mexican producers will appear here from September 3, 2026.')}
                 </div>
                 <button onClick={() => setDemoMode(true)} style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: C.navy, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
                   👁 {t('Ver demo', 'Demo zien', 'Demo ansehen', 'See demo')}

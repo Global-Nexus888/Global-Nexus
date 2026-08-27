@@ -24,7 +24,7 @@ const C = {
 const QUICK_MSGS = [
   { icon: '👋', text: '¡Bienvenido/a a Global Nexus! Estamos muy contentos de tenerte en la plataforma. ¿En qué podemos ayudarte?' },
   { icon: '📋', text: 'Te recordamos que puedes completar tu perfil, subir tu catálogo y agregar tus certificaciones en el dashboard.' },
-  { icon: '🚀', text: 'El lanzamiento oficial es el 28 de agosto de 2026 a las 12:00 pm CDMX. ¡Tu perfil quedará visible para compradores europeos ese día!' },
+  { icon: '🚀', text: 'El lanzamiento oficial es el 3 de septiembre de 2026 a las 12:00 pm CDMX. ¡Tu perfil quedará visible para compradores europeos ese día!' },
   { icon: '🛡️', text: 'Hemos revisado tu información y todo se ve excelente. Si necesitas agregar o corregir algo, no dudes en escribirnos.' },
   { icon: '❓', text: '¿Tienes alguna duda sobre el proceso de exportación o el uso de la plataforma? Estamos aquí para apoyarte.' },
 ]
@@ -426,7 +426,7 @@ export default function AdminPage() {
         </div>
         <div style={{ margin: '1rem .75rem', background: `linear-gradient(135deg, ${C.teal}18, ${C.navy}12)`, border: `1px solid ${C.teal}30`, borderRadius: 10, padding: '10px 12px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.teal, letterSpacing: '.05em', marginBottom: 3 }}>🚀 LANZAMIENTO</div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.navy }}>28 Ago 2026 · 12:00 CDMX</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.navy }}>3 Sep 2026 · 12:00 CDMX</div>
         </div>
         <nav style={{ padding: '0.5rem 0.75rem', flex: 1 }}>
           {navItems.map(item => <SidebarBtn key={item.id} item={item} />)}
@@ -465,7 +465,7 @@ export default function AdminPage() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#5EEAD4', letterSpacing: '.08em', marginBottom: 6 }}>🚀 PRE-LANZAMIENTO — MODO REGISTRO</div>
                 <div style={{ fontSize: 'clamp(1rem,2.5vw,1.25rem)', fontWeight: 800, marginBottom: 4 }}>Plataforma en construcción</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.6 }}>Los perfiles se activarán el <strong style={{ color: '#5EEAD4' }}>28 de agosto de 2026 a las 12:00 pm CDMX</strong>.</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', lineHeight: 1.6 }}>Los perfiles se activarán el <strong style={{ color: '#5EEAD4' }}>3 de septiembre de 2026 a las 12:00 pm CDMX</strong>.</div>
               </div>
               <div style={{ textAlign: 'center', flexShrink: 0 }}>
                 <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#5EEAD4' }}>{totalUsers}</div>
@@ -478,7 +478,7 @@ export default function AdminPage() {
               <StatCard icon="🇪🇺" label="Compradores EU" value={totalBuyers} color="#1E40AF" />
               <StatCard icon="🎓" label="Asesores Pro" value={totalAsesores} color={C.purple} />
               <StatCard icon="💬" label="Sin leer" value={totalUnread} color={totalUnread > 0 ? C.red : C.muted} />
-              <StatCard icon="💳" label="MRR (USD)" value="$0" sub="Se activa el 28 Ago" color={C.green} />
+              <StatCard icon="💳" label="MRR (USD)" value="$0" sub="Se activa el 3 Sep" color={C.green} />
             </div>
             <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
               <h3 style={{ fontWeight: 700, fontSize: 14, color: C.navy, marginBottom: '1rem' }}>Últimos registros</h3>
@@ -649,7 +649,7 @@ export default function AdminPage() {
               <h3 style={{ fontWeight: 700, fontSize: 14, color: C.navy, marginBottom: '1rem' }}>Suscripciones activas</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                 <StatCard icon="💳" label="Suscripciones activas" value={0} color={C.green} />
-                <StatCard icon="💰" label="MRR (USD)" value="$0" sub="Se activa el 28 Ago 2026" color={C.teal} />
+                <StatCard icon="💰" label="MRR (USD)" value="$0" sub="Se activa el 3 Sep 2026" color={C.teal} />
                 <StatCard icon="⏳" label="Pre-registros pagados" value={0} color={C.navy} />
               </div>
               <Empty icon="💳" title="Sin suscripciones todavía" sub="Las suscripciones de Stripe aparecerán aquí automáticamente." />

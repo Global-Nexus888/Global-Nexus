@@ -97,7 +97,7 @@ export const t: Translations = {
     // Countdown
     cd_label: '⚡ Precio anticipado',
     cd_off: '40% OFF',
-    cd_until: '· hasta 28 Ago 2026',
+    cd_until: '· hasta 3 Sep 2026',
     cd_cta: 'Ver planes →',
 
     // Thanks
@@ -196,7 +196,7 @@ export const t: Translations = {
 
     cd_label: '⚡ Early bird pricing',
     cd_off: '40% OFF',
-    cd_until: '· until Aug 28, 2026',
+    cd_until: '· until Sep 3, 2026',
     cd_cta: 'See plans →',
 
     thanks_title: 'Payment complete!',
@@ -294,7 +294,7 @@ export const t: Translations = {
 
     cd_label: '⚡ Vroegboekprijs',
     cd_off: '40% KORTING',
-    cd_until: '· tot 28 aug 2026',
+    cd_until: '· tot 3 sep 2026',
     cd_cta: 'Bekijk plannen →',
 
     thanks_title: 'Betaling voltooid!',
@@ -392,7 +392,7 @@ export const t: Translations = {
 
     cd_label: '⚡ Frühbucherpreis',
     cd_off: '40% RABATT',
-    cd_until: '· bis 28. Aug. 2026',
+    cd_until: '· bis 3. Sep. 2026',
     cd_cta: 'Pläne anzeigen →',
 
     thanks_title: 'Zahlung abgeschlossen!',

@@ -41,10 +41,10 @@ export const pricingI18n: Record<Lang, {
     guarantee_sub: 'Conecta tu tarjeta ahora, tu primer cobro será el 29 de septiembre. Cancela en cualquier momento.',
     faq_title: 'Preguntas frecuentes sobre precios',
     faqs: [
-      { q: '¿Cuándo se hace el primer cobro?', a: 'El primer cobro se realiza el 29 de septiembre de 2026 — un mes después del lanzamiento oficial el 28 de agosto. Regístrate hoy, arma tu perfil y no pagas nada hasta esa fecha.' },
+      { q: '¿Cuándo se hace el primer cobro?', a: 'El primer cobro se realiza el 29 de septiembre de 2026 — un mes después del lanzamiento oficial el 3 de septiembre. Regístrate hoy, arma tu perfil y no pagas nada hasta esa fecha.' },
       { q: '¿Hay comisiones por venta?', a: 'No. Global Nexus cobra solo por suscripción mensual. Las transacciones entre productores y compradores son directas, sin comisiones.' },
       { q: '¿Puedo cambiar de plan?', a: 'Sí. Puedes subir o bajar de plan en cualquier momento desde tu panel. Los cambios aplican al siguiente ciclo de facturación.' },
-      { q: '¿El precio de lanzamiento se mantiene?', a: 'Sí. Si te suscribes antes del 28 de agosto de 2026, el precio preferencial ($59 Pro / $149 Comprador) se congela en tu cuenta para siempre.' },
+      { q: '¿El precio de lanzamiento se mantiene?', a: 'Sí. Si te suscribes antes del 3 de septiembre de 2026, el precio preferencial ($59 Pro / $149 Comprador) se congela en tu cuenta para siempre.' },
     ],
   },
 
@@ -75,10 +75,10 @@ export const pricingI18n: Record<Lang, {
     guarantee_sub: 'Connect your card now, your first charge will be on September 29. Cancel anytime.',
     faq_title: 'Frequently asked questions about pricing',
     faqs: [
-      { q: 'When is the first charge?', a: 'The first charge is on September 29, 2026 — one month after the official launch on August 28. Register today, build your profile and pay nothing until then.' },
+      { q: 'When is the first charge?', a: 'The first charge is on September 29, 2026 — one month after the official launch on September 3. Register today, build your profile and pay nothing until then.' },
       { q: 'Are there sales commissions?', a: 'No. Global Nexus charges only a monthly subscription. Transactions between producers and buyers are direct, commission-free.' },
       { q: 'Can I change my plan?', a: 'Yes. You can upgrade or downgrade at any time from your dashboard. Changes apply to the next billing cycle.' },
-      { q: 'Is the launch price permanent?', a: 'Yes. If you subscribe before August 28, 2026, the preferential price ($59 Pro / $149 EU Buyer) is locked into your account forever.' },
+      { q: 'Is the launch price permanent?', a: 'Yes. If you subscribe before September 3, 2026, the preferential price ($59 Pro / $149 EU Buyer) is locked into your account forever.' },
     ],
   },
 
@@ -109,10 +109,10 @@ export const pricingI18n: Record<Lang, {
     guarantee_sub: 'Koppel uw kaart nu, uw eerste betaling is op 29 september. Annuleer wanneer u wilt.',
     faq_title: 'Veelgestelde vragen over prijzen',
     faqs: [
-      { q: 'Wanneer is de eerste betaling?', a: 'De eerste betaling is op 29 september 2026 — één maand na de officiële lancering op 28 augustus. Registreer vandaag, bouw uw profiel en betaal niets tot die datum.' },
+      { q: 'Wanneer is de eerste betaling?', a: 'De eerste betaling is op 29 september 2026 — één maand na de officiële lancering op 3 september. Registreer vandaag, bouw uw profiel en betaal niets tot die datum.' },
       { q: 'Zijn er verkoopcommissies?', a: 'Nee. Global Nexus brengt alleen een maandelijks abonnement in rekening. Transacties tussen producenten en kopers zijn direct, zonder commissies.' },
       { q: 'Kan ik van plan wisselen?', a: 'Ja. U kunt op elk moment upgraden of downgraden vanuit uw dashboard. Wijzigingen gelden voor de volgende factureringscyclus.' },
-      { q: 'Is de lanceringsprijs permanent?', a: 'Ja. Als u zich abonneert vóór 28 augustus 2026, wordt de voorkeurskorting ($59 Pro / $149 EU Koper) voor altijd in uw account vergrendeld.' },
+      { q: 'Is de lanceringsprijs permanent?', a: 'Ja. Als u zich abonneert vóór 3 september 2026, wordt de voorkeurskorting ($59 Pro / $149 EU Koper) voor altijd in uw account vergrendeld.' },
     ],
   },
 
@@ -143,10 +143,10 @@ export const pricingI18n: Record<Lang, {
     guarantee_sub: 'Hinterlegen Sie jetzt Ihre Karte, Ihre erste Zahlung erfolgt am 29. September. Jederzeit kündbar.',
     faq_title: 'Häufig gestellte Fragen zu Preisen',
     faqs: [
-      { q: 'Wann erfolgt die erste Zahlung?', a: 'Die erste Zahlung erfolgt am 29. September 2026 — einen Monat nach dem offiziellen Launch am 28. August. Registrieren Sie sich heute, erstellen Sie Ihr Profil und zahlen Sie bis dahin nichts.' },
+      { q: 'Wann erfolgt die erste Zahlung?', a: 'Die erste Zahlung erfolgt am 29. September 2026 — einen Monat nach dem offiziellen Launch am 3. September. Registrieren Sie sich heute, erstellen Sie Ihr Profil und zahlen Sie bis dahin nichts.' },
       { q: 'Gibt es Verkaufsprovisionen?', a: 'Nein. Global Nexus berechnet nur ein monatliches Abonnement. Transaktionen zwischen Produzenten und Käufern sind direkt, ohne Provisionen.' },
       { q: 'Kann ich meinen Plan ändern?', a: 'Ja. Sie können jederzeit über Ihr Dashboard upgraden oder downgraden. Änderungen gelten für den nächsten Abrechnungszeitraum.' },
-      { q: 'Ist der Einführungspreis dauerhaft?', a: 'Ja. Wenn Sie sich vor dem 28. August 2026 anmelden, wird der Vorzugspreis ($59 Pro / $149 EU-Käufer) für immer in Ihrem Konto gesperrt.' },
+      { q: 'Ist der Einführungspreis dauerhaft?', a: 'Ja. Wenn Sie sich vor dem 3. September 2026 anmelden, wird der Vorzugspreis ($59 Pro / $149 EU-Käufer) für immer in Ihrem Konto gesperrt.' },
     ],
   },
 }

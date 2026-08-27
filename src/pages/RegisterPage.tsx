@@ -112,10 +112,10 @@ export default function RegisterPage() {
               {lang === 'es'
                 ? 'Tu registro ha sido guardado exitosamente. Tu perfil se activará automáticamente el 28 de agosto de 2026 a las 12:00 pm hora CDMX (Ciudad de México). A partir de esa fecha podrás conectar con compradores europeos y aparecer en el catálogo. ¡Gracias por ser parte del lanzamiento!'
                 : lang === 'nl'
-                ? 'Uw registratie is succesvol opgeslagen. Uw profiel wordt automatisch geactiveerd op 28 augustus 2026 om 12:00 uur CDMX-tijd (Mexico-Stad). Vanaf die datum kunt u verbinding maken met Europese kopers. Bedankt dat u deel uitmaakt van de lancering!'
+                ? 'Uw registratie is succesvol opgeslagen. Uw profiel wordt automatisch geactiveerd op 3 september 2026 om 12:00 uur CDMX-tijd (Mexico-Stad). Vanaf die datum kunt u verbinding maken met Europese kopers. Bedankt dat u deel uitmaakt van de lancering!'
                 : lang === 'de'
-                ? 'Ihre Registrierung wurde erfolgreich gespeichert. Ihr Profil wird automatisch am 28. August 2026 um 12:00 Uhr CDMX-Zeit (Mexiko-Stadt) aktiviert. Ab diesem Datum können Sie sich mit europäischen Käufern verbinden. Danke, dass Sie Teil der Markteinführung sind!'
-                : 'Your registration has been saved successfully. Your profile will be automatically activated on August 28, 2026 at 12:00 pm CDMX time (Mexico City). From that date you can connect with European buyers and appear in the catalog. Thank you for being part of the launch!'}
+                ? 'Ihre Registrierung wurde erfolgreich gespeichert. Ihr Profil wird automatisch am 3. September 2026 um 12:00 Uhr CDMX-Zeit (Mexiko-Stadt) aktiviert. Ab diesem Datum können Sie sich mit europäischen Käufern verbinden. Danke, dass Sie Teil der Markteinführung sind!'
+                : 'Your registration has been saved successfully. Your profile will be automatically activated on September 3, 2026 at 12:00 pm CDMX time (Mexico City). From that date you can connect with European buyers and appear in the catalog. Thank you for being part of the launch!'}
             </div>
           </div>
           <button onClick={() => navigate(role === 'comprador' ? '/dashboard-comprador' : '/dashboard')} className="btn btn-primary" style={{ width: '100%', padding: '13px', fontSize: '15px', marginBottom: '0.75rem' }}>
