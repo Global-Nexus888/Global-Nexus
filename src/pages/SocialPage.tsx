@@ -8,7 +8,7 @@ function getCurrentUser() {
   try {
     const u = JSON.parse(localStorage.getItem('gn_current_user') || 'null')
     if (!u?.email) return null
-    return { email: u.email, name: u.name || '', role: u.role || 'productor', company: u.company || '', isAdmin: false }
+    return { email: u.email, name: u.name || '', role: u.role || 'productor', company: u.company || '', isAdmin: false, plan: u.plan || 'explorador', plan_active: u.plan_active === true }
   } catch { return null }
 }
 

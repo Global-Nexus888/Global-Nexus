@@ -53,6 +53,7 @@ interface Comment {
 interface CurrentUser {
   email: string; name: string; role: string; company?: string
   avatar?: string; isAdmin?: boolean
+  plan?: string; plan_active?: boolean
 }
 
 interface Props { currentUser: CurrentUser | null; compact?: boolean }
@@ -235,7 +236,7 @@ function CommentsSection({ postId, currentUser }: { postId: string; currentUser:
               })}
             </div>
       }
-      {currentUser && (
+      {currentUser && currentUser.plan_active && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Avatar src={currentUser.avatar} name={currentUser.name} color={ROLE_META[currentUser.role]?.color || C.teal} bg={ROLE_META[currentUser.role]?.bg || C.tealLight} size={30} />
           <div style={{ flex: 1, display: 'flex', gap: 6 }}>
@@ -250,6 +251,9 @@ function CommentsSection({ postId, currentUser }: { postId: string; currentUser:
             </button>
           </div>
         </div>
+      )}
+      {currentUser && !currentUser.plan_active && (
+        <div style={{ fontSize: 11, color: '#B45309', padding: '4px 0', textAlign: 'center' }}>🔒 <a href="/precios" style={{ color: '#D97706', fontWeight: 700 }}>Activa tu plan</a> para comentar</div>
       )}
     </div>
   )
@@ -724,7 +728,24 @@ export default function CommunityFeed({ currentUser, compact }: Props) {
         </div>
       )}
 
-      {enrichedUser && <PostComposer currentUser={enrichedUser} lang={lang} onPost={p => setPosts(prev => [p, ...prev])} />}
+      {enrichedUser && enrichedUser.plan_active && <PostComposer currentUser={enrichedUser} lang={lang} onPost={p => setPosts(prev => [p, ...prev])} />}
+
+      {enrichedUser && !enrichedUser.plan_active && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '1.4rem' }}>🔒</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#92400E', marginBottom: 2 }}>
+              {lang === 'nl' ? 'Verkennersmodus — Alleen lezen' : lang === 'de' ? 'Erkundungsmodus — Nur lesen' : lang === 'en' ? 'Explorer mode — Read only' : 'Modo Explorador — Solo lectura'}
+            </div>
+            <div style={{ fontSize: 12, color: '#B45309' }}>
+              {lang === 'nl' ? 'Activeer een plan om te publiceren en te reageren.' : lang === 'de' ? 'Aktiviere einen Plan, um zu posten und zu kommentieren.' : lang === 'en' ? 'Activate a plan to post and comment.' : 'Activa un plan para publicar y comentar.'}
+            </div>
+          </div>
+          <a href="/precios" style={{ padding: '7px 16px', borderRadius: 8, background: '#D97706', color: '#fff', fontWeight: 700, fontSize: 12, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            {lang === 'nl' ? 'Plannen bekijken' : lang === 'de' ? 'Pläne ansehen' : lang === 'en' ? 'See plans' : 'Ver planes'}
+          </a>
+        </div>
+      )}
 
       {!enrichedUser && (
         <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1a4a7a)`, borderRadius: 14, padding: '1.5rem', textAlign: 'center', color: '#fff', marginBottom: '1.5rem' }}>

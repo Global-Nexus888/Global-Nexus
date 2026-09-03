@@ -20,25 +20,25 @@ function getTrustBadges(lang: Lang) {
   if (lang === 'en') return [
     { icon: '🔒', text: 'Secure payments via Stripe' },
     { icon: '↩️', text: 'Cancel anytime' },
-    { icon: '💳', text: 'No card for free plan' },
+    { icon: '💳', text: '32-day trial · Card required' },
     { icon: '🌍', text: 'Billing in USD' },
   ]
   if (lang === 'nl') return [
     { icon: '🔒', text: 'Veilige betalingen via Stripe' },
     { icon: '↩️', text: 'Annuleer wanneer u wilt' },
-    { icon: '💳', text: 'Geen kaart voor gratis plan' },
+    { icon: '💳', text: '32 dagen proef · Kaart vereist' },
     { icon: '🌍', text: 'Facturering in USD' },
   ]
   if (lang === 'de') return [
     { icon: '🔒', text: 'Sichere Zahlungen via Stripe' },
     { icon: '↩️', text: 'Jederzeit kündbar' },
-    { icon: '💳', text: 'Keine Karte für Gratis-Plan' },
+    { icon: '💳', text: '32 Tage Probezeit · Karte erforderlich' },
     { icon: '🌍', text: 'Abrechnung in USD' },
   ]
   return [
     { icon: '🔒', text: 'Pagos seguros con Stripe' },
     { icon: '↩️', text: 'Cancela cuando quieras' },
-    { icon: '💳', text: 'Sin tarjeta para plan gratis' },
+    { icon: '💳', text: '32 días de prueba · Tarjeta requerida' },
     { icon: '🌍', text: 'Facturación en USD' },
   ]
 }
