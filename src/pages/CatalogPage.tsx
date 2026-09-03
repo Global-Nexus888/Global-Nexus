@@ -4,16 +4,19 @@ import { PRODUCTS } from '../lib/data'
 import ProductCard from '../components/ProductCard'
 import FilterSidebar from '../components/FilterSidebar'
 import type { FilterState, ProductCategory, MexicanState } from '../types'
+import { useLang } from '../context/LangContext'
 
-const SORT_OPTIONS = [
-  { value: 'relevancia', label: 'Relevancia' },
-  { value: 'recientes', label: 'Más recientes' },
-  { value: 'menor-precio', label: 'Menor precio' },
-  { value: 'mayor-demanda', label: 'Mayor demanda' },
-  { value: 'verificados', label: 'Verificados primero' },
-]
+const SORT_I18N: Record<string, Record<string,string>> = {
+  relevancia:    { es: 'Relevancia',          en: 'Relevance',         nl: 'Relevantie',      de: 'Relevanz'          },
+  recientes:     { es: 'Más recientes',       en: 'Most recent',       nl: 'Meest recent',    de: 'Neueste'           },
+  'menor-precio':{ es: 'Menor precio',        en: 'Lowest price',      nl: 'Laagste prijs',   de: 'Niedrigster Preis' },
+  'mayor-demanda':{ es: 'Mayor demanda',      en: 'Most demanded',     nl: 'Meest gevraagd',  de: 'Meist gefragt'     },
+  verificados:   { es: 'Verificados primero', en: 'Verified first',    nl: 'Geverifieerd eerst',de: 'Verifizierte zuerst'},
+}
 
 export default function CatalogPage() {
+  const { lang } = useLang()
+  const tl = (rec: Record<string,string>) => rec[lang] || rec.es
   const [searchParams] = useSearchParams()
 
   const [filters, setFilters] = useState<FilterState>({
@@ -59,9 +62,14 @@ export default function CatalogPage() {
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem 1.5rem', minHeight: '80vh' }}>
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 4 }}>Catálogo de productos</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 4 }}>
+          {lang === 'nl' ? 'Productcatalogus' : lang === 'de' ? 'Produktkatalog' : lang === 'en' ? 'Product Catalog' : 'Catálogo de productos'}
+        </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Productos mexicanos certificados listos para exportación a Europa vía TLCUEM
+          {lang === 'nl' ? 'Gecertificeerde Mexicaanse producten klaar voor export naar Europa via TLCUEM'
+           : lang === 'de' ? 'Zertifizierte mexikanische Produkte für den Export nach Europa über TLCUEM'
+           : lang === 'en' ? 'Certified Mexican products ready for export to Europe via TLCUEM'
+           : 'Productos mexicanos certificados listos para exportación a Europa vía TLCUEM'}
         </p>
       </div>
 
@@ -72,7 +80,7 @@ export default function CatalogPage() {
           <input
             value={filters.search}
             onChange={e => updateFilters({ search: e.target.value })}
-            placeholder="Buscar producto o productor..."
+            placeholder={lang === 'nl' ? 'Zoek product of producent...' : lang === 'de' ? 'Produkt oder Hersteller suchen...' : lang === 'en' ? 'Search product or producer...' : 'Buscar producto o productor...'}
             style={{
               width: '100%', padding: '10px 14px 10px 42px',
               border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)',
@@ -87,7 +95,7 @@ export default function CatalogPage() {
           onChange={e => updateFilters({ sort: e.target.value as FilterState['sort'] })}
           style={{ padding: '10px 14px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '14px', background: 'var(--white)', cursor: 'pointer', minWidth: 180 }}
         >
-          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {Object.keys(SORT_I18N).map(v => <option key={v} value={v}>{tl(SORT_I18N[v])}</option>)}
         </select>
       </div>
 
@@ -105,7 +113,7 @@ export default function CatalogPage() {
           ) : (
             <>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                {results.length} productos encontrados
+                {results.length} {lang === 'nl' ? 'producten gevonden' : lang === 'de' ? 'Produkte gefunden' : lang === 'en' ? 'products found' : 'productos encontrados'}
               </div>
               <div className="card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '1rem' }}>
                 {results.map(p => <ProductCard key={p.id} product={p} />)}
