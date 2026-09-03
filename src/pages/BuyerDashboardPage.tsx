@@ -1,4 +1,5 @@
 import { syncBuyerProfile } from '../lib/sync'
+import { translateToAll } from '../lib/translate'
 import { supabase } from '../lib/supabase'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
@@ -175,7 +176,16 @@ export default function BuyerDashboardPage() {
     reader.readAsDataURL(file)
   }
 
-  const saveProfileData = () => { saveBProfile(email, profile); syncBuyerProfile(email, profile as Record<string, unknown>); setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500) }
+  const saveProfileData = async () => {
+    let updated = { ...profile }
+    if ((profile as Record<string,string>).interests?.trim()) {
+      const interests_translations = await translateToAll((profile as Record<string,string>).interests.trim(), lang)
+      updated = { ...updated, interests_translations }
+    }
+    saveBProfile(email, updated)
+    syncBuyerProfile(email, updated as Record<string, unknown>)
+    setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500)
+  }
 
   const addItem = () => {
     if (!newItem.name) return

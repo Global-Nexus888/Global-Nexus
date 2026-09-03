@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
+import { translateToAll } from '../lib/translate'
 import { supabase } from '../lib/supabase'
 import { countUnread, loadThread, sendChatMessage, subscribeThread, markThreadRead, ADMIN_EMAIL, ADMIN_NAME, type ChatMessage } from '../lib/chat'
 import CommunityFeed from '../components/CommunityFeed'
@@ -51,6 +52,7 @@ interface Award {
 interface Product {
   id: string; name: string; category: string; price: string; unit: string
   minOrder: string; desc: string; photos: string[]; origin?: string; certTags?: string[]; certDocs?: CertDoc[]
+  name_translations?: Record<string, string>; description_translations?: Record<string, string>
 }
 
 const C = { navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706', green: '#16A34A', border: '#E2E8F0', bg: '#F8FAFC', white: '#FFFFFF', text: '#0F172A', muted: '#64748B', red: '#DC2626' }
@@ -391,22 +393,36 @@ export default function DashboardPage() {
     e.target.value = ''
   }
 
-  const saveProfileData = () => {
-    saveProfile(email, profile)
-    syncProfile(email, profile as Record<string, unknown>)
+  const saveProfileData = async () => {
+    let updatedProfile = { ...profile }
+    if (profile.bio?.trim()) {
+      const bio_translations = await translateToAll(profile.bio.trim(), lang)
+      updatedProfile = { ...updatedProfile, bio_translations }
+    }
+    saveProfile(email, updatedProfile)
+    syncProfile(email, updatedProfile as Record<string, unknown>)
     setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500)
   }
 
-  const addProduct = () => {
+  const addProduct = async () => {
     if (!newProduct.name || !newProduct.category) return
-    const updated = [...products, { ...newProduct, photos: newProduct.photos || [], id: Date.now().toString() } as Product]
+    const [name_translations, description_translations] = await Promise.all([
+      newProduct.name ? translateToAll(newProduct.name, lang) : Promise.resolve({}),
+      newProduct.desc ? translateToAll(newProduct.desc, lang) : Promise.resolve({}),
+    ])
+    const prod = { ...newProduct, photos: newProduct.photos || [], id: Date.now().toString(), name_translations, description_translations } as Product
+    const updated = [...products, prod]
     setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
     setNewProduct({ photos: [] }); setShowAddProduct(false); setAddFormCertDoc({}); setAddFormCertOpen(false)
   }
 
-  const saveEditProductFn = () => {
+  const saveEditProductFn = async () => {
     if (!editProduct.name || !editProduct.category) return
-    const updated = products.map(p => p.id === editingProductId ? { ...p, ...editProduct } as Product : p)
+    const [name_translations, description_translations] = await Promise.all([
+      editProduct.name ? translateToAll(editProduct.name, lang) : Promise.resolve({}),
+      editProduct.desc ? translateToAll(editProduct.desc, lang) : Promise.resolve({}),
+    ])
+    const updated = products.map(p => p.id === editingProductId ? { ...p, ...editProduct, name_translations, description_translations } as Product : p)
     setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
     setEditingProductId(null); setEditProduct({})
   }
@@ -428,10 +444,16 @@ export default function DashboardPage() {
     const updated = products.map(p => p.id === productId ? { ...p, certDocs: (p.certDocs || []).filter(c => c.id !== certId) } : p)
     setProducts(updated); saveProducts(email, updated); syncProducts(email, updated as unknown as Record<string, unknown>[])
   }
-  const saveStoryData = () => {
+  const saveStoryData = async () => {
     try {
-      saveStory(email, story)
-      syncStory(email, story as Record<string, unknown>)
+      const storyRec = story as Record<string, string>
+      let updatedStory: Record<string, unknown> = { ...story }
+      if (storyRec.history?.trim()) {
+        const history_translations = await translateToAll(storyRec.history.trim(), lang)
+        updatedStory = { ...updatedStory, history_translations }
+      }
+      saveStory(email, updatedStory)
+      syncStory(email, updatedStory)
       setStoryError('')
       setStorySaved(true); setTimeout(() => setStorySaved(false), 2500)
     } catch {

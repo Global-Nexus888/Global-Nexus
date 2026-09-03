@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../context/LangContext'
+import { translateToAll as _translateToAll } from '../lib/translate'
 
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1',
@@ -66,25 +67,7 @@ function getUserAvatar(email: string): string | null {
   } catch { return null }
 }
 
-async function translateText(text: string, from: string, to: string): Promise<string> {
-  if (from === to || !text.trim()) return text
-  try {
-    const res = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 500))}&langpair=${from}|${to}&de=brandmkrs.ads@gmail.com`
-    )
-    const data = await res.json()
-    if (data.responseStatus === 200) return data.responseData.translatedText || text
-    return text
-  } catch { return text }
-}
-
-async function translateToAll(text: string, sourceLang: string): Promise<Record<string, string>> {
-  const results: Record<string, string> = {}
-  await Promise.all(['es', 'en', 'nl', 'de'].map(async lang => {
-    results[lang] = lang === sourceLang ? text : await translateText(text, sourceLang, lang)
-  }))
-  return results
-}
+const translateToAll = _translateToAll
 
 function compressImage(file: File): Promise<string> {
   return new Promise(resolve => {

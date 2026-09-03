@@ -4,7 +4,6 @@ import { supabase } from './supabase'
 export function syncProfile(email: string, data: Record<string, unknown>) {
   supabase.from('perfiles').upsert({ email, ...data, updated_at: new Date().toISOString() })
     .then(() => {}).catch(() => {})
-  // Also keep usuarios in sync for marketplace display
   const usuariosFields: Record<string, unknown> = {}
   if (data.name)     usuariosFields.name     = data.name
   if (data.company)  usuariosFields.company  = data.company
@@ -49,6 +48,8 @@ export function syncProducts(email: string, products: Record<string, unknown>[])
         origin: p.origin || '',
         photos: p.photos || [],
         cert_docs: p.certDocs || [],
+        name_translations: p.name_translations || {},
+        description_translations: p.description_translations || {},
         created_at: new Date().toISOString(),
       }))
     ).then(() => {}).catch(() => {})
@@ -68,6 +69,7 @@ export function syncAwards(email: string, awards: Record<string, unknown>[]) {
         org: a.org,
         description: a.desc,
         photo: a.photo || null,
+        desc_translations: a.desc_translations || {},
         created_at: new Date().toISOString(),
       }))
     ).then(() => {}).catch(() => {})

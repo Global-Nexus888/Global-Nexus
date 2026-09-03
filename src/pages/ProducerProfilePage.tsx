@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../context/LangContext'
+import { getTranslated } from '../lib/translate'
 
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1',
@@ -17,10 +18,16 @@ const CERT_LABELS: Record<string, string> = {
 interface ProfileData {
   id: string; email: string; name: string; company: string; state: string
   category: string; interest: string; created_at: string
-  bio?: string; logo?: string; photo?: string; location?: string
+  bio?: string; bio_translations?: Record<string,string>
+  logo?: string; photo?: string; location?: string
   website?: string; whatsapp?: string
-  photos?: string[]; history?: string; foundedYear?: string; employees?: string
-  products?: { id: string; name: string; category: string; description: string; price: string; unit: string; photos?: string[] }[]
+  photos?: string[]
+  history?: string; history_translations?: Record<string,string>
+  foundedYear?: string; employees?: string
+  products?: {
+    id: string; name: string; category: string; description: string; price: string; unit: string; photos?: string[]
+    name_translations?: Record<string,string>; description_translations?: Record<string,string>
+  }[]
   certifications?: string[]
 }
 
@@ -88,7 +95,10 @@ export default function ProducerProfilePage() {
 
   const displayName = data.company || data.name || ''
   const avatar = data.photo || data.logo
-  const bio = data.bio || data.interest || data.category || ''
+  const bioRaw = data.bio || data.interest || data.category || ''
+  const bio = getTranslated(data.bio_translations, bioRaw, lang)
+  const historyRaw = data.history || ''
+  const history = getTranslated(data.history_translations, historyRaw, lang)
   const location = data.location || data.state || 'México'
   const photos = (data.photos || []).filter(Boolean)
   const products = data.products || []
@@ -149,7 +159,7 @@ export default function ProducerProfilePage() {
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: C.navy, marginBottom: '1rem' }}>
             📖 {t('Historia de la empresa', 'Company story', 'Bedrijfsverhaal', 'Unternehmensgeschichte')}
           </h2>
-          {data.history && <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.7, marginBottom: photos.length > 0 ? '1.25rem' : 0 }}>{data.history}</p>}
+          {history && <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.7, marginBottom: photos.length > 0 ? '1.25rem' : 0 }}>{history}</p>}
           {photos.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
               {photos.slice(0, 9).map((src, i) => (
@@ -172,8 +182,8 @@ export default function ProducerProfilePage() {
                 {p.photos?.[0] && <img src={p.photos[0]} alt="" style={{ width: '100%', height: 140, objectFit: 'cover' }} />}
                 {!p.photos?.[0] && <div style={{ height: 80, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📦</div>}
                 <div style={{ padding: '0.75rem' }}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: 4 }}>{p.name}</div>
-                  {p.description && <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</div>}
+                  <div style={{ fontWeight: 700, fontSize: 13, color: C.navy, marginBottom: 4 }}>{getTranslated(p.name_translations, p.name, lang)}</div>
+                  {p.description && <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.5, marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{getTranslated(p.description_translations, p.description, lang)}</div>}
                   {p.price && <div style={{ fontSize: 13, fontWeight: 700, color: C.teal }}>${p.price} <span style={{ fontWeight: 400, color: '#94A3B8', fontSize: 11 }}>/ {p.unit}</span></div>}
                 </div>
               </div>
