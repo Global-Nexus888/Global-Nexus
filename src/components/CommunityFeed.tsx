@@ -9,37 +9,42 @@ const C = {
   white: '#FFFFFF', text: '#0F172A', muted: '#64748B',
 }
 
-const ROLE_META: Record<string, { icon: string; color: string; bg: string; label: string }> = {
-  productor: { icon: '🏭', color: '#0F766E', bg: C.tealLight,  label: 'Productor MX' },
-  comprador: { icon: '🇪🇺', color: '#1E40AF', bg: '#EFF6FF',  label: 'Comprador EU' },
-  asesor:    { icon: '🎓', color: '#7C3AED', bg: '#F3E8FF',   label: 'Asesor Pro' },
-  admin:     { icon: '👑', color: '#D97706', bg: '#FFFBEB',   label: 'Admin' },
+const ROLE_META: Record<string, { icon: string; color: string; bg: string; label: Record<string,string> }> = {
+  productor: { icon: '🏭', color: '#0F766E', bg: C.tealLight,  label: { es: 'Productor MX', en: 'MX Producer', nl: 'MX Producent', de: 'MX Produzent' } },
+  comprador: { icon: '🇪🇺', color: '#1E40AF', bg: '#EFF6FF',  label: { es: 'Comprador EU', en: 'EU Buyer', nl: 'EU Koper', de: 'EU Käufer' } },
+  asesor:    { icon: '🎓', color: '#7C3AED', bg: '#F3E8FF',   label: { es: 'Asesor Pro', en: 'Advisor', nl: 'Adviseur', de: 'Berater' } },
+  admin:     { icon: '👑', color: '#D97706', bg: '#FFFBEB',   label: { es: 'Admin', en: 'Admin', nl: 'Admin', de: 'Admin' } },
 }
 
-const LANG_LABELS: Record<string, string> = { es: 'Español', en: 'English', nl: 'Nederlands', de: 'Deutsch' }
+const LANG_FLAG: Record<string, string> = { es: '🇲🇽', en: '🇬🇧', nl: '🇳🇱', de: '🇩🇪' }
+const LANG_NAME: Record<string, string> = { es: 'Español', en: 'English', nl: 'Nederlands', de: 'Deutsch' }
+
+const EMOJIS = [
+  '👍','❤️','🔥','🎉','😊','🤝','💪','✅','⭐','🌟',
+  '🇲🇽','🇪🇺','🌍','🚀','💡','📦','📈','💰','🌱','🏆',
+  '🌮','🌶️','☕','🍫','🥑','🍯','🥃','🫒','🌾','🍊',
+  '🏭','🚢','✈️','📊','🤜','👏','🙌','💬','📝','🎯',
+  '😎','👋','🎨','🌺','💎','🫐','🍺','🧀','🥝','🌿',
+]
 
 interface MediaItem { type: 'image' | 'video' | 'file'; url: string; name: string }
 
 interface Post {
-  id: string
-  user_email: string
-  user_name: string
-  user_role: string
-  user_company?: string
-  body: string
-  body_lang: string
-  translations: Record<string, string>
-  media: MediaItem[]
-  likes: string[]
-  created_at: string
+  id: string; user_email: string; user_name: string; user_role: string
+  user_company?: string; user_avatar?: string
+  body: string; body_lang: string; translations: Record<string, string>
+  media: MediaItem[]; likes: string[]; created_at: string
+  commentCount?: number
+}
+
+interface Comment {
+  id: string; post_id: string; user_email: string; user_name: string
+  user_role: string; user_avatar?: string; body: string; created_at: string
 }
 
 interface CurrentUser {
-  email: string
-  name: string
-  role: string
-  company?: string
-  isAdmin?: boolean
+  email: string; name: string; role: string; company?: string
+  avatar?: string; isAdmin?: boolean
 }
 
 interface Props { currentUser: CurrentUser | null; compact?: boolean }
@@ -52,6 +57,13 @@ function timeAgo(iso: string) {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`
   return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+}
+
+function getUserAvatar(email: string): string | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(`gn_profile_${email}`) || '{}')
+    return p.photo || p.logo || null
+  } catch { return null }
 }
 
 async function translateText(text: string, from: string, to: string): Promise<string> {
@@ -67,13 +79,10 @@ async function translateText(text: string, from: string, to: string): Promise<st
 }
 
 async function translateToAll(text: string, sourceLang: string): Promise<Record<string, string>> {
-  const langs = ['es', 'en', 'nl', 'de']
   const results: Record<string, string> = {}
-  await Promise.all(
-    langs.map(async lang => {
-      results[lang] = lang === sourceLang ? text : await translateText(text, sourceLang, lang)
-    })
-  )
+  await Promise.all(['es', 'en', 'nl', 'de'].map(async lang => {
+    results[lang] = lang === sourceLang ? text : await translateText(text, sourceLang, lang)
+  }))
   return results
 }
 
@@ -107,32 +116,184 @@ async function uploadToStorage(file: File): Promise<string | null> {
   } catch { return null }
 }
 
+/* ── Rich text renderer ── */
+function RichText({ text, onHashtag }: { text: string; onHashtag?: (tag: string) => void }) {
+  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(\#[\wÀ-žñÿ]+)|(https?:\/\/[^\s]+)/g
+  const parts: React.ReactNode[] = []
+  let last = 0; let i = 0; let m: RegExpExecArray | null
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > last) parts.push(<span key={i++}>{text.slice(last, m.index)}</span>)
+    if (m[1]) parts.push(<strong key={i++} style={{ fontWeight: 700 }}>{m[2]}</strong>)
+    else if (m[3]) parts.push(<em key={i++}>{m[4]}</em>)
+    else if (m[5]) parts.push(
+      <span key={i++} onClick={() => onHashtag?.(m![5])} style={{ color: C.teal, fontWeight: 600, cursor: onHashtag ? 'pointer' : 'default' }}>{m[5]}</span>
+    )
+    else if (m[6]) parts.push(<a key={i++} href={m[6]} target="_blank" rel="noreferrer" style={{ color: C.teal, textDecoration: 'underline' }}>{m[6]}</a>)
+    last = m.index + m[0].length
+  }
+  if (last < text.length) parts.push(<span key={i++}>{text.slice(last)}</span>)
+  return <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{parts}</span>
+}
+
+/* ── Avatar 1:1 ── */
+function Avatar({ src, name, color, bg, size = 44 }: { src?: string | null; name: string; color: string; bg: string; size?: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), background: bg, flexShrink: 0, overflow: 'hidden', border: `1.5px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color, fontSize: size * 0.36 }}>
+      {src
+        ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        : (name || '?').slice(0, 2).toUpperCase()}
+    </div>
+  )
+}
+
+/* ── Emoji Picker ── */
+function EmojiPicker({ onPick, onClose }: { onPick: (e: string) => void; onClose: () => void }) {
+  return (
+    <div style={{ position: 'absolute', bottom: '100%', left: 0, background: C.white, border: `1px solid ${C.border}`, borderRadius: 12, padding: '10px', zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,.12)', width: 260 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.muted }}>Emojis</span>
+        <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', color: C.muted, fontSize: 14 }}>✕</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 2 }}>
+        {EMOJIS.map(e => (
+          <button key={e} onClick={() => { onPick(e); onClose() }}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '3px', borderRadius: 6, lineHeight: 1 }}
+            onMouseEnter={el => (el.currentTarget.style.background = C.bg)}
+            onMouseLeave={el => (el.currentTarget.style.background = 'none')}>{e}</button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Comments Section ── */
+function CommentsSection({ postId, currentUser }: { postId: string; currentUser: CurrentUser | null }) {
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [input, setInput]       = useState('')
+  const [sending, setSending]   = useState(false)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  useEffect(() => {
+    supabase.from('post_comments').select('*').eq('post_id', postId).order('created_at', { ascending: true })
+      .then(({ data }) => { setComments((data || []) as Comment[]); setLoading(false) })
+    const ch = supabase.channel(`comments-${postId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'post_comments', filter: `post_id=eq.${postId}` },
+        p => setComments(prev => prev.find(c => c.id === p.new.id) ? prev : [...prev, p.new as Comment]))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'post_comments', filter: `post_id=eq.${postId}` },
+        p => setComments(prev => prev.filter(c => c.id !== p.old.id)))
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [postId])
+
+  const send = async () => {
+    if (!currentUser || !input.trim()) return
+    setSending(true)
+    await supabase.rpc('add_comment', {
+      p_post_id: postId, p_user_email: currentUser.email,
+      p_user_name: currentUser.name || currentUser.email,
+      p_user_role: currentUser.isAdmin ? 'admin' : currentUser.role,
+      p_user_avatar: currentUser.avatar || null, p_body: input.trim(),
+    })
+    setInput(''); setSending(false)
+  }
+
+  const doDelete = async (id: string) => {
+    const email = currentUser?.isAdmin ? '' : (currentUser?.email || '')
+    await supabase.rpc('delete_comment', { p_id: id, p_user_email: email })
+    setDeleteId(null)
+  }
+
+  const meta = (role: string) => ROLE_META[role] || ROLE_META.productor
+
+  return (
+    <div style={{ borderTop: `1px solid ${C.border}`, background: '#FAFBFD', padding: '0.875rem 1rem' }}>
+      {loading
+        ? <div style={{ fontSize: 12, color: C.muted, textAlign: 'center', padding: '8px' }}>⏳</div>
+        : comments.length === 0
+          ? <div style={{ fontSize: 12, color: C.muted, fontStyle: 'italic', marginBottom: currentUser ? 10 : 0 }}>Sin comentarios aún.</div>
+          : <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+              {comments.map(c => {
+                const m = meta(c.user_role)
+                const isOwn = currentUser?.email === c.user_email
+                const isAdmin = currentUser?.isAdmin
+                const pendingDelete = deleteId === c.id
+                return (
+                  <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <Avatar src={c.user_avatar} name={c.user_name} color={m.color} bg={m.bg} size={30} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: '4px 12px 12px 12px', padding: '8px 10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: C.navy }}>{c.user_name}</span>
+                          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 100, background: m.bg, color: m.color }}>{m.icon}</span>
+                          <span style={{ fontSize: 10, color: C.muted, marginLeft: 'auto' }}>{timeAgo(c.created_at)}</span>
+                        </div>
+                        <p style={{ fontSize: 13, color: C.text, margin: 0, lineHeight: 1.55 }}>{c.body}</p>
+                      </div>
+                      {(isOwn || isAdmin) && (
+                        pendingDelete
+                          ? <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, color: C.red }}>¿Eliminar?</span>
+                              <button onClick={() => doDelete(c.id)} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, border: 'none', background: C.red, color: '#fff', cursor: 'pointer', fontWeight: 700 }}>Sí</button>
+                              <button onClick={() => setDeleteId(null)} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer' }}>No</button>
+                            </div>
+                          : <button onClick={() => setDeleteId(c.id)} style={{ fontSize: 10, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', marginTop: 2, padding: 0 }}>🗑️</button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+      }
+      {currentUser && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Avatar src={currentUser.avatar} name={currentUser.name} color={ROLE_META[currentUser.role]?.color || C.teal} bg={ROLE_META[currentUser.role]?.bg || C.tealLight} size={30} />
+          <div style={{ flex: 1, display: 'flex', gap: 6 }}>
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+              placeholder="Escribe un comentario..."
+              style={{ flex: 1, padding: '7px 12px', borderRadius: 20, border: `1.5px solid ${C.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', background: C.white, color: C.text }}
+              onFocus={e => (e.target.style.borderColor = C.teal)}
+              onBlur={e => (e.target.style.borderColor = C.border)} />
+            <button onClick={send} disabled={sending || !input.trim()}
+              style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: input.trim() ? C.teal : C.border, color: '#fff', cursor: input.trim() ? 'pointer' : 'default', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ➤
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ── Post Card ── */
 function PostCard({
-  post, currentUser, lang, onDelete, onEdit,
+  post, currentUser, lang, onDelete, onEdit, onHashtag,
 }: {
   post: Post; currentUser: CurrentUser | null; lang: string
   onDelete: (id: string) => void
   onEdit: (id: string, body: string, translations: Record<string, string>) => void
+  onHashtag: (tag: string) => void
 }) {
-  const [liked, setLiked]           = useState(false)
-  const [likeCount, setLikeCount]   = useState(0)
-  const [lightbox, setLightbox]     = useState<string | null>(null)
-  const [showOriginal, setShowOrig] = useState(false)
-  const [editing, setEditing]       = useState(false)
-  const [editBody, setEditBody]     = useState(post.body)
-  const [saving, setSaving]         = useState(false)
+  const [liked, setLiked]             = useState(false)
+  const [likeCount, setLikeCount]     = useState(0)
+  const [lightbox, setLightbox]       = useState<string | null>(null)
+  const [editing, setEditing]         = useState(false)
+  const [editBody, setEditBody]       = useState(post.body)
+  const [saving, setSaving]           = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [commentCount, setCommentCount] = useState(post.commentCount || 0)
+  const [deleteStep, setDeleteStep]   = useState(0) // 0=none 1=confirm
+  const [showEmoji, setShowEmoji]     = useState(false)
+  const textRef = useRef<HTMLTextAreaElement>(null)
 
-  const meta = ROLE_META[post.user_role] || ROLE_META.productor
-  const initials = post.user_name?.slice(0, 2).toUpperCase() || '??'
-  const isOwn    = currentUser?.email === post.user_email
-  const isAdmin  = currentUser?.isAdmin
+  const meta    = ROLE_META[post.user_role] || ROLE_META.productor
+  const isOwn   = currentUser?.email === post.user_email
+  const isAdmin = currentUser?.isAdmin
 
-  // Pick translated body for current viewer language
-  const displayBody = showOriginal
-    ? post.body
-    : (post.translations?.[lang] || post.body)
-  const isDifferent = post.body_lang && post.body_lang !== lang && (post.translations?.[lang] && post.translations[lang] !== post.body)
+  // Translation display: always show both when different
+  const viewerText   = post.translations?.[lang] || post.body
+  const originalText = post.body
+  const showBoth     = post.body_lang && post.body_lang !== lang && viewerText && viewerText !== originalText
 
   useEffect(() => {
     const likes = Array.isArray(post.likes) ? post.likes : []
@@ -140,11 +301,28 @@ function PostCard({
     setLiked(!!currentUser && likes.includes(currentUser.email))
   }, [post.likes, currentUser])
 
+  useEffect(() => {
+    // Listen for comment count changes
+    const ch = supabase.channel(`count-${post.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'post_comments', filter: `post_id=eq.${post.id}` },
+        () => setCommentCount(c => c + 1))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'post_comments', filter: `post_id=eq.${post.id}` },
+        () => setCommentCount(c => Math.max(0, c - 1)))
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [post.id])
+
   const handleLike = async () => {
     if (!currentUser) return
     const next = !liked
     setLiked(next); setLikeCount(c => next ? c + 1 : c - 1)
     await supabase.rpc('toggle_like', { p_post_id: post.id, p_user_email: currentUser.email })
+  }
+
+  const handleDelete = () => {
+    if (deleteStep === 0) { setDeleteStep(1); return }
+    onDelete(post.id)
+    setDeleteStep(0)
   }
 
   const saveEdit = async () => {
@@ -159,6 +337,15 @@ function PostCard({
     setEditing(false); setSaving(false)
   }
 
+  const insertEmoji = (e: string) => {
+    if (!textRef.current) return
+    const start = textRef.current.selectionStart
+    const end   = textRef.current.selectionEnd
+    const next  = editBody.slice(0, start) + e + editBody.slice(end)
+    setEditBody(next)
+    setTimeout(() => { textRef.current!.selectionStart = textRef.current!.selectionEnd = start + e.length }, 0)
+  }
+
   const images = post.media.filter(m => m.type === 'image')
   const videos = post.media.filter(m => m.type === 'video')
   const files  = post.media.filter(m => m.type === 'file')
@@ -170,65 +357,93 @@ function PostCard({
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '1rem 1rem 0.75rem' }}>
-        <div style={{ width: 44, height: 44, borderRadius: 13, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0, fontWeight: 800, color: meta.color }}>
-          {initials}
-        </div>
+        <Avatar src={post.user_avatar} name={post.user_name} color={meta.color} bg={meta.bg} size={46} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: C.navy, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {post.user_name}
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100, background: meta.bg, color: meta.color }}>{meta.icon} {meta.label}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100, background: meta.bg, color: meta.color }}>{meta.icon} {meta.label[lang] || meta.label.es}</span>
           </div>
           {post.user_company && <div style={{ fontSize: 11, color: C.muted }}>{post.user_company}</div>}
           <div style={{ fontSize: 11, color: C.muted }}>{timeAgo(post.created_at)}</div>
         </div>
-        <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0, alignItems: 'center' }}>
           {isOwn && !editing && (
             <button onClick={() => { setEditing(true); setEditBody(post.body) }} title="Editar"
-              style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.85rem' }}>✏️</button>
+              style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✏️</button>
           )}
           {(isOwn || isAdmin) && (
-            <button onClick={() => onDelete(post.id)} title="Eliminar"
-              style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.85rem' }}>🗑️</button>
+            deleteStep === 1
+              ? <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: C.red, fontWeight: 600 }}>¿Eliminar?</span>
+                  <button onClick={handleDelete} style={{ padding: '4px 10px', borderRadius: 7, border: 'none', background: C.red, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Sí</button>
+                  <button onClick={() => setDeleteStep(0)} style={{ padding: '4px 8px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, cursor: 'pointer' }}>No</button>
+                </div>
+              : <button onClick={handleDelete} title="Eliminar"
+                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
           )}
         </div>
       </div>
 
-      {/* Body / Edit mode */}
+      {/* Body */}
       {editing ? (
-        <div style={{ padding: '0 1rem 1rem' }}>
-          <textarea value={editBody} onChange={e => setEditBody(e.target.value)} rows={4}
+        <div style={{ padding: '0 1rem 1rem', position: 'relative' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <button onClick={() => setEditBody(b => { const s = textRef.current?.selectionStart ?? b.length; const e = textRef.current?.selectionEnd ?? b.length; return b.slice(0, s) + `**${b.slice(s, e) || 'texto'}**` + b.slice(e) })}
+              style={{ padding: '4px 10px', borderRadius: 7, border: `1px solid ${C.border}`, background: C.bg, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>B</button>
+            <button onClick={() => setEditBody(b => { const s = textRef.current?.selectionStart ?? b.length; const e = textRef.current?.selectionEnd ?? b.length; return b.slice(0, s) + `*${b.slice(s, e) || 'texto'}*` + b.slice(e) })}
+              style={{ padding: '4px 10px', borderRadius: 7, border: `1px solid ${C.border}`, background: C.bg, fontStyle: 'italic', fontSize: 13, cursor: 'pointer' }}>I</button>
+            <button onClick={() => setShowEmoji(p => !p)}
+              style={{ padding: '4px 10px', borderRadius: 7, border: `1px solid ${C.border}`, background: showEmoji ? C.tealLight : C.bg, fontSize: 13, cursor: 'pointer' }}>😊</button>
+            <span style={{ fontSize: 11, color: C.muted, alignSelf: 'center' }}>**negrita** *cursiva* #hashtag</span>
+          </div>
+          {showEmoji && <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />}
+          <textarea ref={textRef} value={editBody} onChange={e => setEditBody(e.target.value)} rows={4}
             style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${C.teal}`, fontSize: 14, resize: 'none', fontFamily: 'inherit', color: C.text, background: C.bg, boxSizing: 'border-box', lineHeight: 1.6, outline: 'none' }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button onClick={saveEdit} disabled={saving || !editBody.trim()}
+            <button onClick={saveEdit} disabled={saving}
               style={{ padding: '7px 18px', borderRadius: 8, border: 'none', background: C.teal, color: '#fff', fontWeight: 700, fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? .7 : 1 }}>
-              {saving ? '⏳ Guardando...' : '✓ Guardar'}
+              {saving ? '🌐 Traduciendo y guardando...' : '✓ Guardar'}
             </button>
             <button onClick={() => setEditing(false)}
-              style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 13, cursor: 'pointer' }}>
-              Cancelar
-            </button>
+              style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
           </div>
         </div>
-      ) : displayBody ? (
-        <div style={{ padding: '0 1rem 0.875rem' }}>
-          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{displayBody}</p>
-          {isDifferent && (
-            <button onClick={() => setShowOrig(p => !p)}
-              style={{ marginTop: 6, fontSize: 11, color: C.teal, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
-              {showOriginal
-                ? `↩ Ver traducción (${LANG_LABELS[lang] || lang})`
-                : `🌐 Ver original (${LANG_LABELS[post.body_lang] || post.body_lang})`}
-            </button>
+      ) : (
+        <>
+          {/* Viewer language (translated) */}
+          {viewerText && (
+            <div style={{ padding: '0 1rem', paddingBottom: showBoth ? '0.5rem' : '0.875rem' }}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                {LANG_FLAG[lang]} <span style={{ fontWeight: 600 }}>{LANG_NAME[lang]}</span>
+              </div>
+              <p style={{ fontSize: 14, color: C.text, margin: 0, lineHeight: 1.7 }}>
+                <RichText text={viewerText} onHashtag={onHashtag} />
+              </p>
+            </div>
           )}
-        </div>
-      ) : null}
+          {/* Original language (when different) */}
+          {showBoth && (
+            <div style={{ padding: '0.75rem 1rem', margin: '0 1rem 0.875rem', borderRadius: 10, background: C.bg, border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                {LANG_FLAG[post.body_lang]} <span style={{ fontWeight: 600 }}>{LANG_NAME[post.body_lang]}</span>
+                <span style={{ marginLeft: 4, opacity: 0.7 }}>· Original</span>
+              </div>
+              <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.65, fontStyle: 'italic' }}>
+                <RichText text={originalText} />
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
-      {/* Images */}
+      {/* Images 1:1 */}
       {images.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: images.length === 1 ? '1fr' : images.length === 2 ? '1fr 1fr' : 'repeat(3,1fr)', gap: 2 }}>
           {images.map((img, i) => (
-            <img key={i} src={img.url} alt="" onClick={() => setLightbox(img.url)}
-              style={{ width: '100%', aspectRatio: images.length === 1 ? '16/9' : '1', objectFit: 'cover', cursor: 'zoom-in', display: 'block' }} />
+            <div key={i} style={{ position: 'relative', paddingTop: images.length === 1 ? '56.25%' : '100%', overflow: 'hidden' }}>
+              <img src={img.url} alt="" onClick={() => setLightbox(img.url)}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in', display: 'block' }} />
+            </div>
           ))}
         </div>
       )}
@@ -244,7 +459,7 @@ function PostCard({
           {files.map((f, i) => (
             <a key={i} href={f.url} target="_blank" rel="noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: C.bg, border: `1px solid ${C.border}`, textDecoration: 'none', color: C.navy }}>
-              <span style={{ fontSize: '1.1rem' }}>📎</span>
+              <span>📎</span>
               <span style={{ fontSize: 13, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
               <span style={{ fontSize: 11, color: C.teal, fontWeight: 700 }}>↓</span>
             </a>
@@ -253,16 +468,23 @@ function PostCard({
       )}
 
       {/* Footer */}
-      <div style={{ padding: '0.625rem 1rem', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '0.625rem 1rem', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
         <button onClick={handleLike} disabled={!currentUser}
           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: `1px solid ${liked ? C.teal + '50' : C.border}`, background: liked ? C.tealLight : 'transparent', color: liked ? C.teal : C.muted, cursor: currentUser ? 'pointer' : 'default', fontWeight: 600, fontSize: 13, transition: 'all .15s' }}>
           {liked ? '❤️' : '🤍'} {likeCount > 0 ? likeCount : ''}
         </button>
+        <button onClick={() => setShowComments(p => !p)}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, border: `1px solid ${showComments ? C.teal + '50' : C.border}`, background: showComments ? C.tealLight : 'transparent', color: showComments ? C.teal : C.muted, cursor: 'pointer', fontWeight: 600, fontSize: 13, transition: 'all .15s' }}>
+          💬 {commentCount > 0 ? commentCount : ''}
+        </button>
       </div>
+
+      {/* Comments */}
+      {showComments && <CommentsSection postId={post.id} currentUser={currentUser} />}
 
       {/* Lightbox */}
       {lightbox && (
-        <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.88)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', cursor: 'zoom-out' }}>
+        <div onClick={() => setLightbox(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.9)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', cursor: 'zoom-out' }}>
           <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 12, objectFit: 'contain' }} />
         </div>
       )}
@@ -272,13 +494,22 @@ function PostCard({
 
 /* ── Post Composer ── */
 function PostComposer({ currentUser, lang, onPost }: { currentUser: CurrentUser; lang: string; onPost: (p: Post) => void }) {
-  const [body, setBody]       = useState('')
-  const [files, setFiles]     = useState<{ file: File; preview?: string; type: 'image' | 'video' | 'file' }[]>([])
-  const [posting, setPosting] = useState(false)
+  const [body, setBody]         = useState('')
+  const [files, setFiles]       = useState<{ file: File; preview?: string; type: 'image' | 'video' | 'file' }[]>([])
+  const [posting, setPosting]   = useState(false)
   const [translating, setTrans] = useState(false)
-  const [error, setError]     = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
-  const meta = ROLE_META[currentUser.role] || ROLE_META.productor
+  const [error, setError]       = useState('')
+  const [showEmoji, setShowEmoji] = useState(false)
+  const fileRef  = useRef<HTMLInputElement>(null)
+  const textRef  = useRef<HTMLTextAreaElement>(null)
+  const meta     = ROLE_META[currentUser.role] || ROLE_META.productor
+
+  const insertEmoji = (e: string) => {
+    if (!textRef.current) return
+    const s = textRef.current.selectionStart; const end = textRef.current.selectionEnd
+    setBody(b => b.slice(0, s) + e + b.slice(end))
+    setTimeout(() => { textRef.current!.selectionStart = textRef.current!.selectionEnd = s + e.length }, 0)
+  }
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     Array.from(e.target.files || []).forEach(f => {
@@ -287,9 +518,7 @@ function PostComposer({ currentUser, lang, onPost }: { currentUser: CurrentUser;
         const reader = new FileReader()
         reader.onload = ev => setFiles(prev => [...prev, { file: f, preview: ev.target?.result as string, type }])
         reader.readAsDataURL(f)
-      } else {
-        setFiles(prev => [...prev, { file: f, type }])
-      }
+      } else setFiles(prev => [...prev, { file: f, type }])
     })
     e.target.value = ''
   }
@@ -297,104 +526,98 @@ function PostComposer({ currentUser, lang, onPost }: { currentUser: CurrentUser;
   const submit = async () => {
     if (!body.trim() && files.length === 0) return
     setPosting(true); setError('')
-
-    // Translate body
-    setTrans(true)
-    const translations = body.trim() ? await translateToAll(body.trim(), lang) : {}
-    setTrans(false)
-
+    let translations: Record<string, string> = {}
+    if (body.trim()) { setTrans(true); translations = await translateToAll(body.trim(), lang); setTrans(false) }
     try {
       const media: MediaItem[] = []
       for (const f of files) {
         if (f.type === 'image') {
-          const compressed = await compressImage(f.file)
-          media.push({ type: 'image', url: compressed, name: f.file.name })
+          media.push({ type: 'image', url: await compressImage(f.file), name: f.file.name })
         } else {
           const url = await uploadToStorage(f.file)
           if (url) media.push({ type: f.type, url, name: f.file.name })
-          else { setError('Error subiendo archivo. Verifica el bucket "community" en Supabase.'); setPosting(false); return }
+          else { setError('Error subiendo archivo.'); setPosting(false); return }
         }
       }
       const { data, error: rpcError } = await supabase.rpc('create_post', {
-        p_user_email:   currentUser.email,
-        p_user_name:    currentUser.name || currentUser.email,
-        p_user_role:    currentUser.isAdmin ? 'admin' : currentUser.role,
-        p_user_company: currentUser.company || null,
-        p_body:         body.trim(),
-        p_media:        media,
+        p_user_email: currentUser.email, p_user_name: currentUser.name || currentUser.email,
+        p_user_role: currentUser.isAdmin ? 'admin' : currentUser.role,
+        p_user_company: currentUser.company || null, p_body: body.trim(),
+        p_media: media, p_user_avatar: currentUser.avatar || null,
       })
       if (rpcError) { setError(rpcError.message); setPosting(false); return }
-
-      // Save translations & body_lang via update
       if (body.trim()) {
         await supabase.rpc('update_post', {
           p_id: data as string, p_user_email: currentUser.email,
           p_body: body.trim(), p_translations: translations, p_body_lang: lang,
         })
       }
-
-      const newPost: Post = {
-        id: data as string, user_email: currentUser.email,
-        user_name: currentUser.name || currentUser.email,
-        user_role: currentUser.isAdmin ? 'admin' : currentUser.role,
-        user_company: currentUser.company,
-        body: body.trim(), body_lang: lang, translations,
-        media, likes: [], created_at: new Date().toISOString(),
-      }
-      onPost(newPost)
+      onPost({
+        id: data as string, user_email: currentUser.email, user_name: currentUser.name || currentUser.email,
+        user_role: currentUser.isAdmin ? 'admin' : currentUser.role, user_company: currentUser.company,
+        user_avatar: currentUser.avatar, body: body.trim(), body_lang: lang,
+        translations, media, likes: [], created_at: new Date().toISOString(),
+      })
       setBody(''); setFiles([])
-    } catch { setError('Error inesperado. Intenta de nuevo.') }
+    } catch { setError('Error inesperado.') }
     setPosting(false)
   }
+
+  const placeholder = lang === 'nl' ? 'Deel iets...' : lang === 'de' ? 'Teile etwas...' : lang === 'en' ? 'Share something...' : 'Comparte algo con la comunidad...'
 
   return (
     <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 16, padding: '1rem', marginBottom: '1.25rem' }}>
       <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: meta.color, flexShrink: 0, fontSize: '0.9rem' }}>
-          {(currentUser.name || '??').slice(0, 2).toUpperCase()}
+        <Avatar src={currentUser.avatar} name={currentUser.name} color={meta.color} bg={meta.bg} size={42} />
+        <div style={{ flex: 1, position: 'relative' }}>
+          {/* Toolbar */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            {[['B', '**'],['I', '*']].map(([label, mk]) => (
+              <button key={label} onClick={() => { const s = textRef.current?.selectionStart ?? body.length; const e2 = textRef.current?.selectionEnd ?? body.length; setBody(b => b.slice(0,s) + `${mk}${b.slice(s,e2)||'texto'}${mk}` + b.slice(e2)) }}
+                style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${C.border}`, background: C.bg, fontSize: 12, fontWeight: label === 'B' ? 800 : 400, fontStyle: label === 'I' ? 'italic' : 'normal', cursor: 'pointer', color: C.text }}>
+                {label}
+              </button>
+            ))}
+            <button onClick={() => setShowEmoji(p => !p)}
+              style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${showEmoji ? C.teal : C.border}`, background: showEmoji ? C.tealLight : C.bg, fontSize: 13, cursor: 'pointer' }}>😊</button>
+            <span style={{ fontSize: 10, color: C.muted, alignSelf: 'center', marginLeft: 2 }}>#hashtag · **negrita** · *cursiva*</span>
+          </div>
+          {showEmoji && <EmojiPicker onPick={insertEmoji} onClose={() => setShowEmoji(false)} />}
+          <textarea ref={textRef} value={body} onChange={e => setBody(e.target.value)} placeholder={placeholder} rows={3}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 14, resize: 'none', fontFamily: 'inherit', color: C.text, background: C.bg, lineHeight: 1.55, outline: 'none', boxSizing: 'border-box' }}
+            onFocus={e => (e.target.style.borderColor = C.teal)}
+            onBlur={e => (e.target.style.borderColor = C.border)} />
         </div>
-        <textarea value={body} onChange={e => setBody(e.target.value)}
-          placeholder={
-            lang === 'nl' ? 'Deel iets met de gemeenschap...' :
-            lang === 'de' ? 'Teile etwas mit der Community...' :
-            lang === 'en' ? 'Share something with the community...' :
-            'Comparte algo con la comunidad...'
-          }
-          rows={3}
-          style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 14, resize: 'none', fontFamily: 'inherit', color: C.text, background: C.bg, lineHeight: 1.55, outline: 'none' }}
-          onFocus={e => (e.target.style.borderColor = C.teal)}
-          onBlur={e => (e.target.style.borderColor = C.border)} />
       </div>
 
-      {/* File previews */}
       {files.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10, paddingLeft: 50 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10, paddingLeft: 52 }}>
           {files.map((f, i) => (
             <div key={i} style={{ position: 'relative' }}>
               {f.type === 'image' && f.preview
-                ? <img src={f.preview} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
-                : <div style={{ width: 72, height: 72, borderRadius: 8, background: C.bg, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '1.4rem' }}>{f.type === 'video' ? '🎥' : '📎'}</span>
-                    <span style={{ fontSize: 9, color: C.muted, textAlign: 'center', padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 68 }}>{f.file.name}</span>
+                ? <img src={f.preview} alt="" style={{ width: 68, height: 68, objectFit: 'cover', borderRadius: 8, border: `1px solid ${C.border}` }} />
+                : <div style={{ width: 68, height: 68, borderRadius: 8, background: C.bg, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                    <span style={{ fontSize: '1.3rem' }}>{f.type === 'video' ? '🎥' : '📎'}</span>
+                    <span style={{ fontSize: 9, color: C.muted, textAlign: 'center', padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 64 }}>{f.file.name}</span>
                   </div>
               }
-              <button onClick={() => setFiles(p => p.filter((_, idx) => idx !== i))}
+              <button onClick={() => setFiles(p => p.filter((_,j) => j !== i))}
                 style={{ position: 'absolute', top: -5, right: -5, width: 17, height: 17, borderRadius: '50%', border: 'none', background: C.red, color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>✕</button>
             </div>
           ))}
         </div>
       )}
 
-      {error && <div style={{ marginBottom: 8, fontSize: 12, color: C.red, background: '#FEE2E2', padding: '8px 12px', borderRadius: 7 }}>{error}</div>}
+      {error && <div style={{ marginBottom: 8, fontSize: 12, color: C.red, background: '#FEE2E2', padding: '7px 12px', borderRadius: 7 }}>{error}</div>}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 50 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 52 }}>
         <div style={{ display: 'flex', gap: 6 }}>
           <input ref={fileRef} type="file" multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xlsx,.pptx,.zip" onChange={handleFiles} style={{ display: 'none' }} />
           <button onClick={() => fileRef.current?.click()}
-            style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📎</button>
+            style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📎 Adjuntar</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {translating && <span style={{ fontSize: 11, color: C.teal }}>🌐 Traduciendo...</span>}
+          {translating && <span style={{ fontSize: 11, color: C.teal }}>🌐 Traduciendo a 4 idiomas...</span>}
           <button onClick={submit} disabled={posting || (!body.trim() && files.length === 0)}
             style={{ padding: '8px 20px', borderRadius: 9, border: 'none', background: (body.trim() || files.length > 0) ? `linear-gradient(135deg, ${C.teal}, ${C.navy})` : C.border, color: '#fff', fontWeight: 700, fontSize: 13, cursor: posting ? 'not-allowed' : 'pointer', opacity: posting ? .7 : 1 }}>
             {posting ? '⏳' : lang === 'nl' ? 'Publiceren →' : lang === 'de' ? 'Veröffentlichen →' : lang === 'en' ? 'Post →' : 'Publicar →'}
@@ -408,65 +631,72 @@ function PostComposer({ currentUser, lang, onPost }: { currentUser: CurrentUser;
 /* ── Main Feed ── */
 export default function CommunityFeed({ currentUser, compact }: Props) {
   const { lang } = useLang()
-  const [posts, setPosts]           = useState<Post[]>([])
-  const [pending, setPending]       = useState<Post[]>([])
-  const [loading, setLoading]       = useState(true)
+  const [posts, setPosts]       = useState<Post[]>([])
+  const [pending, setPending]   = useState<Post[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [activeTag, setActiveTag] = useState<string | null>(null)
   const feedRef = useRef<HTMLDivElement>(null)
 
+  // Enrich currentUser with avatar from localStorage
+  const enrichedUser = currentUser
+    ? { ...currentUser, avatar: currentUser.avatar || getUserAvatar(currentUser.email) || undefined }
+    : null
+
   const loadPosts = useCallback(async () => {
-    const { data } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(60)
-    if (data) setPosts(data as Post[])
+    const { data: postsData } = await supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(60)
+    if (!postsData) { setLoading(false); return }
+    // Comment counts
+    const ids = postsData.map(p => p.id)
+    const { data: cData } = await supabase.from('post_comments').select('post_id').in('post_id', ids)
+    const countMap: Record<string, number> = {}
+    cData?.forEach((c: { post_id: string }) => { countMap[c.post_id] = (countMap[c.post_id] || 0) + 1 })
+    setPosts(postsData.map(p => ({ ...p, commentCount: countMap[p.id] || 0 })) as Post[])
     setLoading(false)
   }, [])
 
   useEffect(() => {
     loadPosts()
-    const channel = supabase.channel('community-feed')
+    const ch = supabase.channel('community-global')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, payload => {
-        const newPost = payload.new as Post
-        const atTop = (feedRef.current?.scrollTop || 0) < 80
-        if (atTop) {
-          setPosts(prev => [newPost, ...prev.filter(p => p.id !== newPost.id)])
-        } else {
-          setPending(prev => [newPost, ...prev.filter(p => p.id !== newPost.id)])
-        }
+        const p = payload.new as Post
+        const atTop = (feedRef.current?.scrollTop || 0) < 100
+        if (atTop) setPosts(prev => [p, ...prev.filter(x => x.id !== p.id)])
+        else setPending(prev => [p, ...prev.filter(x => x.id !== p.id)])
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, payload => {
-        const updated = payload.new as Post
-        setPosts(prev => prev.map(p => p.id === updated.id ? updated : p))
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, payload => {
-        setPosts(prev => prev.filter(p => p.id !== payload.old.id))
-        setPending(prev => prev.filter(p => p.id !== payload.old.id))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' },
+        p => setPosts(prev => prev.map(x => x.id === p.new.id ? { ...x, ...p.new } : x)))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, p => {
+        setPosts(prev => prev.filter(x => x.id !== p.old.id))
+        setPending(prev => prev.filter(x => x.id !== p.old.id))
       })
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    return () => { supabase.removeChannel(ch) }
   }, [loadPosts])
 
   const showPending = () => {
-    setPosts(prev => {
-      const ids = new Set(prev.map(p => p.id))
-      return [...pending.filter(p => !ids.has(p.id)), ...prev]
-    })
+    setPosts(prev => { const ids = new Set(prev.map(p => p.id)); return [...pending.filter(p => !ids.has(p.id)), ...prev] })
     setPending([])
     feedRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handlePost = (post: Post) => {
-    setPosts(prev => [post, ...prev.filter(p => p.id !== post.id)])
-  }
-
   const handleDelete = async (id: string) => {
-    if (!currentUser) return
+    if (!enrichedUser) return
     const post = posts.find(p => p.id === id)
-    const emailToUse = currentUser.isAdmin ? (post?.user_email || '') : currentUser.email
-    await supabase.rpc('delete_post', { p_id: id, p_user_email: emailToUse })
+    const email = enrichedUser.isAdmin ? (post?.user_email || '') : enrichedUser.email
+    await supabase.rpc('delete_post', { p_id: id, p_user_email: email })
     setPosts(prev => prev.filter(p => p.id !== id))
   }
 
   const handleEdit = (id: string, body: string, translations: Record<string, string>) => {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, body, translations } : p))
   }
+
+  const filteredPosts = activeTag
+    ? posts.filter(p => {
+        const text = [p.body, ...Object.values(p.translations || {})].join(' ')
+        return text.toLowerCase().includes(activeTag.toLowerCase())
+      })
+    : posts
 
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '3rem', color: C.muted }}>
@@ -477,16 +707,24 @@ export default function CommunityFeed({ currentUser, compact }: Props) {
 
   return (
     <div style={{ maxWidth: compact ? '100%' : 680, margin: '0 auto' }}>
-      {currentUser && <PostComposer currentUser={currentUser} lang={lang} onPost={handlePost} />}
+      {/* Hashtag filter bar */}
+      {activeTag && (
+        <div style={{ background: C.tealLight, border: `1px solid ${C.teal}40`, borderRadius: 10, padding: '8px 14px', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+          <span style={{ fontWeight: 700, color: C.teal }}>🔍 {activeTag}</span>
+          <button onClick={() => setActiveTag(null)} style={{ border: 'none', background: 'none', color: C.teal, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ Quitar filtro</button>
+        </div>
+      )}
 
-      {!currentUser && (
+      {enrichedUser && <PostComposer currentUser={enrichedUser} lang={lang} onPost={p => setPosts(prev => [p, ...prev])} />}
+
+      {!enrichedUser && (
         <div style={{ background: `linear-gradient(135deg, ${C.navy}, #1a4a7a)`, borderRadius: 14, padding: '1.5rem', textAlign: 'center', color: '#fff', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🌐</div>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>
             {lang === 'nl' ? 'Word lid van de Global Nexus gemeenschap' : lang === 'de' ? 'Tritt der Global Nexus Community bei' : lang === 'en' ? 'Join the Global Nexus community' : 'Únete a la comunidad Global Nexus'}
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,.75)', marginBottom: '1rem' }}>
-            {lang === 'en' ? 'Sign up to post, share and connect.' : lang === 'nl' ? 'Registreer om te publiceren en verbinden.' : lang === 'de' ? 'Registrieren Sie sich, um zu posten.' : 'Regístrate para publicar y conectar.'}
+            {lang === 'en' ? 'Sign up to post, share and connect.' : lang === 'nl' ? 'Registreer om te publiceren.' : lang === 'de' ? 'Registrieren Sie sich, um zu posten.' : 'Regístrate para publicar y conectar.'}
           </div>
           <a href="/registro" style={{ padding: '9px 22px', borderRadius: 9, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', display: 'inline-block' }}>
             {lang === 'nl' ? 'Gratis registreren →' : lang === 'de' ? 'Kostenlos registrieren →' : lang === 'en' ? 'Sign up free →' : 'Registrarse gratis →'}
@@ -494,7 +732,6 @@ export default function CommunityFeed({ currentUser, compact }: Props) {
         </div>
       )}
 
-      {/* New posts banner */}
       {pending.length > 0 && (
         <button onClick={showPending}
           style={{ width: '100%', marginBottom: '1rem', padding: '10px', borderRadius: 10, border: `1.5px solid ${C.teal}`, background: C.tealLight, color: C.teal, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -502,22 +739,19 @@ export default function CommunityFeed({ currentUser, compact }: Props) {
         </button>
       )}
 
-      {/* Feed */}
       <div ref={feedRef}>
-        {posts.length === 0
+        {filteredPosts.length === 0
           ? (
             <div style={{ textAlign: 'center', padding: '4rem 2rem', color: C.muted }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
               <div style={{ fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 6 }}>
-                {lang === 'en' ? 'The community is just getting started' : lang === 'nl' ? 'De gemeenschap begint net' : lang === 'de' ? 'Die Community fängt gerade an' : 'La comunidad está por comenzar'}
-              </div>
-              <div style={{ fontSize: 13 }}>
-                {lang === 'en' ? 'Be the first to post.' : lang === 'nl' ? 'Wees de eerste die publiceert.' : lang === 'de' ? 'Sei der Erste.' : 'Sé el primero en publicar algo.'}
+                {activeTag ? `Sin posts con ${activeTag}` : lang === 'en' ? 'Be the first to post' : lang === 'nl' ? 'Wees de eerste' : lang === 'de' ? 'Sei der Erste' : 'Sé el primero en publicar'}
               </div>
             </div>
           )
-          : posts.map(post => (
-            <PostCard key={post.id} post={post} currentUser={currentUser} lang={lang} onDelete={handleDelete} onEdit={handleEdit} />
+          : filteredPosts.map(post => (
+            <PostCard key={post.id} post={post} currentUser={enrichedUser} lang={lang}
+              onDelete={handleDelete} onEdit={handleEdit} onHashtag={tag => setActiveTag(tag)} />
           ))
         }
       </div>
