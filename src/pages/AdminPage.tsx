@@ -15,6 +15,11 @@ function getLocalUsers() {
 
 type AdminTab = 'overview' | 'usuarios' | 'compradores' | 'mensajeria' | 'suscripciones' | 'verificaciones' | 'asesores' | 'actividad'
 
+interface ConfirmAction {
+  type: 'restrict' | 'unrestrict' | 'delete'
+  user: Record<string, unknown>
+}
+
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706',
   green: '#16A34A', red: '#DC2626', border: '#E2E8F0', bg: '#F8FAFC',
@@ -106,6 +111,106 @@ function Empty({ icon, title, sub }: { icon: string; title: string; sub: string 
       <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{icon}</div>
       <div style={{ fontWeight: 700, fontSize: 16, color: C.text, marginBottom: 6 }}>{title}</div>
       <div style={{ fontSize: 13, lineHeight: 1.6, maxWidth: 340, margin: '0 auto' }}>{sub}</div>
+    </div>
+  )
+}
+
+/* ── Profile progress ── */
+function profileProgress(u: Record<string, unknown>): number {
+  if (u.role === 'comprador') {
+    let score = 0
+    if (u.name) score += 25
+    if (u.company) score += 25
+    if (u.country) score += 25
+    if (u.category || u.interest) score += 25
+    return score
+  }
+  // productor / asesor
+  let score = 0
+  if (u.name) score += 15
+  if (u.company) score += 15
+  if (u.state) score += 10
+  if (u.category) score += 15
+  if (Number(u.productCount) > 0) score += 30
+  if (u.bio) score += 15
+  return Math.min(score, 100)
+}
+
+function ProgressBar({ pct, color }: { pct: number; color?: string }) {
+  const c = pct >= 80 ? '#16A34A' : pct >= 50 ? '#D97706' : '#94A3B8'
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ flex: 1, height: 6, borderRadius: 100, background: '#E2E8F0', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 100, background: color || c, transition: 'width .4s' }} />
+      </div>
+      <span style={{ fontSize: 10, fontWeight: 700, color: color || c, minWidth: 28 }}>{pct}%</span>
+    </div>
+  )
+}
+
+/* ── Confirm modal (restrict / delete) ── */
+interface ConfirmModalProps {
+  action: ConfirmAction
+  onClose: () => void
+  onDone: () => void
+}
+function ConfirmModal({ action, onClose, onDone }: ConfirmModalProps) {
+  const [pass, setPass]   = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy]   = useState(false)
+
+  const isDelete     = action.type === 'delete'
+  const isRestrict   = action.type === 'restrict'
+  const isUnrestrict = action.type === 'unrestrict'
+  const u = action.user
+
+  const confirm = async () => {
+    if (pass !== ADMIN_PASS) { setError('Contraseña incorrecta.'); return }
+    setBusy(true)
+    try {
+      const email = String(u.email || '')
+      if (isDelete) {
+        await Promise.all([
+          supabase.from('productos').delete().eq('user_email', email),
+          supabase.from('premios').delete().eq('user_email', email),
+          supabase.from('historia').delete().eq('email', email),
+          supabase.from('perfiles').delete().eq('email', email),
+        ])
+        await supabase.from('usuarios').delete().eq('email', email)
+      } else {
+        await supabase.from('usuarios').update({ restricted: isRestrict }).eq('email', email)
+      }
+      onDone()
+    } catch { setError('Error al ejecutar la acción. Intenta de nuevo.') }
+    setBusy(false)
+  }
+
+  const inp: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${C.border}`, background: '#fff', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: C.text }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: '2rem', width: '100%', maxWidth: 400, boxShadow: '0 24px 80px rgba(0,0,0,.3)' }}>
+        <div style={{ fontSize: '2rem', marginBottom: 12, textAlign: 'center' }}>{isDelete ? '🗑️' : isRestrict ? '🚫' : '✅'}</div>
+        <h3 style={{ fontWeight: 800, color: C.navy, textAlign: 'center', marginBottom: 6, fontSize: '1rem' }}>
+          {isDelete ? 'Eliminar cuenta' : isRestrict ? 'Restringir cuenta' : 'Activar cuenta'}
+        </h3>
+        <p style={{ fontSize: 13, color: C.muted, textAlign: 'center', marginBottom: '1.25rem', lineHeight: 1.6 }}>
+          {isDelete
+            ? <>Eliminarás permanentemente a <strong style={{ color: C.navy }}>{String(u.name || u.company || u.email)}</strong> y todos sus datos. Esta acción no se puede deshacer.</>
+            : isRestrict
+            ? <>La cuenta de <strong style={{ color: C.navy }}>{String(u.name || u.company || u.email)}</strong> quedará bloqueada y el usuario no podrá acceder.</>
+            : <>La cuenta de <strong style={{ color: C.navy }}>{String(u.name || u.company || u.email)}</strong> volverá a estar activa.</>
+          }
+        </p>
+        <input type="password" placeholder="Contraseña de admin" value={pass} onChange={e => { setPass(e.target.value); setError('') }} style={inp} onKeyDown={e => e.key === 'Enter' && confirm()} />
+        {error && <div style={{ marginTop: 8, fontSize: 12, color: C.red, background: '#FEE2E2', border: '1px solid #FCA5A5', padding: '8px 12px', borderRadius: 7 }}>{error}</div>}
+        <div style={{ display: 'flex', gap: 8, marginTop: '1rem' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 10, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>Cancelar</button>
+          <button onClick={confirm} disabled={busy} style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: isDelete ? C.red : isRestrict ? C.gold : C.green, color: '#fff', fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontSize: 13, opacity: busy ? .7 : 1 }}>
+            {busy ? '⏳ Procesando...' : isDelete ? '🗑️ Eliminar' : isRestrict ? '🚫 Restringir' : '✅ Activar'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -303,6 +408,9 @@ export default function AdminPage() {
     story: Record<string,unknown> | null
   } | null>(null)
 
+  // Restrict / delete modal
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+
   // Messaging — active chat thread
   const [chatUser, setChatUser]     = useState<Record<string,unknown> | null>(null)
   const [msgSearch, setMsgSearch]   = useState('')
@@ -351,8 +459,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (!auth) return
     loadUsers()
-    const iv = setInterval(loadUsers, 30000)
-    return () => clearInterval(iv)
+    // Real-time subscription to usuarios table
+    const channel = supabase
+      .channel('admin-usuarios')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios' }, () => loadUsers())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [auth])
 
   useEffect(() => {
@@ -595,18 +707,23 @@ export default function AdminPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: C.bg }}>
-                          {['Nombre / Empresa', 'Contacto', 'Rol', 'Ubicación', 'Prods.', 'Registro', 'Acciones'].map(h => (
+                          {['Nombre / Empresa', 'Contacto', 'Rol', 'Ubicación', 'Prods.', 'Avance', 'Registro', 'Acciones'].map(h => (
                             <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: C.muted, fontSize: 12, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {users.map((u, i) => (
-                          <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}
+                        {users.map((u, i) => {
+                          const pct = profileProgress(u)
+                          return (
+                          <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, opacity: u.restricted ? 0.55 : 1 }}
                             onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                             <td style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => openUser(u)}>
-                              <div style={{ fontWeight: 600, color: C.text }}>{String(u.name || '')}</div>
+                              <div style={{ fontWeight: 600, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {String(u.name || '')}
+                                {u.restricted && <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 100, background: '#FEE2E2', color: C.red }}>RESTRINGIDA</span>}
+                              </div>
                               {u.company && <div style={{ fontSize: 11, color: C.muted }}>{String(u.company)}</div>}
                             </td>
                             <td style={{ padding: '12px 14px' }}>
@@ -626,15 +743,19 @@ export default function AdminPage() {
                               {u.country && u.country !== 'México' && <div style={{ fontSize: 11 }}>{String(u.country)}</div>}
                             </td>
                             <td style={{ padding: '12px 14px', textAlign: 'center', fontWeight: 700, color: Number(u.productCount) > 0 ? C.teal : C.muted }}>{Number(u.productCount) || 0}</td>
+                            <td style={{ padding: '12px 14px', minWidth: 100 }}><ProgressBar pct={pct} /></td>
                             <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(u)}</td>
                             <td style={{ padding: '12px 14px' }}>
-                              <div style={{ display: 'flex', gap: 5 }}>
+                              <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap' }}>
                                 <button onClick={() => openUser(u)} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.teal, cursor: 'pointer', fontWeight: 600 }}>Ver</button>
                                 <button onClick={() => { setTab('mensajeria'); setChatUser(u) }} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.teal}40`, background: `${C.teal}08`, color: C.teal, cursor: 'pointer', fontWeight: 700 }}>💬</button>
+                                <button onClick={() => setConfirmAction({ type: u.restricted ? 'unrestrict' : 'restrict', user: u })} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${u.restricted ? '#86EFAC' : '#FCA5A5'}`, background: u.restricted ? '#F0FDF4' : '#FEF2F2', color: u.restricted ? C.green : C.red, cursor: 'pointer', fontWeight: 700 }}>{u.restricted ? '✅' : '🚫'}</button>
+                                <button onClick={() => setConfirmAction({ type: 'delete', user: u })} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid #FCA5A5`, background: '#FEF2F2', color: C.red, cursor: 'pointer', fontWeight: 700 }}>🗑️</button>
                               </div>
                             </td>
                           </tr>
-                        ))}
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -680,7 +801,7 @@ export default function AdminPage() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                         <thead>
                           <tr style={{ background: C.bg }}>
-                            {['Empresa / Nombre', 'País · Idioma', 'Contacto', 'Registro', 'Perfil', 'Acciones'].map(h => (
+                            {['Empresa / Nombre', 'País · Idioma', 'Contacto', 'Avance', 'Registro', 'Badge', 'Acciones'].map(h => (
                               <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: C.muted, fontSize: 12, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
                             ))}
                           </tr>
@@ -688,12 +809,16 @@ export default function AdminPage() {
                         <tbody>
                           {buyers.map((u, i) => {
                             const complete = isProfileComplete(u)
+                            const pct = profileProgress(u)
                             return (
-                              <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}
+                              <tr key={i} style={{ borderBottom: `1px solid ${C.border}`, opacity: u.restricted ? 0.55 : 1 }}
                                 onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                 <td style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => openUser(u)}>
-                                  <div style={{ fontWeight: 700, color: C.text }}>{String(u.company || u.name || '—')}</div>
+                                  <div style={{ fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    {String(u.company || u.name || '—')}
+                                    {u.restricted && <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 100, background: '#FEE2E2', color: C.red }}>RESTRINGIDA</span>}
+                                  </div>
                                   {u.company && <div style={{ fontSize: 11, color: C.muted }}>{String(u.name || '')}</div>}
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
@@ -707,17 +832,20 @@ export default function AdminPage() {
                                       style={{ fontSize: 11, color: C.green, fontWeight: 600, textDecoration: 'none' }}>💬 {String(u.phone)}</a>
                                   )}
                                 </td>
+                                <td style={{ padding: '12px 14px', minWidth: 100 }}><ProgressBar pct={pct} /></td>
                                 <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(u)}</td>
                                 <td style={{ padding: '12px 14px' }}>
                                   {complete
-                                    ? <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D' }}>✅ Badge activo</span>
+                                    ? <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D' }}>✅ Activo</span>
                                     : <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#F1F5F9', color: C.muted }}>⏳ Incompleto</span>
                                   }
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
-                                  <div style={{ display: 'flex', gap: 5 }}>
+                                  <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap' }}>
                                     <button onClick={() => openUser(u)} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.teal, cursor: 'pointer', fontWeight: 600 }}>Ver</button>
                                     <button onClick={() => { setTab('mensajeria'); setChatUser(u) }} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.teal}40`, background: `${C.teal}08`, color: C.teal, cursor: 'pointer', fontWeight: 700 }}>💬</button>
+                                    <button onClick={() => setConfirmAction({ type: u.restricted ? 'unrestrict' : 'restrict', user: u })} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${u.restricted ? '#86EFAC' : '#FCA5A5'}`, background: u.restricted ? '#F0FDF4' : '#FEF2F2', color: u.restricted ? C.green : C.red, cursor: 'pointer', fontWeight: 700 }}>{u.restricted ? '✅' : '🚫'}</button>
+                                    <button onClick={() => setConfirmAction({ type: 'delete', user: u })} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid #FCA5A5`, background: '#FEF2F2', color: C.red, cursor: 'pointer', fontWeight: 700 }}>🗑️</button>
                                   </div>
                                 </td>
                               </tr>
@@ -793,6 +921,15 @@ export default function AdminPage() {
         )}
       </div>
 
+      {/* ── CONFIRM MODAL ── */}
+      {confirmAction && (
+        <ConfirmModal
+          action={confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onDone={() => { setConfirmAction(null); setSelectedUser(null); loadUsers() }}
+        />
+      )}
+
       {/* ── USER DETAIL PANEL ── */}
       {selectedUser && (
         <div onClick={() => setSelectedUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 100, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', padding: '1rem' }}>
@@ -806,9 +943,15 @@ export default function AdminPage() {
                 {selectedUser.company && <div style={{ fontSize: 13, color: C.muted }}>{String(selectedUser.company)}</div>}
                 <div style={{ fontSize: 11, color: C.teal, marginTop: 2 }}>{String(selectedUser.email || '')}</div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
                 <button onClick={() => { setSelectedUser(null); setTab('mensajeria'); setChatUser(selectedUser) }}
                   style={{ fontSize: 11, padding: '6px 12px', borderRadius: 8, border: `1px solid ${C.teal}`, background: `${C.teal}10`, color: C.teal, cursor: 'pointer', fontWeight: 700 }}>💬 Chat</button>
+                <button onClick={() => setConfirmAction({ type: selectedUser.restricted ? 'unrestrict' : 'restrict', user: selectedUser })}
+                  style={{ fontSize: 11, padding: '6px 12px', borderRadius: 8, border: `1px solid ${selectedUser.restricted ? '#86EFAC' : '#FCA5A5'}`, background: selectedUser.restricted ? '#F0FDF4' : '#FEF2F2', color: selectedUser.restricted ? C.green : C.red, cursor: 'pointer', fontWeight: 700 }}>
+                  {selectedUser.restricted ? '✅ Activar' : '🚫 Restringir'}
+                </button>
+                <button onClick={() => setConfirmAction({ type: 'delete', user: selectedUser })}
+                  style={{ fontSize: 11, padding: '6px 12px', borderRadius: 8, border: `1px solid #FCA5A5`, background: '#FEF2F2', color: C.red, cursor: 'pointer', fontWeight: 700 }}>🗑️ Eliminar</button>
                 <button onClick={() => setSelectedUser(null)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', cursor: 'pointer', fontSize: '1rem', color: C.muted }}>✕</button>
               </div>
             </div>
@@ -835,6 +978,12 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+              {/* Progress bar */}
+              <div style={{ background: C.bg, borderRadius: 10, padding: '10px 14px', marginBottom: '1rem' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 6 }}>AVANCE DEL PERFIL</div>
+                <ProgressBar pct={profileProgress(selectedUser)} />
+              </div>
+
               {detailLoading
                 ? <div style={{ textAlign: 'center', padding: '2rem', color: C.muted, fontSize: 13 }}>⏳ Cargando información...</div>
                 : userDetail && (
