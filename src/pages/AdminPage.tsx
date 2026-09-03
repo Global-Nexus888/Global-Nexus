@@ -13,7 +13,7 @@ function getLocalUsers() {
   try { return JSON.parse(localStorage.getItem('gn_users') || '[]') } catch { return [] }
 }
 
-type AdminTab = 'overview' | 'usuarios' | 'mensajeria' | 'suscripciones' | 'verificaciones' | 'asesores' | 'actividad'
+type AdminTab = 'overview' | 'usuarios' | 'compradores' | 'mensajeria' | 'suscripciones' | 'verificaciones' | 'asesores' | 'actividad'
 
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1', gold: '#D97706',
@@ -369,7 +369,8 @@ export default function AdminPage() {
 
   const navItems: { id: AdminTab; label: string; icon: string; badge?: number }[] = [
     { id: 'overview',       label: 'Dashboard',      icon: '📊' },
-    { id: 'usuarios',       label: 'Usuarios',       icon: '👥', badge: totalUsers || undefined },
+    { id: 'usuarios',       label: 'Productores',    icon: '🏭', badge: users.filter(u => u.role === 'productor').length || undefined },
+    { id: 'compradores',    label: 'Compradores EU', icon: '🇪🇺', badge: users.filter(u => u.role === 'comprador').length || undefined },
     { id: 'mensajeria',     label: 'Mensajería',     icon: '💬', badge: totalUnread || undefined },
     { id: 'suscripciones',  label: 'Suscripciones',  icon: '💳' },
     { id: 'verificaciones', label: 'Verificaciones', icon: '🛡️' },
@@ -587,7 +588,7 @@ export default function AdminPage() {
         {tab === 'usuarios' && (
           <div style={{ padding: '1.5rem 2rem' }}>
             <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
-              <h3 style={{ fontWeight: 700, fontSize: 14, color: C.navy, marginBottom: '1rem' }}>Usuarios registrados ({totalUsers})</h3>
+              <h3 style={{ fontWeight: 700, fontSize: 14, color: C.navy, marginBottom: '1rem' }}>Productores mexicanos registrados ({users.filter(u => u.role !== 'comprador').length})</h3>
               {users.length === 0
                 ? <Empty icon="👥" title="Sin usuarios todavía" sub="Los usuarios registrados en global-nexus.business aparecerán aquí." />
                 : <div style={{ overflowX: 'auto' }}>
@@ -641,6 +642,95 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* ── COMPRADORES EU ── */}
+        {tab === 'compradores' && (() => {
+          const buyers = users.filter(u => u.role === 'comprador')
+          const isProfileComplete = (u: typeof users[0]) => {
+            try {
+              const p = JSON.parse(localStorage.getItem(`gn_profile_${String(u.email)}`) || '{}')
+              return !!(u.name && u.company && (u.country || p.country) && (p.categories?.length || p.interests))
+            } catch { return false }
+          }
+          const LAUNCH = new Date('2026-09-03T18:00:00Z')
+          const isLive = new Date() >= LAUNCH
+          return (
+            <div style={{ padding: '1.5rem 2rem' }}>
+              {/* Stats row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                <StatCard icon="🇪🇺" label="Compradores registrados" value={buyers.length} color={C.navy} />
+                <StatCard icon="✅" label="Perfil completo (badge activo)" value={buyers.filter(isProfileComplete).length} color={C.green} />
+                <StatCard icon="🚀" label="Estado plataforma" value={isLive ? 'EN VIVO' : 'Pre-lanzamiento'} color={isLive ? C.green : C.gold} />
+              </div>
+
+              {/* Badge info */}
+              <div style={{ background: isLive ? '#F0FDF4' : '#FFFBEB', border: `1px solid ${isLive ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 12, padding: '12px 16px', marginBottom: '1.5rem', fontSize: 13, color: isLive ? '#166534' : '#92400E', fontWeight: 600 }}>
+                {isLive
+                  ? '🟢 Plataforma EN VIVO — los perfiles con badge están visibles para productores mexicanos.'
+                  : '⏳ Pre-lanzamiento — el badge de perfil verificado se activará el 3 Sep 2026 a las 12:00 pm CDMX. Solo compradores con perfil completo lo recibirán.'}
+              </div>
+
+              <div style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 14, padding: '1.5rem' }}>
+                <h3 style={{ fontWeight: 700, fontSize: 14, color: C.navy, marginBottom: '1rem' }}>
+                  Compradores / Empresas Europeas ({buyers.length})
+                </h3>
+                {buyers.length === 0
+                  ? <Empty icon="🇪🇺" title="Sin compradores todavía" sub="Los compradores europeos registrados en global-nexus.business aparecerán aquí." />
+                  : <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: C.bg }}>
+                            {['Empresa / Nombre', 'País · Idioma', 'Contacto', 'Registro', 'Perfil', 'Acciones'].map(h => (
+                              <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: C.muted, fontSize: 12, borderBottom: `1px solid ${C.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {buyers.map((u, i) => {
+                            const complete = isProfileComplete(u)
+                            return (
+                              <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}
+                                onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                <td style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => openUser(u)}>
+                                  <div style={{ fontWeight: 700, color: C.text }}>{String(u.company || u.name || '—')}</div>
+                                  {u.company && <div style={{ fontSize: 11, color: C.muted }}>{String(u.name || '')}</div>}
+                                </td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <div style={{ fontWeight: 600, color: C.navy, fontSize: 12 }}>{String(u.country || '—')}</div>
+                                  {u.lang && <div style={{ fontSize: 11, color: C.muted }}>🌐 {String(u.lang).toUpperCase()}</div>}
+                                </td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <div style={{ fontSize: 12, color: C.navy, fontWeight: 600 }}>{String(u.email || '')}</div>
+                                  {u.phone && (
+                                    <a href={`https://wa.me/${String(u.phone).replace(/\D/g,'')}`} target="_blank" rel="noreferrer"
+                                      style={{ fontSize: 11, color: C.green, fontWeight: 600, textDecoration: 'none' }}>💬 {String(u.phone)}</a>
+                                  )}
+                                </td>
+                                <td style={{ padding: '12px 14px', color: C.muted, fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(u)}</td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  {complete
+                                    ? <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#DCFCE7', color: '#15803D' }}>✅ Badge activo</span>
+                                    : <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#F1F5F9', color: C.muted }}>⏳ Incompleto</span>
+                                  }
+                                </td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <div style={{ display: 'flex', gap: 5 }}>
+                                    <button onClick={() => openUser(u)} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.border}`, background: 'transparent', color: C.teal, cursor: 'pointer', fontWeight: 600 }}>Ver</button>
+                                    <button onClick={() => { setTab('mensajeria'); setChatUser(u) }} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 7, border: `1px solid ${C.teal}40`, background: `${C.teal}08`, color: C.teal, cursor: 'pointer', fontWeight: 700 }}>💬</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                }
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── SUSCRIPCIONES ── */}
         {tab === 'suscripciones' && (
