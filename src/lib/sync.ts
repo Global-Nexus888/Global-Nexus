@@ -1,9 +1,35 @@
 import { supabase } from './supabase'
 
-/* Sync profile to Supabase — non-blocking */
+/* Sync profile to Supabase — updates both perfiles and usuarios tables */
 export function syncProfile(email: string, data: Record<string, unknown>) {
   supabase.from('perfiles').upsert({ email, ...data, updated_at: new Date().toISOString() })
     .then(() => {}).catch(() => {})
+  // Also keep usuarios in sync for marketplace display
+  const usuariosFields: Record<string, unknown> = {}
+  if (data.name)     usuariosFields.name     = data.name
+  if (data.company)  usuariosFields.company  = data.company
+  if (data.location) usuariosFields.state    = data.location
+  if (data.category) usuariosFields.category = data.category
+  if (Object.keys(usuariosFields).length > 0) {
+    supabase.from('usuarios').update(usuariosFields).eq('email', email)
+      .then(() => {}).catch(() => {})
+  }
+}
+
+/* Sync buyer profile to Supabase */
+export function syncBuyerProfile(email: string, data: Record<string, unknown>) {
+  supabase.from('perfiles').upsert({ email, ...data, updated_at: new Date().toISOString() })
+    .then(() => {}).catch(() => {})
+  const usuariosFields: Record<string, unknown> = {}
+  if (data.country)   usuariosFields.country  = data.country
+  if (data.industry)  usuariosFields.category = data.industry
+  if (data.interests) usuariosFields.interest = data.interests
+  if (data.name)      usuariosFields.name     = data.name
+  if (data.company)   usuariosFields.company  = data.company
+  if (Object.keys(usuariosFields).length > 0) {
+    supabase.from('usuarios').update(usuariosFields).eq('email', email)
+      .then(() => {}).catch(() => {})
+  }
 }
 
 /* Sync full products array for a user — delete + reinsert */

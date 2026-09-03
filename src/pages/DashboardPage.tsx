@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
+import { supabase } from '../lib/supabase'
 import { countUnread, loadThread, sendChatMessage, subscribeThread, markThreadRead, ADMIN_EMAIL, ADMIN_NAME, type ChatMessage } from '../lib/chat'
 
 /* ─── Storage helpers ─── */
@@ -478,7 +479,7 @@ export default function DashboardPage() {
     keys.forEach(k => localStorage.removeItem(k))
     navigate('/registro')
   }
-  const logout = async () => { await import('../lib/supabase').then(m => m.supabase.auth.signOut()).catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
+  const logout = async () => { await supabase.auth.signOut().catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const es = lang === 'es'; const nl = lang === 'nl'; const de = lang === 'de'
   const t = (a: string, b: string, c: string, d: string) => es ? a : nl ? b : de ? c : d

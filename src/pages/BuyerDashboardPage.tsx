@@ -1,3 +1,5 @@
+import { syncBuyerProfile } from '../lib/sync'
+import { supabase } from '../lib/supabase'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
@@ -171,7 +173,7 @@ export default function BuyerDashboardPage() {
     reader.readAsDataURL(file)
   }
 
-  const saveProfileData = () => { saveBProfile(email, profile); setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500) }
+  const saveProfileData = () => { saveBProfile(email, profile); syncBuyerProfile(email, profile as Record<string, unknown>); setSaveMsg(true); setTimeout(() => setSaveMsg(false), 2500) }
 
   const addItem = () => {
     if (!newItem.name) return
@@ -179,7 +181,7 @@ export default function BuyerDashboardPage() {
     setSavedList(updated); saveSavedFn(email, updated); setNewItem({}); setShowAdd(false)
   }
 
-  const logout = async () => { await import('../lib/supabase').then(m => m.supabase.auth.signOut()).catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
+  const logout = async () => { await supabase.auth.signOut().catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const EU_COUNTRIES = ['Alemania / Germany', 'Países Bajos / Netherlands', 'España / Spain', 'Francia / France', 'Italia / Italy', 'Bélgica / Belgium', 'Austria', 'Polonia / Poland', 'Suecia / Sweden', 'Otro / Other']
   const industries = es
