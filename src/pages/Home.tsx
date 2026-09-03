@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PRODUCTS, PRODUCERS } from '../lib/data'
 import ProductCard from '../components/ProductCard'
 import ProducerCard from '../components/ProducerCard'
+import BuyerCard, { type Buyer, getFlag } from '../components/BuyerCard'
 import { useLang } from '../context/LangContext'
 import { homeI18n } from '../lib/i18n/home'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { supabase } from '../lib/supabase'
 
 const CAT_DATA = [
   { value: 'bebidas',      icon: '🥃', count: 48 },
@@ -25,6 +27,26 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const { lang } = useLang()
   const i = homeI18n[lang]
+  const [featuredBuyers, setFeaturedBuyers] = useState<Buyer[]>([])
+
+  useEffect(() => {
+    supabase.from('usuarios').select('*').eq('role', 'comprador').order('created_at', { ascending: false }).limit(3)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setFeaturedBuyers((data as Record<string, unknown>[]).map(u => ({
+            id:              String(u.id || u.email),
+            company:         String(u.company || u.name || 'Empresa EU'),
+            name:            String(u.name || ''),
+            country:         String(u.country || 'Europa'),
+            flag:            getFlag(String(u.country || '')),
+            sector:          String(u.interest || u.category || 'general'),
+            lang:            String(u.lang || 'en'),
+            profileComplete: !!(u.name && u.company && u.country),
+            joinedAt:        String(u.created_at || new Date().toISOString()),
+          })))
+        }
+      }).catch(() => {})
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,6 +175,36 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {featuredProducers.map(p => <ProducerCard key={p.id} producer={p} />)}
+          </div>
+        </section>
+
+        {/* ── COMPRADORES EU ── */}
+        <section style={{ marginBottom: 'clamp(2rem,5vw,3.5rem)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <h2 style={{ fontSize: 'clamp(1rem,3vw,1.25rem)', fontWeight: 700 }}>
+                {lang === 'es' ? '🇪🇺 Compradores Europeos' : lang === 'nl' ? '🇪🇺 Europese Kopers' : lang === 'de' ? '🇪🇺 Europäische Einkäufer' : '🇪🇺 European Buyers'}
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 2 }}>
+                {lang === 'es' ? 'Empresas e importadores de Europa en la plataforma' : lang === 'nl' ? 'Europese bedrijven en importeurs op het platform' : lang === 'de' ? 'Europäische Unternehmen und Importeure auf der Plattform' : 'European companies and importers on the platform'}
+              </p>
+            </div>
+            <Link to="/compradores" style={{ fontSize: '13px', color: 'var(--teal)', fontWeight: 600, whiteSpace: 'nowrap', marginLeft: 12 }}>
+              {lang === 'es' ? 'Ver todos →' : lang === 'nl' ? 'Alles zien →' : lang === 'de' ? 'Alle anzeigen →' : 'See all →'}
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {featuredBuyers.length === 0 ? (
+              <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 8 }}>🇪🇺</div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                  {lang === 'es' ? 'Primeros compradores europeos en camino' : lang === 'nl' ? 'Eerste Europese kopers onderweg' : lang === 'de' ? 'Erste europäische Käufer kommen bald' : 'First European buyers on their way'}
+                </div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>
+                  {lang === 'es' ? 'Se activarán el 3 Sep 2026 · 12:00 pm CDMX' : lang === 'nl' ? 'Actief vanaf 3 sep 2026' : lang === 'de' ? 'Aktiv ab 3. Sep 2026' : 'Active from Sep 3, 2026'}
+                </div>
+              </div>
+            ) : featuredBuyers.map(b => <BuyerCard key={b.id} buyer={b} />)}
           </div>
         </section>
 

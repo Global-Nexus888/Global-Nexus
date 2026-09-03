@@ -27,6 +27,7 @@ import FAQPage from './pages/FAQPage'
 import ThankYouPage from './pages/ThankYouPage'
 import AsesoriaPage from './pages/AsesoriaPage'
 import BuyerDashboardPage from './pages/BuyerDashboardPage'
+import BuyersPage from './pages/BuyersPage'
 import NotFound from './pages/NotFound'
 import CookieBanner from './components/CookieBanner'
 import DemoBubble from './components/DemoBubble'
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/gracias" element={<ThankYouPage />} />
           <Route path="/asesoria" element={<AsesoriaPage />} />
+          <Route path="/compradores" element={<BuyersPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
