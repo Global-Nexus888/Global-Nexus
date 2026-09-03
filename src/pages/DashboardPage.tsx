@@ -478,7 +478,7 @@ export default function DashboardPage() {
     keys.forEach(k => localStorage.removeItem(k))
     navigate('/registro')
   }
-  const logout = () => { localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
+  const logout = async () => { await import('../lib/supabase').then(m => m.supabase.auth.signOut()).catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const es = lang === 'es'; const nl = lang === 'nl'; const de = lang === 'de'
   const t = (a: string, b: string, c: string, d: string) => es ? a : nl ? b : de ? c : d

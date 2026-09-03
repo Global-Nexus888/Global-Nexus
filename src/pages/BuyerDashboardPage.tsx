@@ -179,7 +179,7 @@ export default function BuyerDashboardPage() {
     setSavedList(updated); saveSavedFn(email, updated); setNewItem({}); setShowAdd(false)
   }
 
-  const logout = () => { localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
+  const logout = async () => { await import('../lib/supabase').then(m => m.supabase.auth.signOut()).catch(() => {}); localStorage.removeItem('gn_current_user'); localStorage.removeItem('gn_session_expires'); navigate('/login') }
 
   const EU_COUNTRIES = ['Alemania / Germany', 'Países Bajos / Netherlands', 'España / Spain', 'Francia / France', 'Italia / Italy', 'Bélgica / Belgium', 'Austria', 'Polonia / Poland', 'Suecia / Sweden', 'Otro / Other']
   const industries = es

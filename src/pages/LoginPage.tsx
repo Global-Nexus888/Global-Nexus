@@ -22,8 +22,10 @@ export default function LoginPage() {
     transition: 'border-color .15s', fontFamily: 'inherit',
   }
 
-  // Handle Google OAuth callback
+  // Handle Google OAuth callback — only runs when redirected back from Google
   useEffect(() => {
+    const isOAuthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=')
+    if (!isOAuthCallback) return
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) return
       const u = session.user
