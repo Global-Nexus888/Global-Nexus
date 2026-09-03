@@ -28,6 +28,18 @@ export default function RegisterPage() {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
 
+  const handleGoogle = async () => {
+    if (!agreed) { setError(lang === 'es' ? 'Debes aceptar los términos para continuar.' : 'You must accept the terms to continue.'); return }
+    setLoading(true)
+    setError('')
+    sessionStorage.setItem('gn_oauth_role', role)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/login` },
+    })
+    if (error) { setError(error.message); setLoading(false) }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!agreed) { setError(lang === 'es' ? 'Debes aceptar los términos para continuar.' : 'You must accept the terms to continue.'); return }
@@ -166,6 +178,29 @@ export default function RegisterPage() {
                 style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: 'all .15s', background: role === r ? 'var(--white)' : 'transparent', color: role === r ? 'var(--teal)' : 'var(--text-muted)', boxShadow: role === r ? 'var(--shadow-sm)' : 'none' }}
               >{r === 'productor' ? T('reg_role_producer') : T('reg_role_buyer')}</button>
             ))}
+          </div>
+
+          {/* Google OAuth */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'flex', gap: 8, fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', alignItems: 'flex-start', marginBottom: '0.9rem' }}>
+              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ accentColor: 'var(--teal)', marginTop: 2, flexShrink: 0 }} />
+              <span>
+                {T('reg_terms')} <Link to="/terminos" style={{ color: 'var(--teal)' }}>{T('reg_terms_link')}</Link> {T('reg_and')} <Link to="/privacidad" style={{ color: 'var(--teal)' }}>{T('reg_privacy_link')}</Link>
+              </span>
+            </label>
+            <button type="button" onClick={handleGoogle} disabled={loading}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '11px 16px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--white)', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'var(--text)', transition: 'border-color .15s' }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#4285F4')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+              <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.2 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.8 20-21 0-1.4-.1-2.7-.5-4z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.5 19.2 14 24 14c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.4-17.7 11.7z"/><path fill="#FBBC05" d="M24 45c5.5 0 10.5-1.9 14.4-5.1l-6.7-5.5C29.7 35.8 27 37 24 37c-5.8 0-10.2-3.9-11.8-9.2l-7 5.4C8.9 40.6 15.9 45 24 45z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.4-2.3 4.5-4.3 5.9l6.7 5.5C41.9 36.3 45 30.6 45 24c0-1.4-.2-2.7-.5-4z"/></svg>
+              {lang === 'es' ? 'Registrarse con Google' : lang === 'nl' ? 'Registreren met Google' : lang === 'de' ? 'Mit Google registrieren' : 'Sign up with Google'}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1rem' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{lang === 'es' ? 'o completa el formulario' : lang === 'nl' ? 'of vul het formulier in' : lang === 'de' ? 'oder Formular ausfüllen' : 'or fill the form'}</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
