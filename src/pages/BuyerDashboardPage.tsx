@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import type { Lang } from '../context/LangContext'
+import CommunityFeed from '../components/CommunityFeed'
 
 function getUser() { try { return JSON.parse(localStorage.getItem('gn_current_user') || 'null') } catch { return null } }
 function getBProfile(email: string) { try { return JSON.parse(localStorage.getItem(`gn_bprofile_${email}`) || '{}') } catch { return {} } }
@@ -43,6 +44,7 @@ function getSidebarNav(lang: Lang, savedCount: number): NavItem[] {
     { icon: '📋', label: es ? 'Mis búsquedas' : nl ? 'Mijn zoekopdrachten' : de ? 'Meine Suchen' : 'My searches', id: 3, badge: savedCount || undefined },
     { icon: '💬', label: es ? 'Mensajes' : nl ? 'Berichten' : de ? 'Nachrichten' : 'Messages', id: 4, badge: 3 },
     { icon: '📜', label: es ? 'Mis RFQs' : nl ? 'Mijn RFQs' : de ? 'Meine RFQs' : 'My RFQs', id: 5 },
+    { icon: '🌐', label: es ? 'Comunidad' : nl ? 'Gemeenschap' : de ? 'Gemeinschaft' : 'Community', id: 6 },
   ]
 }
 
@@ -689,6 +691,15 @@ export default function BuyerDashboardPage() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 6 && (
+          <div style={{ padding: '1.75rem 2rem' }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, marginBottom: '1.5rem' }}>
+              🌐 {t('Comunidad Global Nexus', 'Gemeenschap', 'Gemeinschaft', 'Community')}
+            </h2>
+            <CommunityFeed currentUser={{ email, name: profile.name || user?.name || email, role: 'comprador', company: profile.company || user?.company }} compact />
           </div>
         )}
 

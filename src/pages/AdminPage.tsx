@@ -6,6 +6,7 @@ import {
   subscribeThread, ADMIN_EMAIL, ADMIN_NAME,
   type ChatMessage,
 } from '../lib/chat'
+import CommunityFeed from '../components/CommunityFeed'
 
 const ADMIN_PASS = 'nexus2026'
 
@@ -13,7 +14,7 @@ function getLocalUsers() {
   try { return JSON.parse(localStorage.getItem('gn_users') || '[]') } catch { return [] }
 }
 
-type AdminTab = 'overview' | 'usuarios' | 'compradores' | 'mensajeria' | 'suscripciones' | 'verificaciones' | 'asesores' | 'actividad'
+type AdminTab = 'overview' | 'usuarios' | 'compradores' | 'mensajeria' | 'suscripciones' | 'verificaciones' | 'asesores' | 'actividad' | 'comunidad'
 
 interface ConfirmAction {
   type: 'restrict' | 'unrestrict' | 'delete'
@@ -170,15 +171,11 @@ function ConfirmModal({ action, onClose, onDone }: ConfirmModalProps) {
     try {
       const email = String(u.email || '')
       if (isDelete) {
-        await Promise.all([
-          supabase.from('productos').delete().eq('user_email', email),
-          supabase.from('premios').delete().eq('user_email', email),
-          supabase.from('historia').delete().eq('email', email),
-          supabase.from('perfiles').delete().eq('email', email),
-        ])
-        await supabase.from('usuarios').delete().eq('email', email)
+        const { error } = await supabase.rpc('admin_delete_user', { user_email: email })
+        if (error) { setError('Error: ' + error.message); setBusy(false); return }
       } else {
-        await supabase.from('usuarios').update({ restricted: isRestrict }).eq('email', email)
+        const { error } = await supabase.rpc('admin_restrict_user', { user_email: email, is_restricted: isRestrict })
+        if (error) { setError('Error: ' + error.message); setBusy(false); return }
       }
       onDone()
     } catch { setError('Error al ejecutar la acción. Intenta de nuevo.') }
@@ -488,6 +485,7 @@ export default function AdminPage() {
     { id: 'verificaciones', label: 'Verificaciones', icon: '🛡️' },
     { id: 'asesores',       label: 'Asesores',       icon: '🎓', badge: totalAsesores || undefined },
     { id: 'actividad',      label: 'Actividad',      icon: '⚡' },
+    { id: 'comunidad',     label: 'Comunidad',      icon: '🌐' },
   ]
 
   const SidebarBtn = ({ item }: { item: typeof navItems[0] }) => (
@@ -907,6 +905,13 @@ export default function AdminPage() {
                   </div>
               }
             </div>
+          </div>
+        )}
+
+        {/* ── COMUNIDAD ── */}
+        {tab === 'comunidad' && (
+          <div style={{ padding: '1.5rem 2rem' }}>
+            <CommunityFeed currentUser={{ email: ADMIN_EMAIL, name: 'Global Nexus Admin', role: 'admin', isAdmin: true }} />
           </div>
         )}
 

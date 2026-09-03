@@ -5,6 +5,7 @@ import type { Lang } from '../context/LangContext'
 import { syncProfile, syncProducts, syncAwards, syncStory } from '../lib/sync'
 import { supabase } from '../lib/supabase'
 import { countUnread, loadThread, sendChatMessage, subscribeThread, markThreadRead, ADMIN_EMAIL, ADMIN_NAME, type ChatMessage } from '../lib/chat'
+import CommunityFeed from '../components/CommunityFeed'
 
 /* ─── Storage helpers ─── */
 function getUser() {
@@ -118,6 +119,7 @@ function getSidebarNav(lang: Lang, msgCount: number): NavItem[] {
     { icon: '📋', label: es ? 'Solicitudes' : nl ? 'Verzoeken' : de ? 'Anfragen' : 'Requests', id: 5, badge: 5 },
     { icon: '📜', label: es ? 'Órdenes' : nl ? 'Bestellingen' : de ? 'Bestellungen' : 'Orders', id: 6 },
     { icon: '⚙️', label: es ? 'Ajustes' : nl ? 'Instellingen' : de ? 'Einstellungen' : 'Settings', id: 8 },
+    { icon: '🌐', label: es ? 'Comunidad' : nl ? 'Gemeenschap' : de ? 'Gemeinschaft' : 'Community', id: 9 },
   ]
 }
 
@@ -1536,6 +1538,15 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {tab === 9 && (
+          <div style={{ padding: '1.75rem 2rem' }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1.1rem', color: C.navy, marginBottom: '1.5rem' }}>
+              🌐 {t('Comunidad Global Nexus', 'Gemeenschap', 'Gemeinschaft', 'Community')}
+            </h2>
+            <CommunityFeed currentUser={{ email, name: profile.name || email, role: 'productor', company: profile.company }} compact />
           </div>
         )}
 
