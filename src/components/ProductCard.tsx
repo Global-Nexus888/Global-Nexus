@@ -35,6 +35,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const t = (key: string) => T[key][lang] ?? T[key].es
   const catColor = CAT_COLORS[product.category] || 'var(--teal)'
 
+  const displayName = lang === 'es' ? product.name : (product.nameEn || product.name)
+  const displayUnit = lang === 'es' ? product.unit : (product.unitEn || product.unit)
+
   return (
     <Link to={`/producto/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
       <div className="card" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer' }}>
@@ -57,7 +60,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Name + producer */}
         <div style={{ flex: 1 }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35, marginBottom: 4 }}>
-            {product.name}
+            {displayName}
           </h3>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
             <span>🏭</span>{product.producerName}
@@ -81,7 +84,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--teal)' }}>
               ${product.price.toFixed(2)}
-              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: 2 }}>USD/{product.unit}</span>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: 2 }}>USD/{displayUnit}</span>
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 2 }}>
               MOQ: {product.moq} {product.moqUnit}

@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../context/LangContext'
-import { translateToAll as _translateToAll } from '../lib/translate'
+import { translateToAll as _translateToAll, translateText } from '../lib/translate'
+
+function getCachedTr(postId: string, lang: string): string | null {
+  try { return sessionStorage.getItem(`tr_${postId}_${lang}`) } catch { return null }
+}
+function setCachedTr(postId: string, lang: string, text: string) {
+  try { sessionStorage.setItem(`tr_${postId}_${lang}`, text) } catch {}
+}
 
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1',
@@ -267,16 +274,36 @@ function PostCard({
   const [commentCount, setCommentCount] = useState(post.commentCount || 0)
   const [deleteStep, setDeleteStep]   = useState(0) // 0=none 1=confirm
   const [showEmoji, setShowEmoji]     = useState(false)
+  const [autoTr, setAutoTr]           = useState<string | null>(null)
+  const [autoTrLoading, setAutoTrLoading] = useState(false)
   const textRef = useRef<HTMLTextAreaElement>(null)
 
   const meta    = ROLE_META[post.user_role] || ROLE_META.productor
   const isOwn   = currentUser?.email === post.user_email
   const isAdmin = currentUser?.isAdmin
 
-  // Translation display: always show both when different
-  const viewerText   = post.translations?.[lang] || post.body
+  // Resolve translation: DB stored → sessionStorage cache → auto-translate
+  const storedTr   = post.translations?.[lang]
+  const hasStoredTr = storedTr && storedTr !== post.body
+  const viewerText  = hasStoredTr ? storedTr : (autoTr || post.body)
   const originalText = post.body
-  const showBoth     = post.body_lang && post.body_lang !== lang && viewerText && viewerText !== originalText
+  const viewerLang   = hasStoredTr || autoTr ? lang : (post.body_lang || 'es')
+  const showBoth     = viewerLang !== (post.body_lang || 'es') && viewerText !== originalText
+
+  // Auto-translate when no stored translation and langs differ
+  useEffect(() => {
+    const srcLang = post.body_lang || 'es'
+    if (srcLang === lang || !post.body.trim()) return
+    if (hasStoredTr) return
+    const cached = getCachedTr(post.id, lang)
+    if (cached) { setAutoTr(cached); return }
+    setAutoTrLoading(true)
+    translateText(post.body, srcLang, lang).then(result => {
+      setAutoTr(result)
+      setCachedTr(post.id, lang, result)
+      setAutoTrLoading(false)
+    })
+  }, [post.id, lang, hasStoredTr, post.body, post.body_lang])
 
   useEffect(() => {
     const likes = Array.isArray(post.likes) ? post.likes : []
@@ -393,22 +420,21 @@ function PostCard({
         </div>
       ) : (
         <>
-          {/* Viewer language (translated) */}
-          {viewerText && (
-            <div style={{ padding: '0 1rem', paddingBottom: showBoth ? '0.5rem' : '0.875rem' }}>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                {LANG_FLAG[lang]} <span style={{ fontWeight: 600 }}>{LANG_NAME[lang]}</span>
-              </div>
-              <p style={{ fontSize: 14, color: C.text, margin: 0, lineHeight: 1.7 }}>
-                <RichText text={viewerText} onHashtag={onHashtag} />
-              </p>
+          {/* Main content — in viewer's language (translated or loading) */}
+          <div style={{ padding: '0 1rem', paddingBottom: showBoth ? '0.5rem' : '0.875rem' }}>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {LANG_FLAG[viewerLang]} <span style={{ fontWeight: 600 }}>{LANG_NAME[viewerLang]}</span>
+              {autoTrLoading && <span style={{ marginLeft: 6, color: C.teal, fontSize: 10 }}>🌐 traduciendo...</span>}
             </div>
-          )}
-          {/* Original language (when different) */}
+            <p style={{ fontSize: 14, color: C.text, margin: 0, lineHeight: 1.7, opacity: autoTrLoading ? 0.5 : 1 }}>
+              <RichText text={viewerText} onHashtag={onHashtag} />
+            </p>
+          </div>
+          {/* Original language block — shown when we have a real translation */}
           {showBoth && (
             <div style={{ padding: '0.75rem 1rem', margin: '0 1rem 0.875rem', borderRadius: 10, background: C.bg, border: `1px solid ${C.border}` }}>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                {LANG_FLAG[post.body_lang]} <span style={{ fontWeight: 600 }}>{LANG_NAME[post.body_lang]}</span>
+                {LANG_FLAG[post.body_lang || 'es']} <span style={{ fontWeight: 600 }}>{LANG_NAME[post.body_lang || 'es']}</span>
                 <span style={{ marginLeft: 4, opacity: 0.7 }}>· Original</span>
               </div>
               <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.65, fontStyle: 'italic' }}>

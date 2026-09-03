@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useLang } from '../context/LangContext'
-import { getTranslated } from '../lib/translate'
+import { getTranslated, translateText } from '../lib/translate'
 
 const C = {
   navy: '#1E3A5F', teal: '#0D9488', tealLight: '#CCFBF1',
@@ -59,11 +59,30 @@ export default function ProducerProfilePage() {
         // Load products
         const { data: prods } = await supabase.from('productos').select('*').eq('user_email', email).order('created_at', { ascending: false })
 
+        const bioRawVal   = (perfil as Record<string,unknown>)?.bio as string || ''
+        const histRawVal  = (hist as Record<string,unknown>)?.history as string || (perfil as Record<string,unknown>)?.history as string || ''
+        const bioTr       = (perfil as Record<string,unknown>)?.bio_translations as Record<string,string> || {}
+        const histTr      = (hist as Record<string,unknown>)?.history_translations as Record<string,string> || {}
+
+        // Auto-translate on the fly if translation missing for this lang
+        if (lang !== 'es' && bioRawVal && !bioTr[lang]) {
+          translateText(bioRawVal, 'es', lang).then(tr => {
+            if (tr) setData(d => d ? { ...d, bio_translations: { ...(d.bio_translations || {}), [lang]: tr } } : d)
+          })
+        }
+        if (lang !== 'es' && histRawVal && !histTr[lang]) {
+          translateText(histRawVal, 'es', lang).then(tr => {
+            if (tr) setData(d => d ? { ...d, history_translations: { ...(d.history_translations || {}), [lang]: tr } } : d)
+          })
+        }
+
         setData({
           ...u,
           ...(perfil || {}),
+          bio_translations: bioTr,
+          history_translations: histTr,
           photos: (hist as Record<string,unknown>)?.photos as string[] || perfil?.photos || [],
-          history: (hist as Record<string,unknown>)?.history as string || perfil?.history || '',
+          history: histRawVal,
           foundedYear: (hist as Record<string,unknown>)?.foundedYear as string || perfil?.foundedYear || '',
           employees: (hist as Record<string,unknown>)?.employees as string || perfil?.employees || '',
           products: (prods || []) as ProfileData['products'],
@@ -72,7 +91,7 @@ export default function ProducerProfilePage() {
       setLoading(false)
     }
     if (id) load()
-  }, [id])
+  }, [id, lang])
 
   if (loading) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
