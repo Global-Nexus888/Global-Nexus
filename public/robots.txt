@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Priority crawl paths
+Allow: /catalogo
+Allow: /productores
+Allow: /compradores
+Allow: /oportunidades
+Allow: /como-funciona
+Allow: /asesoria
+Allow: /precios
+Allow: /registro
+Allow: /comunidad
+Allow: /faq
+
+# Block authenticated/private areas
+Disallow: /panel
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /login
+
+# Sitemap
+Sitemap: https://global-nexus.business/sitemap.xml
+
+# Crawl delay (be respectful)
+Crawl-delay: 1
