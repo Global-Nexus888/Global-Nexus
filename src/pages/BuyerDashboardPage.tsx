@@ -284,6 +284,30 @@ export default function BuyerDashboardPage() {
         {/* ── TAB 0: DASHBOARD ── */}
         {tab === 0 && (
           <div style={{ padding: '1.75rem 2rem' }}>
+
+            {/* Explorer mode upgrade CTA */}
+            {!user.plan_active && (
+              <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #0F2744)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.75rem', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', color: '#fff' }}>
+                <div style={{ fontSize: '2.5rem', flexShrink: 0 }}>🔐</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+                    {t('Modo Explorador — Activa tu plan Comprador EU', 'Explorer Mode — Activate your EU Buyer plan', 'Verkennersmodus — Activeer je EU Koper-abonnement', 'Erkundungsmodus — Aktiviere deinen EU-Käufer-Plan')}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,.75)', lineHeight: 1.55 }}>
+                    {t(
+                      'Estás en modo explorador. Activa tu plan para contactar productores, enviar RFQs y acceder a precios de exportación exclusivos.',
+                      'You are in explorer mode. Activate your plan to contact producers, send RFQs and access exclusive export pricing.',
+                      'U bevindt zich in verkennersmodus. Activeer uw plan om producenten te contacteren, RFQs te sturen en exclusieve exportprijzen te bekijken.',
+                      'Sie befinden sich im Erkundungsmodus. Aktivieren Sie Ihren Plan, um Produzenten zu kontaktieren, RFQs zu senden und exklusive Exportpreise zu sehen.'
+                    )}
+                  </div>
+                </div>
+                <a href="/precios" style={{ padding: '11px 24px', borderRadius: 10, background: '#0D9488', color: '#fff', fontWeight: 800, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: '0 4px 15px rgba(13,148,136,.4)' }}>
+                  {t('Activar Plan →', 'Activate Plan →', 'Plan activeren →', 'Plan aktivieren →')}
+                </a>
+              </div>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <h1 style={{ fontWeight: 900, fontSize: '1.4rem', color: C.navy, margin: 0 }}>

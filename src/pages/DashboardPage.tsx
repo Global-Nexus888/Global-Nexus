@@ -650,6 +650,35 @@ export default function DashboardPage() {
         {/* ── TAB 0: DASHBOARD ── */}
         {tab === 0 && (
           <div style={{ padding: '1.75rem 2rem' }}>
+
+            {/* Explorer mode upgrade CTA */}
+            {!user.plan_active && (
+              <div style={{ background: 'linear-gradient(135deg, #1E3A5F, #0F2744)', borderRadius: 14, padding: '1.5rem', marginBottom: '1.75rem', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', color: '#fff' }}>
+                <div style={{ fontSize: '2.5rem', flexShrink: 0 }}>🏅</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
+                    {t('Modo Explorador — Obtén tu insignia de Productor Pro', 'Explorer Mode — Get your Pro Producer badge', 'Verkennersmodus — Haal je Pro Producent-badge', 'Erkundungsmodus — Hole dir dein Pro-Produzenten-Badge')}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,.75)', lineHeight: 1.55 }}>
+                    {t(
+                      'Actualmente estás en modo explorador. Activa tu plan Pro Exportador para publicar productos en el catálogo, chatear con compradores europeos y obtener tu badge ✓ Verificado.',
+                      'You are currently in explorer mode. Activate your Pro Exporter plan to list products in the catalog, chat with European buyers, and get your ✓ Verified badge.',
+                      'U bevindt zich in verkennersmodus. Activeer uw Pro Exporteur-abonnement om producten te vermelden, te chatten met EU-kopers en uw ✓ Geverifieerd-badge te ontvangen.',
+                      'Sie befinden sich im Erkundungsmodus. Aktivieren Sie Ihren Pro Exporteur-Plan, um Produkte zu listen, mit EU-Käufern zu chatten und Ihr ✓ Verifiziert-Badge zu erhalten.'
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: '1rem', flexWrap: 'wrap' }}>
+                    {['✓ Badge verificado en catálogo', '💬 Chat con compradores EU', '📦 Productos destacados', '📈 Analytics completos'].map(f => (
+                      <span key={f} style={{ fontSize: 11, background: 'rgba(255,255,255,.1)', padding: '3px 10px', borderRadius: 20, color: 'rgba(255,255,255,.85)' }}>{f}</span>
+                    ))}
+                  </div>
+                </div>
+                <Link to="/precios" style={{ padding: '11px 24px', borderRadius: 10, background: 'var(--teal, #0D9488)', color: '#fff', fontWeight: 800, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: '0 4px 15px rgba(13,148,136,.4)' }}>
+                  {t('Activar Plan Pro →', 'Activate Pro Plan →', 'Pro Plan activeren →', 'Pro-Plan aktivieren →')}
+                </Link>
+              </div>
+            )}
+
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 12 }}>
               <div>

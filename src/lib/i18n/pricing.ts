@@ -20,9 +20,9 @@ export const pricingI18n: Record<Lang, {
     badge_prelaunch: '🎉 Registro gratis · Sin cobros hasta el 29 de septiembre de 2026',
     plans: {
       explorador: {
-        eyebrow: 'EXPLORADOR', name: 'Explorador', period: '/ mes', desc: 'Para conocer la plataforma antes de comprometer.',
-        cta: 'Empezar gratis',
-        features: ['Perfil básico (sin badge verificado)', 'Ver catálogo completo', '3 solicitudes de contacto/mes', 'Feed social (solo lectura)', 'Badge verificado', 'Chat ilimitado'],
+        eyebrow: 'MODO EXPLORADOR', name: 'Explorador', period: '· acceso limitado', desc: 'Solo para explorar la plataforma. Sin acceso a publicar, chatear ni aparecer en el catálogo.',
+        cta: 'Explorar la plataforma',
+        features: ['Ver catálogo de productos', 'Ver perfiles de productores', 'Feed social (solo lectura)', 'Sin chat ni mensajes', 'Sin publicaciones en comunidad', 'No apareces en el catálogo'],
       },
       pro: {
         eyebrow: 'PRO EXPORTADOR', name: 'Pro Exportador', period: 'USD / mes', desc: 'Para productores listos para conquistar Europa.',
@@ -54,9 +54,9 @@ export const pricingI18n: Record<Lang, {
     badge_prelaunch: '🎉 Free registration · No charges until September 29, 2026',
     plans: {
       explorador: {
-        eyebrow: 'EXPLORER', name: 'Explorer', period: '/ month', desc: 'To discover the platform before committing.',
-        cta: 'Start for free',
-        features: ['Basic profile (no verified badge)', 'Full catalog access', '3 contact requests/month', 'Social feed (read-only)', 'Verified badge', 'Unlimited chat'],
+        eyebrow: 'EXPLORER MODE', name: 'Explorer', period: '· limited access', desc: 'Browse only. No posting, no chat, and you will not appear in the catalog.',
+        cta: 'Explore the platform',
+        features: ['Browse product catalog', 'View producer profiles', 'Social feed (read-only)', 'No chat or messaging', 'No community posts', 'Not listed in catalog'],
       },
       pro: {
         eyebrow: 'PRO EXPORTER', name: 'Pro Exporter', period: 'USD / month', desc: 'For producers ready to conquer Europe.',
@@ -88,9 +88,9 @@ export const pricingI18n: Record<Lang, {
     badge_prelaunch: '🎉 Gratis registratie · Geen kosten tot 29 september 2026',
     plans: {
       explorador: {
-        eyebrow: 'VERKENNER', name: 'Verkenner', period: '/ maand', desc: 'Om het platform te ontdekken voordat u zich verbindt.',
-        cta: 'Gratis beginnen',
-        features: ['Basisprofiel (geen geverifieerd badge)', 'Volledige catalogustoegang', '3 contactverzoeken/maand', 'Sociale feed (alleen lezen)', 'Geverifieerd badge', 'Onbeperkt chatten'],
+        eyebrow: 'VERKENNERSMODUS', name: 'Verkenner', period: '· beperkte toegang', desc: 'Alleen rondkijken. Geen publicaties, geen chat en u verschijnt niet in de catalogus.',
+        cta: 'Platform verkennen',
+        features: ['Productcatalogus bekijken', 'Producentprofielen bekijken', 'Sociale feed (alleen lezen)', 'Geen chat of berichten', 'Geen communityposts', 'Niet vermeld in catalogus'],
       },
       pro: {
         eyebrow: 'PRO EXPORTEUR', name: 'Pro Exporteur', period: 'USD / maand', desc: 'Voor producenten klaar om Europa te veroveren.',
@@ -122,9 +122,9 @@ export const pricingI18n: Record<Lang, {
     badge_prelaunch: '🎉 Kostenlose Registrierung · Keine Kosten bis 29. September 2026',
     plans: {
       explorador: {
-        eyebrow: 'ENTDECKER', name: 'Entdecker', period: '/ Monat', desc: 'Um die Plattform zu erkunden, bevor Sie sich festlegen.',
-        cta: 'Kostenlos starten',
-        features: ['Basisprofil (kein verifiziertes Badge)', 'Vollständiger Katalogzugang', '3 Kontaktanfragen/Monat', 'Social Feed (nur lesen)', 'Verifiziertes Badge', 'Unbegrenzter Chat'],
+        eyebrow: 'ERKUNDUNGSMODUS', name: 'Entdecker', period: '· begrenzter Zugang', desc: 'Nur zum Stöbern. Kein Posten, kein Chat, keine Auflistung im Katalog.',
+        cta: 'Plattform erkunden',
+        features: ['Produktkatalog durchsuchen', 'Produzentenprofile ansehen', 'Social Feed (nur lesen)', 'Kein Chat oder Nachrichten', 'Keine Community-Posts', 'Nicht im Katalog gelistet'],
       },
       pro: {
         eyebrow: 'PRO EXPORTEUR', name: 'Pro Exporteur', period: 'USD / Monat', desc: 'Für Produzenten, die bereit sind, Europa zu erobern.',
